@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BI Pneus — FEMSA</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  /* ===================== RESET & BASE ===================== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red:       #E30613;
+    --red-dark:  #b30510;
+    --red-glow:  rgba(227,6,19,0.15);
+    --bg:        #141414;
+    --surface:   #1e1e1e;
+    --surface2:  #252525;
+    --border:    #2e2e2e;
+    --text:      #f0f0f0;
+    --text-muted:#888;
+    --green:     #2ecc71;
+    --yellow:    #f39c12;
+    --orange:    #e67e22;
+    --font:      'Segoe UI', system-ui, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===================== SIDEBAR ===================== */
+  .sidebar {
+    position: fixed; top: 0; left: 0;
+    width: 220px; height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-logo .brand {
+    font-size: 20px; font-weight: 700;
+    color: var(--red); letter-spacing: 1px;
+  }
+
+  .sidebar-logo .sub {
+    font-size: 11px; color: var(--text-muted);
+    margin-top: 2px; text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .nav { padding: 16px 0; flex: 1; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 20px; cursor: pointer;
+    font-size: 13px; color: var(--text-muted);
+    transition: all 0.2s; border-left: 3px solid transparent;
+    user-select: none;
+  }
+
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+
+  .nav-item.active {
+    color: var(--red); border-left-color: var(--red);
+    background: var(--red-glow);
+  }
+
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-muted);
+  }
+
+  /* ===================== MAIN ===================== */
+  .main {
+    margin-left: 220px;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  .topbar {
+    height: 56px; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 0 28px; position: sticky; top: 0; z-index: 50;
+  }
+
+  .topbar-title { font-size: 15px; font-weight: 600; }
+
+  .topbar-right {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .btn-refresh {
+    background: var(--red); color: #fff;
+    border: none; border-radius: 6px;
+    padding: 7px 16px; font-size: 12px;
+    cursor: pointer; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.2s;
+  }
+
+  .btn-refresh:hover { background: var(--red-dark); }
+  .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .last-update { font-size: 11px; color: var(--text-muted); }
+
+  .content { padding: 28px; flex: 1; }
+
+  /* ===================== LOADING ===================== */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 200; gap: 16px;
+  }
+
+  .loading-overlay.hidden { display: none; }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 4px solid var(--border);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text { font-size: 14px; color: var(--text-muted); }
+
+  /* ===================== PAGES ===================== */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===================== CARDS KPI ===================== */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative; overflow: hidden;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--red);
+  }
+
+  .kpi-label {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 32px; font-weight: 700;
+    line-height: 1;
+  }
+
+  .kpi-sub {
+    font-size: 11px; color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  .kpi-value.red    { color: var(--red); }
+  .kpi-value.green  { color: var(--green); }
+  .kpi-value.yellow { color: var(--yellow); }
+  .kpi-value.orange { color: var(--orange); }
+
+  /* ===================== SECTION ===================== */
+  .section-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .section-title::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  /* ===================== GRID 2 COL ===================== */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px; margin-bottom: 24px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px; margin-bottom: 24px;
+  }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* ===================== CARD ===================== */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 13px; font-weight: 600;
+    margin-bottom: 16px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  /* ===================== TABELA ===================== */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead tr {
+    background: var(--red);
+  }
+
+  thead th {
+    padding: 10px 14px;
+    text-align: left; font-weight: 600;
+    font-size: 12px; letter-spacing: 0.5px;
+    color: #fff; white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+
+  tbody td {
+    padding: 9px 14px; color: var(--text);
+    white-space: nowrap;
+  }
+
+  /* ===================== BADGES ===================== */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  .badge-red     { background: rgba(227,6,19,0.2);   color: #ff4d57; }
+  .badge-green   { background: rgba(46,204,113,0.2); color: var(--green); }
+  .badge-yellow  { background: rgba(243,156,18,0.2); color: var(--yellow); }
+  .badge-orange  { background: rgba(230,126,34,0.2); color: var(--orange); }
+  .badge-gray    { background: rgba(136,136,136,0.2);color: var(--text-muted); }
+
+  /* ===================== CHART CONTAINER ===================== */
+  .chart-wrap {
+    position: relative; height: 220px;
+  }
+
+  /* ===================== ADERÊNCIA GAUGE ===================== */
+  .gauge-wrap {
+    display: flex; align-items: center;
+    justify-content: center; flex-direction: column;
+    gap: 4px; padding: 8px 0;
+  }
+
+  .gauge-value {
+    font-size: 48px; font-weight: 700;
+  }
+
+  .gauge-label {
+    font-size: 12px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .gauge-meta {
+    font-size: 12px; color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* ===================== PROGRESS BAR ===================== */
+  .progress-bar-wrap { margin-bottom: 10px; }
+
+  .progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; margin-bottom: 4px;
+  }
+
+  .progress-bar {
+    height: 8px; background: var(--border);
+    border-radius: 4px; overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  /* ===================== EIXOS VIEW ===================== */
+  .eixo-filter {
+    display: flex; gap: 10px; margin-bottom: 20px;
+    flex-wrap: wrap; align-items: center;
+  }
+
+  .eixo-filter select, .eixo-filter input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px;
+    padding: 8px 12px; font-size: 13px;
+    outline: none;
+  }
+
+  .eixo-filter select:focus, .eixo-filter input:focus {
+    border-color: var(--red);
+  }
+
+  .vehicle-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px; margin-bottom: 16px;
+  }
+
+  .vehicle-header {
+    display: flex; align-items: center;
+    gap: 16px; margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .vehicle-placa {
+    font-size: 18px; font-weight: 700;
+    color: var(--red);
+  }
+
+  .vehicle-info {
+    font-size: 12px; color: var(--text-muted);
+    display: flex; gap: 16px; flex-wrap: wrap;
+  }
+
+  .vehicle-info span strong { color: var(--text); }
+
+  .axle-container {
+    display: flex; gap: 24px;
+    align-items: flex-start; flex-wrap: wrap;
+  }
+
+  .axle {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+  }
+
+  .axle-label {
+    font-size: 10px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .axle-tires {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+
+  .axle-side {
+    display: flex; gap: 4px;
+  }
+
+  .tire-box {
+    width: 90px; background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px;
+    font-size: 11px; cursor: pointer;
+    transition: all 0.2s; position: relative;
+  }
+
+  .tire-box:hover { border-color: var(--red); }
+
+  .tire-box.bloquear { border-color: var(--red); background: rgba(227,6,19,0.1); }
+  .tire-box.recapar  { border-color: var(--orange); background: rgba(230,126,34,0.1); }
+  .tire-box.regular  { border-color: var(--yellow); background: rgba(243,156,18,0.08); }
+  .tire-box.bom      { border-color: var(--green); background: rgba(46,204,113,0.05); }
+  .tire-box.vazio    { border-color: var(--border); opacity: 0.4; }
+
+  .tire-pos {
+    font-size: 10px; color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .tire-serial {
+    font-weight: 600; font-size: 11px;
+    margin-bottom: 3px; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .tire-mm {
+    font-size: 13px; font-weight: 700;
+    margin: 2px 0;
+  }
+
+  .tire-marca {
+    font-size: 10px; color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .tire-dot {
+    font-size: 10px; color: var(--text-muted);
+  }
+
+  .tire-pressure {
+    font-size: 10px; margin-top: 3px;
+  }
+
+  .tire-pressure.nok { color: var(--red); font-weight: 600; }
+  .tire-pressure.ok  { color: var(--text-muted); }
+
+  .axle-divider {
+    width: 2px; height: 100%;
+    background: var(--border); align-self: stretch;
+    margin: 0 4px;
+  }
+
+  /* ===================== EMPTY STATE ===================== */
+  .empty {
+    text-align: center; padding: 48px;
+    color: var(--text-muted); font-size: 14px;
+  }
+
+  /* ===================== TOOLTIP ===================== */
+  .tooltip-info {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px;
+    font-size: 12px; margin-bottom: 16px;
+    color: var(--text-muted);
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+
+  .search-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px;
+    padding: 8px 12px; font-size: 13px;
+    outline: none; width: 260px;
+  }
+
+  .search-box:focus { border-color: var(--red); }
+
+  .table-controls {
+    display: flex; gap: 10px;
+    margin-bottom: 14px; align-items: center;
+    flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Carregando dados da API...</div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">FEMSA</div>
+    <div class="sub">BI Gestão de Pneus</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" data-page="painel" onclick="navigate('painel')">
+      <span class="icon">📊</span> Painel Geral
+    </div>
+    <div class="nav-item" data-page="milimetragem" onclick="navigate('milimetragem')">
+      <span class="icon">📏</span> Milimetragem
+    </div>
+    <div class="nav-item" data-page="pressao" onclick="navigate('pressao')">
+      <span class="icon">🔵</span> Pressão
+    </div>
+    <div class="nav-item" data-page="eixos" onclick="navigate('eixos')">
+      <span class="icon">🚛</span> Visão de Eixos
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    v1.0 · Prolog API
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <header class="topbar">
+    <span class="topbar-title" id="pageTitle">Painel Geral</span>
+    <div class="topbar-right">
+      <span class="last-update" id="lastUpdate">—</span>
+      <button class="btn-refresh" onclick="loadData()" id="btnRefresh">
+        ↺ Atualizar
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ========== PAINEL GERAL ========== -->
+    <div class="page active" id="page-painel">
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Aderência às Aferições</div>
+          <div class="gauge-wrap">
+            <div class="gauge-value" id="gaugeAderencia">—</div>
+            <div class="gauge-label">dos veículos aferidos</div>
+            <div class="gauge-meta" id="gaugeMeta">Meta: 100%</div>
+          </div>
+          <div style="margin-top:16px" id="aderenciaBarras"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Status de Aferição por Veículo</div>
+          <div class="chart-wrap">
+            <canvas id="chartAderencia"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">Status Milimetragem</div>
+          <div class="chart-wrap">
+            <canvas id="chartMM"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Pressão dos Pneus</div>
+          <div class="chart-wrap">
+            <canvas id="chartPressao"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Desgaste Irregular (Amplitude > 5mm)</div>
+          <div class="gauge-wrap">
+            <div class="gauge-value orange" id="gaugeAmplitude">—</div>
+            <div class="gauge-label">dos pneus instalados</div>
+          </div>
+          <div style="margin-top:12px" id="amplitudeInfo"></div>
+        </div>
+      </div>
+
+      <p class="section-title">Veículos sem Aferição Recente (Vencidos)</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Placa</th><th>Frota</th><th>Tipo</th>
+            <th>Última Aferição</th><th>Dias</th><th>Status</th>
+          </tr></thead>
+          <tbody id="tbodyVencidos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== MILIMETRAGEM ========== -->
+    <div class="page" id="page-milimetragem">
+      <div class="kpi-grid" id="kpiMM"></div>
+
+      <p class="section-title">Ranking de Desgaste Irregular (Amplitude)</p>
+      <div class="tooltip-info">
+        💡 Amplitude = diferença entre o maior e menor sulco do mesmo pneu. Valores altos indicam desgaste irregular.
+      </div>
+      <div class="table-controls">
+        <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchAmplitude" oninput="filtrarAmplitude()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Serial</th><th>Placa</th><th>Frota</th><th>Posição</th>
+            <th>Marca</th><th>Vida</th>
+            <th>mm1</th><th>mm2</th><th>mm3</th><th>mm4</th>
+            <th>Menor MM</th><th>Amplitude</th><th>Status MM</th>
+          </tr></thead>
+          <tbody id="tbodyAmplitude"></tbody>
+        </table>
+      </div>
+
+      <p class="section-title">Todos os Pneus — Status Milimetragem</p>
+      <div class="table-controls">
+        <select id="filterStatusMM" onchange="filtrarTodosMM()">
+          <option value="">Todos os status</option>
+          <option value="Bloquear">🔴 Bloquear</option>
+          <option value="Recapar">🟠 Recapar</option>
+          <option value="Regular">🟡 Regular</option>
+          <option value="Bom Estado">🟢 Bom Estado</option>
+        </select>
+        <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchMM" oninput="filtrarTodosMM()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Serial</th><th>Placa</th><th>Frota</th><th>Posição</th>
+            <th>Marca</th><th>Modelo</th><th>Vida</th><th>DOT</th>
+            <th>Menor MM</th><th>Status</th>
+          </tr></thead>
+          <tbody id="tbodyTodosMM"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== PRESSÃO ========== -->
+    <div class="page" id="page-pressao">
+      <div class="kpi-grid" id="kpiPressao"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Distribuição de Pressão</div>
+          <div class="chart-wrap">
+            <canvas id="chartPressaoDetalhe"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Desvio de Pressão por Faixa</div>
+          <div style="margin-top: 8px" id="pressaoFaixas"></div>
+        </div>
+      </div>
+
+      <p class="section-title">Pneus com Pressão NOK</p>
+      <div class="tooltip-info">
+        💡 Pressão NOK: desvio superior a 15% (acima ou abaixo) da pressão ideal cadastrada.
+      </div>
+      <div class="table-controls">
+        <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchPressao" oninput="filtrarPressao()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Serial</th><th>Placa</th><th>Frota</th><th>Posição</th>
+            <th>Marca</th><th>Pressão Ideal</th><th>Pressão Atual</th>
+            <th>Desvio</th><th>Status</th>
+          </tr></thead>
+          <tbody id="tbodyPressao"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== VISÃO DE EIXOS ========== -->
+    <div class="page" id="page-eixos">
+      <div class="eixo-filter">
+        <select id="filterVeiculo" onchange="renderEixos()">
+          <option value="">Todos os veículos</option>
+        </select>
+        <select id="filterTipoVeiculo" onchange="renderEixos()">
+          <option value="">Todos os tipos</option>
+        </select>
+        <input class="search-box" type="text" placeholder="Buscar placa ou frota..."
+          id="searchVeiculo" oninput="renderEixos()" style="width:200px">
+      </div>
+      <div class="tooltip-info">
+        💡 Cores: <span style="color:var(--green)">■ Bom Estado</span> &nbsp;
+        <span style="color:var(--yellow)">■ Regular</span> &nbsp;
+        <span style="color:var(--orange)">■ Recapar</span> &nbsp;
+        <span style="color:var(--red)">■ Bloquear</span>
+      </div>
+      <div id="eixosContainer"></div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const PROXY_URL = 'SUA_URL_DO_APPS_SCRIPT_AQUI';
+
+// ============================================================
+// STATE
+// ============================================================
+let DATA = { vehicles: [], tires: [], inspections: [] };
+let charts = {};
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+
+  const titles = {
+    painel: 'Painel Geral',
+    milimetragem: 'Milimetragem',
+    pressao: 'Pressão dos Pneus',
+    eixos: 'Visão de Eixos'
+  };
+  document.getElementById('pageTitle').textContent = titles[page];
+}
+
+// ============================================================
+// LOAD DATA
+// ============================================================
+async function loadData() {
+  showLoading('Carregando veículos...');
+  document.getElementById('btnRefresh').disabled = true;
+
+  try {
+    // Se PROXY_URL não configurado, usa dados mock para demonstração
+    if (PROXY_URL === 'SUA_URL_DO_APPS_SCRIPT_AQUI') {
+      DATA = getMockData();
+    } else {
+      setLoadingText('Buscando veículos...');
+      const [v, t, i] = await Promise.all([
+        fetchProxy('vehicles'),
+        fetchProxy('tires'),
+        fetchProxy('inspections')
+      ]);
+      DATA.vehicles    = v;
+      DATA.tires       = t;
+      DATA.inspections = i;
+    }
+
+    document.getElementById('lastUpdate').textContent =
+      'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+
+    renderAll();
+  } catch(e) {
+    console.error(e);
+    alert('Erro ao carregar dados: ' + e.message);
+  } finally {
+    hideLoading();
+    document.getElementById('btnRefresh').disabled = false;
+  }
+}
+
+async function fetchProxy(endpoint) {
+  const res = await fetch(`${PROXY_URL}?endpoint=${endpoint}`);
+  if (!res.ok) throw new Error(`Erro ${res.status} em ${endpoint}`);
+  return res.json();
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll() {
+  renderPainel();
+  renderMilimetragem();
+  renderPressao();
+  renderEixosFilters();
+  renderEixos();
+}
+
+// ============================================================
+// PAINEL GERAL
+// ============================================================
+function renderPainel() {
+  const tires      = DATA.tires.filter(t => t.status === 'INSTALLED');
+  const vehicles   = DATA.vehicles;
+  const insps      = DATA.inspections;
+
+  // Última aferição por veículo
+  const ultimaInsp = {};
+  insps.forEach(i => {
+    if (!ultimaInsp[i.veiculoId] || new Date(i.dataInspecao) > new Date(ultimaInsp[i.veiculoId].dataInspecao)) {
+      ultimaInsp[i.veiculoId] = i;
+    }
+  });
+
+  // Aderência
+  let noPrazo = 0, emAtencao = 0, vencidos = 0, semInsp = 0;
+  vehicles.forEach(v => {
+    const u = ultimaInsp[v.id];
+    if (!u) { semInsp++; return; }
+    const dias = u.dias;
+    if (dias <= 20)      noPrazo++;
+    else if (dias <= 30) emAtencao++;
+    else                 vencidos++;
+  });
+
+  const total = vehicles.length;
+  const aderentes = noPrazo + emAtencao;
+  const aderenciaPct = total > 0 ? ((aderentes / total) * 100).toFixed(1) : 0;
+
+  // MM stats
+  const bloquear = tires.filter(t => t.statusMM === 'Bloquear').length;
+  const recapar  = tires.filter(t => t.statusMM === 'Recapar').length;
+  const regular  = tires.filter(t => t.statusMM === 'Regular').length;
+  const bom      = tires.filter(t => t.statusMM === 'Bom Estado').length;
+
+  // Pressão NOK
+  const pressaoNOK = tires.filter(t => t.pressaoNOK).length;
+  const pressaoPct = tires.length > 0 ? ((pressaoNOK / tires.length) * 100).toFixed(1) : 0;
+
+  // Amplitude
+  const irregulares = tires.filter(t => t.amplitude > 5).length;
+  const ampPct = tires.length > 0 ? ((irregulares / tires.length) * 100).toFixed(1) : 0;
+
+  // KPIs
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Veículos Ativos</div>
+      <div class="kpi-value">${total}</div>
+      <div class="kpi-sub">Frota FEMSA</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pneus Instalados</div>
+      <div class="kpi-value">${tires.length}</div>
+      <div class="kpi-sub">de ${DATA.tires.length} totais</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pneus para Bloquear</div>
+      <div class="kpi-value ${bloquear > 0 ? 'red' : 'green'}">${bloquear}</div>
+      <div class="kpi-sub">Sulco < 2mm</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pneus para Recapar</div>
+      <div class="kpi-value ${recapar > 0 ? 'orange' : 'green'}">${recapar}</div>
+      <div class="kpi-sub">Sulco ≤ 3mm</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pressão NOK</div>
+      <div class="kpi-value ${pressaoNOK > 0 ? 'red' : 'green'}">${pressaoPct}%</div>
+      <div class="kpi-sub">${pressaoNOK} pneus fora da faixa</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Desgaste Irregular</div>
+      <div class="kpi-value ${irregulares > 0 ? 'orange' : 'green'}">${ampPct}%</div>
+      <div class="kpi-sub">${irregulares} pneus com amplitude > 5mm</div>
+    </div>
+  `;
+
+  // Gauge aderência
+  const cor = aderenciaPct >= 80 ? 'var(--green)' : aderenciaPct >= 50 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('gaugeAderencia').style.color = cor;
+  document.getElementById('gaugeAderencia').textContent = aderenciaPct + '%';
+  document.getElementById('gaugeMeta').textContent = `Meta: 100% · ${aderentes} de ${total} veículos`;
+
+  // Barras aderência
+  document.getElementById('aderenciaBarras').innerHTML = `
+    ${barra('No Prazo', noPrazo, total, 'var(--green)')}
+    ${barra('Em Atenção', emAtencao, total, 'var(--yellow)')}
+    ${barra('Vencidos', vencidos, total, 'var(--red)')}
+    ${semInsp > 0 ? barra('Sem Inspeção', semInsp, total, 'var(--text-muted)') : ''}
+  `;
+
+  // Gráfico aderência (donut)
+  destroyChart('chartAderencia');
+  charts.chartAderencia = new Chart(document.getElementById('chartAderencia'), {
+    type: 'doughnut',
+    data: {
+      labels: ['No Prazo', 'Em Atenção', 'Vencidos', 'Sem Inspeção'],
+      datasets: [{ data: [noPrazo, emAtencao, vencidos, semInsp],
+        backgroundColor: ['#2ecc71','#f39c12','#E30613','#555'],
+        borderWidth: 0, hoverOffset: 4
+      }]
+    },
+    options: chartDonutOptions()
+  });
+
+  // Gráfico MM
+  destroyChart('chartMM');
+  charts.chartMM = new Chart(document.getElementById('chartMM'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Bom Estado', 'Regular', 'Recapar', 'Bloquear'],
+      datasets: [{ data: [bom, regular, recapar, bloquear],
+        backgroundColor: ['#2ecc71','#f39c12','#e67e22','#E30613'],
+        borderWidth: 0
+      }]
+    },
+    options: chartDonutOptions()
+  });
+
+  // Gráfico Pressão
+  destroyChart('chartPressao');
+  charts.chartPressao = new Chart(document.getElementById('chartPressao'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pressão OK', 'Pressão NOK'],
+      datasets: [{ data: [tires.length - pressaoNOK, pressaoNOK],
+        backgroundColor: ['#2ecc71','#E30613'],
+        borderWidth: 0
+      }]
+    },
+    options: chartDonutOptions()
+  });
+
+  // Gauge amplitude
+  document.getElementById('gaugeAmplitude').textContent = ampPct + '%';
+  document.getElementById('amplitudeInfo').innerHTML = `
+    <div style="font-size:12px;color:var(--text-muted);text-align:center">
+      ${irregulares} pneus com desgaste irregular<br>
+      de ${tires.length} pneus instalados
+    </div>
+  `;
+
+  // Tabela vencidos
+  const vencidosVeiculos = vehicles.filter(v => {
+    const u = ultimaInsp[v.id];
+    return !u || u.dias > 30;
+  }).map(v => {
+    const u = ultimaInsp[v.id];
+    return { ...v, dias: u ? u.dias : null, dataInsp: u ? u.dataInspecao : null };
+  }).sort((a, b) => (b.dias || 9999) - (a.dias || 9999));
+
+  document.getElementById('tbodyVencidos').innerHTML = vencidosVeiculos.length === 0
+    ? '<tr><td colspan="6" class="empty">✅ Todos os veículos estão com aferição em dia</td></tr>'
+    : vencidosVeiculos.map(v => `
+        <tr>
+          <td><strong>${v.placa}</strong></td>
+          <td>${v.frota}</td>
+          <td>${v.tipo}</td>
+          <td>${v.dataInsp ? new Date(v.dataInsp).toLocaleDateString('pt-BR') : '—'}</td>
+          <td style="text-align:right"><strong style="color:var(--red)">${v.dias ?? '—'}</strong></td>
+          <td>${v.dias === null ? badgeHtml('Sem Inspeção','gray') : badgeHtml('Vencida','red')}</td>
+        </tr>
+      `).join('');
+}
+
+// ============================================================
+// MILIMETRAGEM
+// ============================================================
+function renderMilimetragem() {
+  const tires = DATA.tires.filter(t => t.status === 'INSTALLED');
+
+  const bloquear = tires.filter(t => t.statusMM === 'Bloquear').length;
+  const recapar  = tires.filter(t => t.statusMM === 'Recapar').length;
+  const regular  = tires.filter(t => t.statusMM === 'Regular').length;
+  const bom      = tires.filter(t => t.statusMM === 'Bom Estado').length;
+  const irregulares = tires.filter(t => t.amplitude > 5).length;
+  const ampPct = tires.length > 0 ? ((irregulares / tires.length) * 100).toFixed(1) : 0;
+
+  document.getElementById('kpiMM').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Bloquear</div>
+      <div class="kpi-value ${bloquear > 0 ? 'red' : 'green'}">${bloquear}</div>
+      <div class="kpi-sub">Sulco < 2mm</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Recapar</div>
+      <div class="kpi-value ${recapar > 0 ? 'orange' : 'green'}">${recapar}</div>
+      <div class="kpi-sub">Sulco ≤ 3mm</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Regular</div>
+      <div class="kpi-value yellow">${regular}</div>
+      <div class="kpi-sub">Sulco 3–6mm</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Bom Estado</div>
+      <div class="kpi-value green">${bom}</div>
+      <div class="kpi-sub">Sulco > 6mm</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Desgaste Irregular</div>
+      <div class="kpi-value ${irregulares > 0 ? 'orange' : 'green'}">${ampPct}%</div>
+      <div class="kpi-sub">${irregulares} pneus (amplitude > 5mm)</div>
+    </div>
+  `;
+
+  // Ranking amplitude
+  window._tiresAmplitude = [...tires].sort((a, b) => b.amplitude - a.amplitude);
+  filtrarAmplitude();
+
+  // Todos MM
+  window._tiresMM = [...tires].sort((a, b) => a.menorMM - b.menorMM);
+  filtrarTodosMM();
+}
+
+function filtrarAmplitude() {
+  const q = (document.getElementById('searchAmplitude')?.value || '').toLowerCase();
+  const lista = (window._tiresAmplitude || []).filter(t =>
+    !q || t.serial.toLowerCase().includes(q) || t.placa.toLowerCase().includes(q)
+  );
+
+  document.getElementById('tbodyAmplitude').innerHTML = lista.length === 0
+    ? '<tr><td colspan="13" class="empty">Nenhum pneu encontrado</td></tr>'
+    : lista.map(t => `
+        <tr>
+          <td><strong>${t.serial}</strong></td>
+          <td>${t.placa}</td>
+          <td>${t.frota}</td>
+          <td>${t.nomePosicao || t.posicao || '—'}</td>
+          <td>${t.marca}</td>
+          <td>${t.cicloVida}</td>
+          <td>${fmt(t.mm1)}</td>
+          <td>${fmt(t.mm2)}</td>
+          <td>${fmt(t.mm3)}</td>
+          <td>${fmt(t.mm4)}</td>
+          <td><strong>${fmt(t.menorMM)}</strong></td>
+          <td style="text-align:right">
+            <strong style="color:${t.amplitude > 5 ? 'var(--red)' : t.amplitude > 3 ? 'var(--yellow)' : 'var(--green)'}">
+              ${fmt(t.amplitude)}
+            </strong>
+          </td>
+          <td>${badgeStatusMM(t.statusMM)}</td>
+        </tr>
+      `).join('');
+}
+
+function filtrarTodosMM() {
+  const q      = (document.getElementById('searchMM')?.value || '').toLowerCase();
+  const status = document.getElementById('filterStatusMM')?.value || '';
+  const lista  = (window._tiresMM || []).filter(t =>
+    (!status || t.statusMM === status) &&
+    (!q || t.serial.toLowerCase().includes(q) || t.placa.toLowerCase().includes(q))
+  );
+
+  document.getElementById('tbodyTodosMM').innerHTML = lista.length === 0
+    ? '<tr><td colspan="10" class="empty">Nenhum pneu encontrado</td></tr>'
+    : lista.map(t => `
+        <tr>
+          <td><strong>${t.serial}</strong></td>
+          <td>${t.placa}</td>
+          <td>${t.frota}</td>
+          <td>${t.nomePosicao || t.posicao || '—'}</td>
+          <td>${t.marca}</td>
+          <td>${t.modelo}</td>
+          <td>${t.cicloVida}</td>
+          <td>${t.dot || '—'}</td>
+          <td><strong>${fmt(t.menorMM)}</strong></td>
+          <td>${badgeStatusMM(t.statusMM)}</td>
+        </tr>
+      `).join('');
+}
+
+// ============================================================
+// PRESSÃO
+// ============================================================
+function renderPressao() {
+  const tires    = DATA.tires.filter(t => t.status === 'INSTALLED');
+  const nok      = tires.filter(t => t.pressaoNOK);
+  const ok       = tires.filter(t => !t.pressaoNOK);
+  const nokPct   = tires.length > 0 ? ((nok.length / tires.length) * 100).toFixed(1) : 0;
+  const baixa    = tires.filter(t => t.desvioPressao < -15).length;
+  const alta     = tires.filter(t => t.desvioPressao > 15).length;
+
+  document.getElementById('kpiPressao').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Pressão NOK</div>
+      <div class="kpi-value ${nok.length > 0 ? 'red' : 'green'}">${nokPct}%</div>
+      <div class="kpi-sub">${nok.length} pneus fora da faixa</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pressão OK</div>
+      <div class="kpi-value green">${ok.length}</div>
+      <div class="kpi-sub">${(100 - parseFloat(nokPct)).toFixed(1)}% da frota</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Baixa Pressão</div>
+      <div class="kpi-value ${baixa > 0 ? 'orange' : 'green'}">${baixa}</div>
+      <div class="kpi-sub">Desvio < -15%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Alta Pressão</div>
+      <div class="kpi-value ${alta > 0 ? 'red' : 'green'}">${alta}</div>
+      <div class="kpi-sub">Desvio > +15%</div>
+    </div>
+  `;
+
+  // Gráfico
+  destroyChart('chartPressaoDetalhe');
+  charts.chartPressaoDetalhe = new Chart(document.getElementById('chartPressaoDetalhe'), {
+    type: 'doughnut',
+    data: {
+      labels: ['OK', 'Baixa Pressão', 'Alta Pressão'],
+      datasets: [{ data: [ok.length, baixa, alta],
+        backgroundColor: ['#2ecc71','#e67e22','#E30613'],
+        borderWidth: 0
+      }]
+    },
+    options: chartDonutOptions()
+  });
+
+  // Faixas de desvio
+  const faixas = [
+    { label: '> +15% (Alta)', count: alta,                           cor: 'var(--red)' },
+    { label: '+5% a +15%',    count: tires.filter(t => t.desvioPressao > 5 && t.desvioPressao <= 15).length, cor: 'var(--yellow)' },
+    { label: '-5% a +5%',     count: tires.filter(t => Math.abs(t.desvioPressao) <= 5).length,               cor: 'var(--green)' },
+    { label: '-5% a -15%',    count: tires.filter(t => t.desvioPressao < -5 && t.desvioPressao >= -15).length,cor: 'var(--yellow)' },
+    { label: '< -15% (Baixa)',count: baixa,                          cor: 'var(--orange)' },
+  ];
+
+  document.getElementById('pressaoFaixas').innerHTML = faixas.map(f =>
+    barra(f.label, f.count, tires.length, f.cor)
+  ).join('');
+
+  // Tabela NOK
+  window._tiresNOK = [...nok].sort((a, b) => Math.abs(b.desvioPressao) - Math.abs(a.desvioPressao));
+  filtrarPressao();
+}
+
+function filtrarPressao() {
+  const q = (document.getElementById('searchPressao')?.value || '').toLowerCase();
+  const lista = (window._tiresNOK || []).filter(t =>
+    !q || t.serial.toLowerCase().includes(q) || t.placa.toLowerCase().includes(q)
+  );
+
+  document.getElementById('tbodyPressao').innerHTML = lista.length === 0
+    ? '<tr><td colspan="9" class="empty">✅ Nenhum pneu com pressão NOK</td></tr>'
+    : lista.map(t => {
+        const cor = t.desvioPressao > 0 ? 'var(--red)' : 'var(--orange)';
+        const tipo = t.desvioPressao > 0 ? 'Alta' : 'Baixa';
+        return `
+          <tr>
+            <td><strong>${t.serial}</strong></td>
+            <td>${t.placa}</td>
+            <td>${t.frota}</td>
+            <td>${t.nomePosicao || t.posicao || '—'}</td>
+            <td>${t.marca}</td>
+            <td>${t.pressaoIdeal} PSI</td>
+            <td>${fmt(t.pressaoAtual)} PSI</td>
+            <td style="color:${cor};font-weight:700">${t.desvioPressao > 0 ? '+' : ''}${t.desvioPressao}%</td>
+            <td><span class="badge badge-red">${tipo} Pressão</span></td>
+          </tr>
+        `;
+      }).join('');
+}
+
+// ============================================================
+// EIXOS
+// ============================================================
+function renderEixosFilters() {
+  const sel = document.getElementById('filterVeiculo');
+  const selTipo = document.getElementById('filterTipoVeiculo');
+
+  DATA.vehicles.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.id; opt.textContent = `${v.placa} — ${v.frota}`;
+    sel.appendChild(opt);
+  });
+
+  const tipos = [...new Set(DATA.vehicles.map(v => v.tipo))].sort();
+  tipos.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    selTipo.appendChild(opt);
+  });
+}
+
+function renderEixos() {
+  const veiculoId = document.getElementById('filterVeiculo').value;
+  const tipo      = document.getElementById('filterTipoVeiculo').value;
+  const q         = (document.getElementById('searchVeiculo').value || '').toLowerCase();
+
+  let veiculos = DATA.vehicles.filter(v => {
+    if (veiculoId && v.id != veiculoId) return false;
+    if (tipo && v.tipo !== tipo) return false;
+    if (q && !v.placa.toLowerCase().includes(q) && !v.frota.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const container = document.getElementById('eixosContainer');
+
+  if (veiculos.length === 0) {
+    container.innerHTML = '<div class="empty">Nenhum veículo encontrado</div>';
+    return;
+  }
+
+  // Mapa pneus por veículo
+  const pneusPorVeiculo = {};
+  DATA.tires.filter(t => t.status === 'INSTALLED').forEach(t => {
+    if (!pneusPorVeiculo[t.veiculoId]) pneusPorVeiculo[t.veiculoId] = {};
+    pneusPorVeiculo[t.veiculoId][t.posicao] = t;
+  });
+
+  container.innerHTML = veiculos.map(v => {
+    const pneus = pneusPorVeiculo[v.id] || {};
+    return renderVehicleCard(v, pneus);
+  }).join('');
+}
+
+function renderVehicleCard(v, pneus) {
+  // Determina eixos pelo número de pneus esperados
+  const eixosConfig = getEixosConfig(v.tipo, v.pneusEsperados);
+
+  return `
+    <div class="vehicle-card">
+      <div class="vehicle-header">
+        <div class="vehicle-placa">${v.placa}</div>
+        <div class="vehicle-info">
+          <span>Frota: <strong>${v.frota}</strong></span>
+          <span>Tipo: <strong>${v.tipo}</strong></span>
+          <span>Marca: <strong>${v.marca}</strong></span>
+          <span>Modelo: <strong>${v.modelo}</strong></span>
+          <span>Odômetro: <strong>${v.odometro.toLocaleString('pt-BR')} km</strong></span>
+          <span>Pneus: <strong>${v.pneusInstalados}/${v.pneusEsperados}</strong></span>
+        </div>
+      </div>
+      <div class="axle-container">
+        ${eixosConfig.map(eixo => renderEixo(eixo, pneus)).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderEixo(eixo, pneus) {
+  const ladoDir = eixo.posicoes.filter(p => p.toString()[1] === '1');
+  const ladoEsq = eixo.posicoes.filter(p => p.toString()[1] === '2');
+
+  const renderLado = (posicoes) => posicoes.map(pos => {
+    const pneu = pneus[pos];
+    if (!pneu) return `<div class="tire-box vazio"><div class="tire-pos">${pos}</div><div style="color:var(--text-muted);font-size:10px;text-align:center;margin-top:8px">Vazio</div></div>`;
+
+    const cls = {
+      'Bloquear': 'bloquear', 'Recapar': 'recapar',
+      'Regular': 'regular', 'Bom Estado': 'bom'
+    }[pneu.statusMM] || '';
+
+    return `
+      <div class="tire-box ${cls}">
+        <div class="tire-pos">${pneu.nomePosicao || pos}</div>
+        <div class="tire-serial">${pneu.serial}</div>
+        <div class="tire-mm" style="color:${corMM(pneu.statusMM)}">${fmt(pneu.menorMM)} mm</div>
+        <div class="tire-marca">${pneu.marca}</div>
+        <div class="tire-dot">DOT: ${pneu.dot || '—'} · V${pneu.cicloVida}</div>
+        ${pneu.banda ? `<div class="tire-dot">Banda: ${pneu.banda}</div>` : ''}
+        <div class="tire-pressure ${pneu.pressaoNOK ? 'nok' : 'ok'}">
+          ${fmt(pneu.pressaoAtual)} PSI${pneu.pressaoNOK ? ' ⚠' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="axle">
+      <div class="axle-label">${eixo.label}</div>
+      <div class="axle-tires">
+        <div class="axle-side">${renderLado(ladoDir)}</div>
+        <div style="height:4px"></div>
+        <div class="axle-side">${renderLado(ladoEsq)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function getEixosConfig(tipo, totalPneus) {
+  // TOCO = 6 pneus: eixo 1 (2) + eixo 2 (4)
+  // TRUCK = 10 pneus: eixo 1 (2) + eixo 2 (4) + eixo 3 (4)
+  // TRUCK S = 8 pneus: eixo 1 (2) + eixo 2 (2) + eixo 3 (4)
+  if (totalPneus <= 6 || tipo === 'TOCO') {
+    return [
+      { label: 'Eixo 1 — Direcional', posicoes: [111, 121] },
+      { label: 'Eixo 2 — Tração',     posicoes: [211, 212, 221, 222] }
+    ];
+  } else if (totalPneus === 8 || tipo === 'TRUCK S') {
+    return [
+      { label: 'Eixo 1 — Direcional', posicoes: [111, 121] },
+      { label: 'Eixo 2 — Tração',     posicoes: [211, 221] },
+      { label: 'Eixo 3 — Tração',     posicoes: [311, 321] }
+    ];
+  } else {
+    return [
+      { label: 'Eixo 1 — Direcional', posicoes: [111, 121] },
+      { label: 'Eixo 2 — Tração',     posicoes: [211, 212, 221, 222] },
+      { label: 'Eixo 3 — Tração',     posicoes: [311, 312, 321, 322] }
+    ];
+  }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmt(n) { return n != null ? parseFloat(n).toFixed(2) : '—'; }
+
+function corMM(status) {
+  return { 'Bloquear':'var(--red)', 'Recapar':'var(--orange)',
+           'Regular':'var(--yellow)', 'Bom Estado':'var(--green)' }[status] || 'var(--text)';
+}
+
+function badgeStatusMM(s) {
+  const map = { 'Bloquear':'red', 'Recapar':'orange', 'Regular':'yellow', 'Bom Estado':'green' };
+  return `<span class="badge badge-${map[s] || 'gray'}">${s}</span>`;
+}
+
+function badgeHtml(label, type) {
+  return `<span class="badge badge-${type}">${label}</span>`;
+}
+
+function barra(label, count, total, cor) {
+  const pct = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+  return `
+    <div class="progress-bar-wrap">
+      <div class="progress-label">
+        <span style="color:var(--text-muted)">${label}</span>
+        <span style="color:var(--text)">${count} <span style="color:var(--text-muted)">(${pct}%)</span></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%;background:${cor}"></div>
+      </div>
+    </div>
+  `;
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function chartDonutOptions() {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#888', font: { size: 11 }, padding: 12 } }
+    },
+    cutout: '65%'
+  };
+}
+
+function showLoading(msg) {
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+  document.getElementById('loadingText').textContent = msg || 'Carregando...';
+}
+
+function setLoadingText(msg) {
+  document.getElementById('loadingText').textContent = msg;
+}
+
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+// ============================================================
+// MOCK DATA (para demonstração sem proxy)
+// ============================================================
+function getMockData() {
+  return {
+    vehicles: [
+      { id:1, placa:'IOW4A71', frota:'11683', tipo:'TOCO', marca:'FORD', modelo:'CARGO 1717', odometro:487360, pneusInstalados:6, pneusEsperados:6 },
+      { id:2, placa:'IPX4592', frota:'11693', tipo:'TRUCK S', marca:'FORD', modelo:'CARGO 1717', odometro:401056, pneusInstalados:8, pneusEsperados:8 },
+      { id:3, placa:'FDR5904', frota:'16739', tipo:'TRUCK', marca:'VW', modelo:'13.180 2018', odometro:71852, pneusInstalados:10, pneusEsperados:10 },
+    ],
+    tires: [
+      { id:1, serial:'931729', status:'INSTALLED', marca:'Goodyear', modelo:'kmax-s', cicloVida:1, maxCiclos:5, banda:'', dot:'3124', mm1:11.27, mm2:10.02, mm3:10.27, mm4:10.18, menorMM:10.02, amplitude:1.25, statusMM:'Bom Estado', pressaoIdeal:100, pressaoAtual:106.97, desvioPressao:6.97, pressaoNOK:false, cpk:0.066, kmRodados:36800, custo:2450, veiculoId:1, placa:'IOW4A71', frota:'11683', posicao:111, nomePosicao:'DE', direcional:true },
+      { id:2, serial:'931731', status:'INSTALLED', marca:'Firestone', modelo:'T822', cicloVida:1, maxCiclos:5, banda:'', dot:'0625', mm1:10.2, mm2:9.31, mm3:9.31, mm4:10.48, menorMM:9.31, amplitude:1.17, statusMM:'Bom Estado', pressaoIdeal:100, pressaoAtual:109.18, desvioPressao:9.18, pressaoNOK:false, cpk:0.054, kmRodados:18453, custo:1000, veiculoId:1, placa:'IOW4A71', frota:'11683', posicao:121, nomePosicao:'DD', direcional:true },
+      { id:3, serial:'931732', status:'INSTALLED', marca:'CONTINENTAL', modelo:'HSC1+', cicloVida:2, maxCiclos:5, banda:'250bzy', dot:'0422', mm1:6.93, mm2:6.87, mm3:6.87, mm4:6.41, menorMM:6.41, amplitude:0.52, statusMM:'Bom Estado', pressaoIdeal:100, pressaoAtual:108.99, desvioPressao:8.99, pressaoNOK:false, cpk:0.027, kmRodados:18453, custo:1000, veiculoId:1, placa:'IOW4A71', frota:'11683', posicao:211, nomePosicao:'TEE', direcional:false },
+      { id:4, serial:'931733', status:'INSTALLED', marca:'Firestone', modelo:'T822', cicloVida:2, maxCiclos:5, banda:'250bzy', dot:'0422', mm1:6.17, mm2:6.23, mm3:6.23, mm4:6.28, menorMM:6.17, amplitude:0.11, statusMM:'Bom Estado', pressaoIdeal:100, pressaoAtual:108.94, desvioPressao:8.94, pressaoNOK:false, cpk:0.027, kmRodados:18453, custo:1000, veiculoId:1, placa:'IOW4A71', frota:'11683', posicao:212, nomePosicao:'TEI', direcional:false },
+      { id:5, serial:'931734', status:'INSTALLED', marca:'DUNLOP', modelo:'SP571', cicloVida:2, maxCiclos:5, banda:'250bzy', dot:'1022', mm1:5.99, mm2:6.03, mm3:6.03, mm4:6.22, menorMM:5.99, amplitude:0.23, statusMM:'Regular', pressaoIdeal:100, pressaoAtual:108.85, desvioPressao:8.85, pressaoNOK:false, cpk:0.027, kmRodados:18453, custo:1000, veiculoId:1, placa:'IOW4A71', frota:'11683', posicao:221, nomePosicao:'TDE', direcional:false },
+      { id:6, serial:'931735', status:'INSTALLED', marca:'DUNLOP', modelo:'SP571', cicloVida:2, maxCiclos:5, banda:'250bzy', dot:'1022', mm1:2.1, mm2:1.8, mm3:2.3, mm4:2.0, menorMM:1.8, amplitude:0.5, statusMM:'Bloquear', pressaoIdeal:100, pressaoAtual:78.0, desvioPressao:-22.0, pressaoNOK:true, cpk:0.027, kmRodados:18453, custo:1000, veiculoId:1, placa:'IOW4A71', frota:'11683', posicao:222, nomePosicao:'TDI', direcional:false },
+    ],
+    inspections: [
+      { inspecaoId:1, veiculoId:1, placa:'IOW4A71', frota:'11683', dataInspecao: new Date(Date.now() - 5*86400000).toISOString(), dias:5, aderencia:'No Prazo' },
+      { inspecaoId:2, veiculoId:2, placa:'IPX4592', frota:'11693', dataInspecao: new Date(Date.now() - 25*86400000).toISOString(), dias:25, aderencia:'Em Atenção' },
+    ]
+  };
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadData();
+</script>
+</body>
+</html>
