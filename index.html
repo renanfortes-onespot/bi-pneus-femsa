@@ -16,36 +16,43 @@
   :root {
     --red:       #E30613;
     --red-dark:  #b30510;
+    --red-soft:  #FF6666;
     --red-glow:  rgba(227,6,19,0.08);
-    --bg:        #0a0a0a;
-    --surface:   rgba(255,255,255,0.04);
-    --surface2:  rgba(255,255,255,0.07);
+    --bg:        #0C1017;
+    --card:      #141B26;
+    --card2:     #1A2335;
+    --surface:   rgba(20,27,38,0.55);
+    --surface2:  rgba(255,255,255,0.06);
     --border:    rgba(255,255,255,0.07);
-    --text:      #f0f0f0;
-    --text-muted:#666;
-    --green:     #2ecc71;
+    --border2:   #1E2D40;
+    --text:      #F1F5F9;
+    --text-muted:#94A3B8;
+    --text3:     #475569;
+    --green:     #3BB33B;
     --yellow:    #f39c12;
     --orange:    #e67e22;
-    --font:      'Montserrat', 'Segoe UI', system-ui, sans-serif;
-    --header-bg: rgba(10,10,10,0.80);
+    --blue:      #38BDF8;
+    --font:      'Montserrat', -apple-system, sans-serif;
+    --header-bg: rgba(12,16,23,0.75);
   }
 
   /* ===== LIGHT MODE ===== */
   body.light-mode {
-    --bg:        #f0f0f0;
-    --surface:   rgba(0,0,0,0.04);
-    --surface2:  rgba(0,0,0,0.07);
-    --border:    rgba(0,0,0,0.10);
+    --bg:        #F0F0F0;
+    --surface:   #FFFFFF;
+    --surface2:  rgba(0,0,0,0.05);
+    --border:    rgba(0,0,0,0.08);
     --text:      #1a1a1a;
-    --text-muted:#777;
+    --text-muted:#444444;
+    --text3:     #666666;
     --header-bg: rgba(240,240,240,0.90);
   }
 
   body.light-mode {
     background:
-      radial-gradient(ellipse 80% 60% at 100% 0%, rgba(227,6,19,0.06) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 0% 100%, rgba(227,6,19,0.04) 0%, transparent 55%),
-      #f0f0f0;
+      radial-gradient(ellipse at 10% 25%, rgba(227,6,19,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 75%, rgba(56,189,248,0.04) 0%, transparent 50%),
+      #F0F0F0;
   }
 
   body.light-mode .sidebar {
@@ -57,12 +64,13 @@
 
   body {
     background:
-      radial-gradient(ellipse 80% 60% at 100% 0%, rgba(100,0,5,0.28) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 0% 100%, rgba(80,0,4,0.18) 0%, transparent 55%),
-      #0a0a0a;
+      radial-gradient(ellipse at 10% 25%, rgba(227,6,19,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 75%, rgba(56,189,248,0.05) 0%, transparent 50%),
+      var(--bg);
     background-attachment: fixed;
     color: var(--text);
     font-family: var(--font);
+    font-size: 13px;
     min-height: 100vh;
     overflow-x: hidden;
   }
@@ -141,8 +149,9 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .topbar-title { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
-  .topbar-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .topbar-title { font-size: 16px; font-weight: 700; color: var(--red); letter-spacing: 0.3px; }
+  body.light-mode .topbar-title { color: var(--red); }
+  .topbar-sub   { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
   .topbar-right { display: flex; align-items: center; gap: 8px; }
 
@@ -359,24 +368,25 @@
   }
 
   .adh-label {
-    font-size: 14px; font-weight: 700;
-    color: var(--text); text-transform: uppercase;
-    letter-spacing: 1px; margin-bottom: 4px;
+    font-size: 10px; font-weight: 600;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 6px;
   }
 
   .adh-value {
-    font-size: 72px; font-weight: 800;
-    line-height: 1; margin-bottom: 8px;
+    font-size: 52px; font-weight: 800;
+    line-height: 1; margin-bottom: 10px;
   }
 
   .adh-meta {
-    font-size: 13px; font-weight: 600;
-    color: var(--text-muted);
+    font-size: 12px; font-weight: 700;
+    color: var(--text);
   }
+  .adh-meta b { font-weight: 700; }
 
   .adh-yoy {
-    font-size: 11px; color: var(--text-muted);
-    margin-top: 4px; opacity: 0.6;
+    font-size: 10px; color: var(--text-muted);
+    margin-top: 4px;
   }
 
   /* 3 CARDS */
@@ -387,44 +397,44 @@
   }
 
   .adh-card {
-    background: rgba(20,25,35,0.75);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 18px 20px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 3px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
   }
   body.light-mode .adh-card {
-    background: rgba(255,255,255,0.75);
-    border-color: rgba(0,0,0,0.08);
+    background: #FFFFFF;
+    border-color: transparent;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
   }
 
   .adh-card-label {
-    font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1.2px;
-    color: var(--text-muted); margin-bottom: 8px;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-muted);
   }
 
   .adh-card-value {
-    font-size: 48px; font-weight: 800;
-    line-height: 1; margin-bottom: 2px;
+    font-size: 24px; font-weight: 800;
+    line-height: 1.1; margin-top: 2px;
     color: var(--text);
   }
 
-  .adh-card-green .adh-card-value { color: #27ae60; }
-  .adh-card-yellow .adh-card-value { color: #e6a817; }
-  .adh-card-red .adh-card-value    { color: #c0392b; }
+  .adh-card-green .adh-card-value { color: var(--green); }
+  .adh-card-yellow .adh-card-value { color: var(--yellow); }
+  .adh-card-red .adh-card-value    { color: var(--red-soft); }
 
   .adh-card-sub {
-    font-size: 15px; font-weight: 600;
-    margin-bottom: 6px;
+    font-size: 10px; font-weight: 600;
+    color: var(--text-muted); margin-top: 5px;
   }
-  .adh-card-green .adh-card-sub { color: #27ae60; }
-  .adh-card-yellow .adh-card-sub { color: #e6a817; }
-  .adh-card-red .adh-card-sub    { color: #c0392b; }
 
   .adh-card-rule {
-    font-size: 11px; color: var(--text-muted); opacity: 0.7;
+    font-size: 10px; color: var(--text-muted); opacity: 0.7;
   }
 
   /* TABELAS LADO A LADO */
@@ -435,21 +445,24 @@
   }
 
   .adh-table-wrap {
-    background: rgba(20,25,35,0.60);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px; overflow: hidden;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
   }
   body.light-mode .adh-table-wrap {
-    background: rgba(255,255,255,0.75);
-    border-color: rgba(0,0,0,0.07);
+    background: #FFFFFF;
+    border-color: transparent;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
   }
 
   .adh-table-title {
-    font-size: 15px; font-weight: 700;
+    font-size: 15px; font-weight: 800;
     padding: 14px 18px 10px;
     color: var(--text);
+    text-transform: uppercase; letter-spacing: 0.5px;
   }
 
   .adh-table {
@@ -487,9 +500,9 @@
     border-radius: 5px; padding: 3px 10px;
     min-width: 32px; text-align: center;
   }
-  .td-dias.vencida  { background: rgba(180,30,30,0.35); color: #f28b8b; }
-  .td-dias.atencao  { background: rgba(200,140,0,0.25); color: #e6be5a; }
-  .td-dias.prazo    { background: rgba(30,140,60,0.25); color: #5dbf7e; }
+  .td-dias.vencida  { background: rgba(255,102,102,0.18); color: #FF6666; }
+  .td-dias.atencao  { background: rgba(243,156,18,0.18); color: #f39c12; }
+  .td-dias.prazo    { background: rgba(59,179,59,0.18); color: #3BB33B; }
 
   /* farol */
   .farol-dot {
@@ -500,12 +513,12 @@
     content: ''; width: 7px; height: 7px;
     border-radius: 50%; display: inline-block;
   }
-  .farol-dot.vencida { color: #f28b8b; }
-  .farol-dot.vencida::before { background: #c0392b; }
-  .farol-dot.atencao { color: #e6be5a; }
-  .farol-dot.atencao::before { background: #d4a017; }
-  .farol-dot.prazo   { color: #5dbf7e; }
-  .farol-dot.prazo::before   { background: #27ae60; }
+  .farol-dot.vencida { color: #FF6666; }
+  .farol-dot.vencida::before { background: #FF6666; }
+  .farol-dot.atencao { color: #f39c12; }
+  .farol-dot.atencao::before { background: #f39c12; }
+  .farol-dot.prazo   { color: #3BB33B; }
+  .farol-dot.prazo::before   { background: #3BB33B; }
 
   @media (max-width: 900px) {
     .adh-cards  { grid-template-columns: 1fr; }
@@ -517,15 +530,21 @@
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    border-radius: 8px;
+    padding: 18px 18px 14px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  body.light-mode .card {
+    background: #FFFFFF;
+    border-color: transparent;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
   }
 
   .card-title {
-    font-size: 13px; font-weight: 600;
-    margin-bottom: 16px; color: var(--text-muted);
+    font-size: 15px; font-weight: 800;
+    margin-bottom: 14px; color: var(--text);
     text-transform: uppercase; letter-spacing: 0.5px;
   }
 
@@ -1370,7 +1389,7 @@ function renderPainel() {
 
   const pct    = (noPrazo + emAten) / total * 100;
   const pctStr = pct.toFixed(1).replace('.', ',') + '%';
-  const corAd  = pct >= 98 ? 'var(--green)' : pct >= 85 ? 'var(--yellow)' : 'var(--red)';
+  const corAd  = pct >= 98 ? 'var(--green)' : pct >= 85 ? 'var(--yellow)' : 'var(--red-soft)';
 
   const elVal = document.getElementById('adhValue');
   elVal.textContent = pctStr;
@@ -1439,9 +1458,9 @@ function renderMensalChart() {
 
   // Cor por cluster: ≥98 verde | 85–98 amarelo | <85 vermelho
   const clusterColor = (p, alpha) =>
-    p >= 98 ? `rgba(39,174,96,${alpha})` :
-    p >= 85 ? `rgba(230,168,23,${alpha})` :
-              `rgba(227,6,19,${alpha})`;
+    p >= 98 ? `rgba(59,179,59,${alpha})` :
+    p >= 85 ? `rgba(243,156,18,${alpha})` :
+              `rgba(255,102,102,${alpha})`;
 
   const barColors = meses.map((m, i) => {
     const p = pcts[i];
@@ -1522,11 +1541,13 @@ function renderMensalChart() {
       layout: { padding: { top: 18 } },
       plugins: {
         legend: {
-          labels: { color: '#aaa', font: { family: 'Montserrat', size: 11 }, boxWidth: 10, padding: 16, usePointStyle: false }
+          labels: { color: '#94A3B8', font: { family: 'Montserrat', size: 11 }, boxWidth: 10, padding: 16, usePointStyle: false }
         },
         tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.85)',
-          titleColor: '#fff', bodyColor: '#ccc',
+          backgroundColor: '#141B26',
+          titleColor: '#E30613', bodyColor: '#F1F5F9',
+          borderColor: '#1E2D40', borderWidth: 1,
+          titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
           callbacks: {
             label: ctx => ctx.parsed.y === null ? '—' :
               ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1).replace('.', ',') + '%'
@@ -1535,17 +1556,17 @@ function renderMensalChart() {
       },
       scales: {
         x: {
-          ticks: { color: '#777', font: { family: 'Montserrat', size: 11 } },
-          grid: { color: 'rgba(255,255,255,0.03)' }
+          ticks: { color: '#94A3B8', font: { family: 'Montserrat', size: 11 } },
+          grid: { color: 'rgba(255,255,255,0.06)' }
         },
         y: {
           min: 0, max: 115,
           ticks: {
-            color: '#777', font: { family: 'Montserrat', size: 11 },
+            color: '#94A3B8', font: { family: 'Montserrat', size: 9 },
             callback: v => v > 100 ? '' : v + '%',
             stepSize: 20
           },
-          grid: { color: 'rgba(255,255,255,0.05)' }
+          grid: { color: 'rgba(255,255,255,0.06)' }
         }
       }
     }
