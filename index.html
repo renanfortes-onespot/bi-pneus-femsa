@@ -1537,15 +1537,12 @@ function renderMensalChart() {
       scales: {
         x: {
           ticks: { color: '#94A3B8', font: { family: 'Montserrat', size: 11 } },
-          grid: { color: 'rgba(255,255,255,0.06)' }
+          grid: { display: false },
+          border: { display: false }
         },
         y: {
-          grace: '10%',
-          ticks: {
-            color: '#94A3B8', font: { family: 'Montserrat', size: 9 },
-            callback: v => v.toFixed(0) + '%'
-          },
-          grid: { color: 'rgba(255,255,255,0.06)' }
+          display: false,
+          grace: '10%'
         }
       }
     }
