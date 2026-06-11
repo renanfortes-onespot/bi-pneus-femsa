@@ -1096,6 +1096,8 @@
               <button class="chip" data-met="mm" onclick="setSaudeMetric('mm',this)">MM Média</button>
               <button class="chip" data-met="calib" onclick="setSaudeMetric('calib',this)">Calibragem</button>
               <button class="chip" data-met="amp" onclick="setSaudeMetric('amp',this)">Amplitude</button>
+              <button class="chip" data-met="status" onclick="setSaudeMetric('status',this)">Status</button>
+              <button class="chip" data-met="vida" onclick="setSaudeMetric('vida',this)">Vida Média</button>
             </div>
           </div>
           <div class="chart-legend" id="saudeLegend">
@@ -1610,17 +1612,24 @@ function renderAll() {
 // ============================================================
 const SCORE_PESOS = { mm: 0.30, calib: 0.20, status: 0.20, amp: 0.15, dot: 0.10, recape: 0.05 };
 
-function parseDOT(dot) {
-  // DOT formato WWAA (semana/ano). Retorna idade em anos ou null.
+function dotFabDate(dot) {
+  // DOT formato WWAA (semana/ano). Retorna data de fabricação ou null.
   if (!dot || !/^\d{4}$/.test(String(dot).trim())) return null;
   const s = String(dot).trim();
   const ww = parseInt(s.slice(0, 2));
   const aa = parseInt(s.slice(2));
   if (ww < 1 || ww > 53) return null;
-  const ano = 2000 + aa;
-  const fab = new Date(ano, 0, 1 + (ww - 1) * 7);
-  if (fab > new Date()) return null;
-  return (Date.now() - fab.getTime()) / (365.25 * 86400000);
+  const fab = new Date(2000 + aa, 0, 1 + (ww - 1) * 7);
+  return fab > new Date() ? null : fab;
+}
+
+function parseDOT(dot, ref) {
+  // Idade em anos na data ref (default: hoje) ou null.
+  const fab = dotFabDate(dot);
+  if (!fab) return null;
+  const refDate = ref || new Date();
+  if (fab > refDate) return null;
+  return (refDate.getTime() - fab.getTime()) / (365.25 * 86400000);
 }
 
 function clamp01(x) { return Math.max(0, Math.min(1, x)); }
@@ -1794,6 +1803,18 @@ const SAUDE_METRICAS = {
     fmt: v => v.toFixed(1).replace('.', ',') + ' mm',
     cluster: v => v <= 2 ? 'g' : v <= 5 ? 'y' : 'r',
     legenda: [['g','≤ 2mm'], ['y','2 a 5mm'], ['r','> 5mm']]
+  },
+  status: {
+    label: 'Status Médio',
+    fmt: v => v.toFixed(0) + ' pts',
+    cluster: v => v >= 80 ? 'g' : v >= 60 ? 'y' : 'r',
+    legenda: [['g','≥ 80 pts'], ['y','60 a 80 pts'], ['r','< 60 pts']]
+  },
+  vida: {
+    label: 'Vida Média (DOT)',
+    fmt: v => v.toFixed(1).replace('.', ',') + ' anos',
+    cluster: v => v <= 3 ? 'g' : v <= 5 ? 'y' : 'r',
+    legenda: [['g','≤ 3 anos'], ['y','3 a 5 anos'], ['r','> 5 anos']]
   }
 };
 
@@ -1840,6 +1861,16 @@ function renderSaudeMensalChart() {
       case 'mm':    return med(mmVals);
       case 'calib': return comP > 0 ? (okP / comP * 100) : null;
       case 'amp':   return med(ampVals);
+      case 'status': return med(sStatus);
+      case 'vida': {
+        // idade média (DOT) dos pneus instalados no fim do mês
+        const fimMes = new Date(m.ano, m.mes + 1, 0, 23, 59, 59);
+        const idades = getFilteredTires()
+          .filter(t => t.status === 'INSTALLED')
+          .map(t => parseDOT(t.dot, fimMes))
+          .filter(v => v !== null);
+        return med(idades);
+      }
       default:
         return scoreComposto({
           mm:     med(sMM),
