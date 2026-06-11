@@ -36,31 +36,76 @@
     --header-bg: rgba(12,16,23,0.75);
   }
 
-  /* ===== LIGHT MODE ===== */
+  /* ===== LIGHT MODE — estilo FEMSA (branco + preto + vermelho) ===== */
   body.light-mode {
-    --bg:        #F0F0F0;
-    --surface:   #FFFFFF;
+    --bg:        #FFFFFF;
+    --surface:   #141414;
     --surface2:  rgba(0,0,0,0.05);
-    --border:    rgba(0,0,0,0.08);
-    --text:      #1a1a1a;
-    --text-muted:#444444;
-    --text3:     #666666;
-    --header-bg: rgba(240,240,240,0.90);
+    --border:    rgba(0,0,0,0.10);
+    --text:      #111111;
+    --text-muted:#555555;
+    --text3:     #777777;
+    --header-bg: rgba(255,255,255,0.92);
   }
 
   body.light-mode {
-    background:
-      radial-gradient(ellipse at 10% 25%, rgba(227,6,19,0.05) 0%, transparent 50%),
-      radial-gradient(ellipse at 90% 75%, rgba(56,189,248,0.04) 0%, transparent 50%),
-      #F0F0F0;
+    background: #FFFFFF;
   }
 
   body.light-mode .sidebar {
-    background: rgba(255,255,255,0.85);
-    border-right-color: rgba(0,0,0,0.08);
+    background: #141414;
+    border-right-color: transparent;
   }
+  body.light-mode .sidebar .nav-item { color: #999; }
+  body.light-mode .sidebar .nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+  body.light-mode .sidebar .nav-item.active { color: var(--red); }
+  body.light-mode .sidebar-footer { color: #777; }
 
+  /* Cards pretos com texto claro (estilo painel FEMSA) */
+  body.light-mode .card,
+  body.light-mode .adh-card,
+  body.light-mode .adh-table-wrap {
+    background: #141414;
+    border: 1px solid #141414;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.25);
+    color: #F1F5F9;
+  }
+  body.light-mode .card-title,
+  body.light-mode .adh-table-title,
+  body.light-mode .adh-card-value { color: #F1F5F9; }
+  body.light-mode .adh-card-label,
+  body.light-mode .adh-card-sub,
+  body.light-mode .adh-card-rule,
+  body.light-mode .lg-item { color: #aaa; }
+  body.light-mode .adh-table tbody td { color: #F1F5F9; }
+  body.light-mode .farol-dot { color: #F1F5F9; }
+  body.light-mode .adh-table tbody tr { border-bottom-color: rgba(255,255,255,0.03); }
+  body.light-mode .adh-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+
+  /* Header de tabela vermelho cheio */
   body.light-mode .adh-table thead tr { background: var(--red); }
+  body.light-mode .adh-table thead th { color: #fff; }
+
+  /* Filtros: pretos com borda vermelha */
+  body.light-mode .ms-btn {
+    background: #141414; color: #fff;
+    border: 1px solid var(--red);
+  }
+  body.light-mode .ms-btn:hover, body.light-mode .ms-btn.open {
+    background: #1e1e1e;
+  }
+  body.light-mode .ms-panel { background: #141414; border-color: var(--red); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  body.light-mode .ms-option { color: #eee; }
+  body.light-mode .ms-option:hover { background: rgba(255,255,255,0.07); }
+  body.light-mode .ms-search { color: #eee; border-bottom-color: rgba(255,255,255,0.15); }
+
+  /* Hero: título preto grande, deltas mantêm cores */
+  body.light-mode .adh-label { color: #555; }
+
+  body.light-mode .theme-btn {
+    background: #141414; color: #fff;
+    border-color: #141414;
+  }
 
   body {
     background:
@@ -225,7 +270,6 @@
     box-shadow: 0 8px 24px rgba(0,0,0,0.7);
     z-index: 200; display: none;
   }
-  body.light-mode .ms-panel { background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
   .ms-panel.open { display: block; }
 
   .ms-search {
@@ -408,11 +452,6 @@
     -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 2px 12px rgba(0,0,0,0.25);
   }
-  body.light-mode .adh-card {
-    background: #FFFFFF;
-    border-color: transparent;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-  }
 
   .adh-card-label {
     font-size: 10px; font-weight: 600;
@@ -454,11 +493,6 @@
     -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 2px 12px rgba(0,0,0,0.25);
   }
-  body.light-mode .adh-table-wrap {
-    background: #FFFFFF;
-    border-color: transparent;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-  }
 
   .adh-table-title {
     font-size: 15px; font-weight: 800;
@@ -473,7 +507,6 @@
   }
 
   .adh-table thead tr { background: rgba(120,5,12,0.18); }
-  body.light-mode .adh-table thead tr { background: rgba(227,6,19,0.07); }
 
   .adh-table thead th {
     padding: 8px 18px; text-align: left;
@@ -487,7 +520,6 @@
     border-bottom: 1px solid rgba(255,255,255,0.02);
     transition: background 0.12s;
   }
-  body.light-mode .adh-table tbody tr { border-bottom-color: rgba(0,0,0,0.03); }
   .adh-table tbody tr:last-child { border-bottom: none; }
   .adh-table tbody tr:hover { background: rgba(255,255,255,0.03); }
 
@@ -548,11 +580,6 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-  }
-  body.light-mode .card {
-    background: #FFFFFF;
-    border-color: transparent;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
   }
 
   .card-title {
