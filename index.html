@@ -227,14 +227,27 @@
   }
 
   .ms-option {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 12px; font-size: 12px;
+    display: flex; align-items: center;
+    padding: 6px 12px; font-size: 12px;
     cursor: pointer; color: var(--text);
-    transition: background 0.1s;
+    transition: background 0.1s; gap: 8px;
   }
   .ms-option:hover { background: var(--surface2); }
-  .ms-option input[type=checkbox] { accent-color: var(--red); cursor: pointer; }
+  .ms-option label { display: flex; align-items: center; gap: 8px; flex: 1; cursor: pointer; }
+  .ms-option input[type=checkbox] { accent-color: var(--red); cursor: pointer; flex-shrink: 0; }
   .ms-option.select-all { border-bottom: 1px solid var(--border); font-weight: 700; font-size: 11px; color: var(--text-muted); }
+
+  /* botão "Apenas" por opção */
+  .ms-only {
+    margin-left: auto; font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--red); opacity: 0; padding: 2px 5px;
+    border: 1px solid rgba(227,6,19,0.3); border-radius: 3px;
+    background: transparent; cursor: pointer; font-family: var(--font);
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+  .ms-option:hover .ms-only { opacity: 1; }
 
   .content { padding: 28px; flex: 1; }
 
@@ -369,51 +382,48 @@
   .adh-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px; margin-bottom: 32px;
+    gap: 12px; margin-bottom: 28px;
   }
 
   .adh-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px 24px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    position: relative; overflow: hidden;
+    background: rgba(20,25,35,0.75);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 8px;
+    padding: 18px 20px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
-
-  .adh-card::before {
-    content: ''; position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
+  body.light-mode .adh-card {
+    background: rgba(255,255,255,0.75);
+    border-color: rgba(0,0,0,0.08);
   }
-
-  .adh-card-green::before { background: var(--green); }
-  .adh-card-yellow::before { background: var(--yellow); }
-  .adh-card-red::before    { background: var(--red); }
 
   .adh-card-label {
-    font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1px;
-    color: var(--text-muted); margin-bottom: 10px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--text-muted); margin-bottom: 8px;
   }
 
   .adh-card-value {
-    font-size: 42px; font-weight: 800;
-    line-height: 1; margin-bottom: 4px;
+    font-size: 48px; font-weight: 800;
+    line-height: 1; margin-bottom: 2px;
+    color: var(--text);
   }
 
-  .adh-card-green .adh-card-value { color: var(--green); }
-  .adh-card-yellow .adh-card-value { color: var(--yellow); }
-  .adh-card-red .adh-card-value    { color: var(--red); }
+  .adh-card-green .adh-card-value { color: #27ae60; }
+  .adh-card-yellow .adh-card-value { color: #e6a817; }
+  .adh-card-red .adh-card-value    { color: #c0392b; }
 
   .adh-card-sub {
-    font-size: 18px; font-weight: 600;
-    color: var(--text-muted); margin-bottom: 6px;
+    font-size: 15px; font-weight: 600;
+    margin-bottom: 6px;
   }
+  .adh-card-green .adh-card-sub { color: #27ae60; }
+  .adh-card-yellow .adh-card-sub { color: #e6a817; }
+  .adh-card-red .adh-card-sub    { color: #c0392b; }
 
   .adh-card-rule {
-    font-size: 11px; color: var(--text-muted);
-    opacity: 0.6;
+    font-size: 11px; color: var(--text-muted); opacity: 0.7;
   }
 
   /* TABELAS LADO A LADO */
@@ -424,19 +434,21 @@
   }
 
   .adh-table-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(20,25,35,0.60);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px; overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  body.light-mode .adh-table-wrap {
+    background: rgba(255,255,255,0.75);
+    border-color: rgba(0,0,0,0.07);
   }
 
   .adh-table-title {
-    font-size: 14px; font-weight: 700;
-    padding: 16px 20px 12px;
+    font-size: 15px; font-weight: 700;
+    padding: 14px 18px 10px;
     color: var(--text);
-    letter-spacing: 0.3px;
   }
 
   .adh-table {
@@ -444,57 +456,55 @@
     font-size: 13px;
   }
 
-  .adh-table thead tr {
-    background: var(--red);
-  }
+  .adh-table thead tr { background: var(--red); }
 
   .adh-table thead th {
-    padding: 9px 16px;
-    text-align: left; font-weight: 600;
-    font-size: 12px; color: #fff;
-    white-space: nowrap;
+    padding: 8px 18px; text-align: left;
+    font-weight: 600; font-size: 11px;
+    color: #fff; white-space: nowrap;
+    letter-spacing: 0.4px;
   }
-
   .adh-table thead th.col-dias { text-align: right; }
 
   .adh-table tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.12s;
   }
-
+  body.light-mode .adh-table tbody tr { border-bottom-color: rgba(0,0,0,0.05); }
   .adh-table tbody tr:last-child { border-bottom: none; }
-  .adh-table tbody tr:hover { background: var(--surface2); }
+  .adh-table tbody tr:hover { background: rgba(255,255,255,0.04); }
 
   .adh-table tbody td {
-    padding: 8px 16px; color: var(--text);
-    white-space: nowrap;
+    padding: 9px 18px; white-space: nowrap;
+    font-size: 13px; color: var(--text);
   }
 
-  .adh-table .td-dias {
-    text-align: right; font-weight: 700;
-    font-size: 13px;
+  /* badge dias */
+  .td-dias {
+    display: inline-block;
+    font-weight: 700; font-size: 12px;
+    border-radius: 5px; padding: 3px 10px;
+    min-width: 32px; text-align: center;
   }
+  .td-dias.vencida  { background: rgba(180,30,30,0.35); color: #f28b8b; }
+  .td-dias.atencao  { background: rgba(200,140,0,0.25); color: #e6be5a; }
+  .td-dias.prazo    { background: rgba(30,140,60,0.25); color: #5dbf7e; }
 
-  .td-dias.vencida  { color: #fff; background: rgba(227,6,19,0.55); border-radius: 4px; padding: 2px 8px; }
-  .td-dias.atencao  { color: #fff; background: rgba(243,156,18,0.55); border-radius: 4px; padding: 2px 8px; }
-  .td-dias.prazo    { color: #fff; background: rgba(46,204,113,0.35); border-radius: 4px; padding: 2px 8px; }
-
+  /* farol */
   .farol-dot {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 12px; font-weight: 600;
+    font-size: 12px; font-weight: 500;
   }
-
   .farol-dot::before {
-    content: ''; display: inline-block;
-    width: 8px; height: 8px; border-radius: 50%;
+    content: ''; width: 7px; height: 7px;
+    border-radius: 50%; display: inline-block;
   }
-
-  .farol-dot.vencida { color: #ff4d57; }
-  .farol-dot.vencida::before { background: #E30613; }
-  .farol-dot.atencao { color: var(--yellow); }
-  .farol-dot.atencao::before { background: var(--yellow); }
-  .farol-dot.prazo   { color: var(--green); }
-  .farol-dot.prazo::before   { background: var(--green); }
+  .farol-dot.vencida { color: #f28b8b; }
+  .farol-dot.vencida::before { background: #c0392b; }
+  .farol-dot.atencao { color: #e6be5a; }
+  .farol-dot.atencao::before { background: #d4a017; }
+  .farol-dot.prazo   { color: #5dbf7e; }
+  .farol-dot.prazo::before   { background: #27ae60; }
 
   @media (max-width: 900px) {
     .adh-cards  { grid-template-columns: 1fr; }
@@ -1125,13 +1135,21 @@ function buildFilter(key, values) {
   FILTERS[key] = [];
   container.innerHTML = values.map(v => `
     <div class="ms-option ms-opt" data-val="${v}">
-      <label style="display:flex;align-items:center;gap:8px;width:100%;cursor:pointer">
+      <label>
         <input type="checkbox" checked data-key="${key}" data-val="${v}"
           onchange="onFilterChange('${key}')">
         ${v}
       </label>
+      <button class="ms-only" onclick="onlyFilter('${key}','${v}')">Apenas</button>
     </div>`).join('');
-  // Todos marcados = nenhum filtro ativo
+}
+
+function onlyFilter(key, val) {
+  // Desmarca todos, marca só este
+  document.querySelectorAll(`#opts-${key} input`).forEach(c => {
+    c.checked = c.dataset.val === val;
+  });
+  onFilterChange(key);
 }
 
 function onFilterChange(key) {
@@ -1393,27 +1411,46 @@ function renderPainel() {
 // GRÁFICO ADERÊNCIA MENSAL
 // ============================================================
 function renderMensalChart() {
-  const hoje = new Date();
-  const meses = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-    meses.push({ ano: d.getFullYear(), mes: d.getMonth(), label: d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) });
-  }
+  // Eixo X fixo: Jan–Dez do ano atual (ou ano filtrado)
+  const anoAtivo = FILTERS.ano.length === 1 ? parseInt(FILTERS.ano[0]) : new Date().getFullYear();
+  const hoje     = new Date();
+
+  const meses = Array.from({ length: 12 }, (_, i) => ({
+    ano: anoAtivo, mes: i,
+    label: new Date(anoAtivo, i, 1).toLocaleDateString('pt-BR', { month: 'short' }) + '. ' + String(anoAtivo).slice(2)
+  }));
+
+  // Meses filtrados por vigência (para highlight)
+  const vigFiltros = FILTERS.vigencia; // ['MM/AAAA', ...]
+  const isFuturo = m => new Date(m.ano, m.mes, 1) > new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
   const totalFrota = DATA.vehicles.length || 1;
 
   const counts = meses.map(m => {
-    const veicInspecionados = new Set();
+    if (isFuturo(m)) return null;
+    const set = new Set();
     DATA.inspections.forEach(i => {
       const d = new Date(i.dataInspecao);
-      if (d.getFullYear() === m.ano && d.getMonth() === m.mes) {
-        veicInspecionados.add(i.veiculoId);
-      }
+      if (d.getFullYear() === m.ano && d.getMonth() === m.mes) set.add(i.veiculoId);
     });
-    return veicInspecionados.size;
+    return set.size;
   });
 
-  const pcts = counts.map(c => parseFloat((c / totalFrota * 100).toFixed(1)));
+  const pcts = counts.map(c => c === null ? null : parseFloat((c / totalFrota * 100).toFixed(1)));
+
+  // Cores das barras: destaque se mês está no filtro de vigência (ou todos destacados se sem filtro)
+  const barColors = meses.map((m, i) => {
+    if (counts[i] === null) return 'rgba(255,255,255,0.04)'; // futuro
+    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
+    const highlighted = vigFiltros.length === 0 || vigFiltros.includes(mv);
+    return highlighted ? 'rgba(227,6,19,0.70)' : 'rgba(227,6,19,0.18)';
+  });
+
+  const pointColors = meses.map((m, i) => {
+    if (counts[i] === null) return 'transparent';
+    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
+    return vigFiltros.length === 0 || vigFiltros.includes(mv) ? '#fff' : 'rgba(255,255,255,0.3)';
+  });
 
   destroyChart('chartMensal');
   charts.chartMensal = new Chart(document.getElementById('chartMensal'), {
@@ -1424,22 +1461,21 @@ function renderMensalChart() {
           type: 'bar',
           label: 'Veículos Inspecionados',
           data: counts,
-          backgroundColor: 'rgba(227,6,19,0.55)',
-          borderColor: '#E30613',
-          borderWidth: 1,
-          borderRadius: 4,
+          backgroundColor: barColors,
+          borderRadius: 3,
           yAxisID: 'y'
         },
         {
           type: 'line',
           label: '% da Frota',
           data: pcts,
-          borderColor: '#fff',
-          backgroundColor: 'rgba(255,255,255,0.08)',
+          borderColor: 'rgba(255,255,255,0.85)',
           borderWidth: 2,
-          pointBackgroundColor: '#fff',
-          pointRadius: 4,
-          tension: 0.4,
+          pointBackgroundColor: pointColors,
+          pointBorderColor: pointColors,
+          pointRadius: 5,
+          tension: 0.35,
+          spanGaps: false,
           yAxisID: 'y2'
         }
       ]
@@ -1447,17 +1483,35 @@ function renderMensalChart() {
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: '#aaa', font: { family: 'Montserrat', size: 11 }, boxWidth: 12 } },
+        legend: {
+          labels: { color: '#aaa', font: { family: 'Montserrat', size: 11 }, boxWidth: 10, padding: 16 }
+        },
         tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.8)',
+          backgroundColor: 'rgba(0,0,0,0.85)',
           titleColor: '#fff', bodyColor: '#ccc',
-          callbacks: { label: ctx => ctx.dataset.yAxisID === 'y2' ? ctx.parsed.y.toFixed(1) + '%' : ctx.parsed.y + ' veículos' }
+          callbacks: {
+            label: ctx => ctx.dataset.yAxisID === 'y2'
+              ? (ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) + '% da frota' : '—')
+              : (ctx.parsed.y !== null ? ctx.parsed.y + ' veículos' : '—')
+          }
         }
       },
       scales: {
-        x: { ticks: { color: '#888', font: { family: 'Montserrat', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y:  { position: 'left',  ticks: { color: '#888', font: { family: 'Montserrat', size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } },
-        y2: { position: 'right', ticks: { color: '#aaa', font: { family: 'Montserrat', size: 11 }, callback: v => v + '%' }, grid: { display: false } }
+        x: {
+          ticks: { color: '#777', font: { family: 'Montserrat', size: 11 } },
+          grid: { color: 'rgba(255,255,255,0.03)' }
+        },
+        y: {
+          position: 'left',
+          ticks: { color: '#777', font: { family: 'Montserrat', size: 11 } },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        },
+        y2: {
+          position: 'right',
+          min: 0, max: 100,
+          ticks: { color: '#999', font: { family: 'Montserrat', size: 11 }, callback: v => v + '%' },
+          grid: { display: false }
+        }
       }
     }
   });
