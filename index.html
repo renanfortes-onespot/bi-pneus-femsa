@@ -38,20 +38,22 @@
 
   /* ===== LIGHT MODE — estilo FEMSA (branco + preto + vermelho) ===== */
   body.light-mode {
-    --bg:        #FFFFFF;
-    --surface:   #141414;
+    --bg:        #F2F2F2;
+    --surface:   rgba(255,255,255,0.65);
     --surface2:  rgba(0,0,0,0.05);
-    --border:    rgba(0,0,0,0.10);
+    --border:    rgba(0,0,0,0.06);
     --text:      #111111;
     --text-muted:#555555;
     --text3:     #777777;
-    --header-bg: rgba(255,255,255,0.92);
+    --red-soft:  #FF0000;
+    --green:     #0BA50B;
   }
 
   body.light-mode {
-    background: #FFFFFF;
+    background: #F2F2F2;
   }
 
+  /* Sidebar continua escura no modo claro */
   body.light-mode .sidebar {
     background: #141414;
     border-right-color: transparent;
@@ -61,51 +63,24 @@
   body.light-mode .sidebar .nav-item.active { color: var(--red); }
   body.light-mode .sidebar-footer { color: #777; }
 
-  /* Cards pretos com texto claro (estilo painel FEMSA) */
+  /* Cards: cinza claro semi-transparente, texto preto */
   body.light-mode .card,
   body.light-mode .adh-card,
   body.light-mode .adh-table-wrap {
-    background: #141414;
-    border: 1px solid #141414;
-    box-shadow: 0 3px 14px rgba(0,0,0,0.25);
-    color: #F1F5F9;
+    background: rgba(255,255,255,0.65);
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    color: #111;
   }
   body.light-mode .card-title,
   body.light-mode .adh-table-title,
-  body.light-mode .adh-card-value { color: #F1F5F9; }
-  body.light-mode .adh-card-label,
-  body.light-mode .adh-card-sub,
-  body.light-mode .adh-card-rule,
-  body.light-mode .lg-item { color: #aaa; }
-  body.light-mode .adh-table tbody td { color: #F1F5F9; }
-  body.light-mode .farol-dot { color: #F1F5F9; }
-  body.light-mode .adh-table tbody tr { border-bottom-color: rgba(255,255,255,0.03); }
-  body.light-mode .adh-table tbody tr:hover { background: rgba(255,255,255,0.04); }
-
-  /* Header de tabela vermelho cheio */
-  body.light-mode .adh-table thead tr { background: var(--red); }
-  body.light-mode .adh-table thead th { color: #fff; }
-
-  /* Filtros: pretos com borda vermelha */
-  body.light-mode .ms-btn {
-    background: #141414; color: #fff;
-    border: 1px solid var(--red);
-  }
-  body.light-mode .ms-btn:hover, body.light-mode .ms-btn.open {
-    background: #1e1e1e;
-  }
-  body.light-mode .ms-panel { background: #141414; border-color: var(--red); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-  body.light-mode .ms-option { color: #eee; }
-  body.light-mode .ms-option:hover { background: rgba(255,255,255,0.07); }
-  body.light-mode .ms-search { color: #eee; border-bottom-color: rgba(255,255,255,0.15); }
-
-  /* Hero: título preto grande, deltas mantêm cores */
-  body.light-mode .adh-label { color: #555; }
-
-  body.light-mode .theme-btn {
-    background: #141414; color: #fff;
-    border-color: #141414;
-  }
+  body.light-mode .adh-card-value { color: #111; }
+  body.light-mode .adh-table tbody td { color: #111; }
+  body.light-mode .farol-dot { color: #111; }
+  body.light-mode .adh-table tbody tr { border-bottom-color: rgba(0,0,0,0.03); }
+  body.light-mode .adh-table tbody tr:hover { background: rgba(0,0,0,0.03); }
+  body.light-mode .adh-table thead tr { background: rgba(227,6,19,0.08); }
+  body.light-mode .adh-table thead th { color: #555; }
 
   body {
     background:
@@ -178,13 +153,23 @@
   }
 
   .topbar {
-    background: var(--header-bg);
-    border-bottom: 1px solid var(--border);
+    background: rgba(12,16,23,0.85);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
     position: sticky; top: 0; z-index: 50;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     box-shadow: 0 2px 12px rgba(0,0,0,0.2);
   }
+
+  /* Topbar mantém cor escura nos dois modos */
+  body.light-mode .topbar { background: #0C1017; }
+  body.light-mode .topbar-sub { color: #94A3B8; }
+  body.light-mode .status-badge { color: #94A3B8; }
+  body.light-mode .theme-btn { color: #94A3B8; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+  body.light-mode .ms-btn { color: #F1F5F9; }
+  body.light-mode .ms-panel { background: #111; }
+  body.light-mode .ms-option { color: #eee; }
+  body.light-mode .ms-search { color: #eee; }
 
   .topbar-row1 {
     height: 48px;
@@ -535,9 +520,9 @@
     border-radius: 5px; padding: 3px 10px;
     min-width: 32px; text-align: center;
   }
-  .td-dias.vencida  { color: #FF6666; }
-  .td-dias.atencao  { color: #f39c12; }
-  .td-dias.prazo    { color: #3BB33B; }
+  .td-dias.vencida  { color: var(--red-soft); }
+  .td-dias.atencao  { color: var(--yellow); }
+  .td-dias.prazo    { color: var(--green); }
 
   /* legenda do gráfico */
   .chart-legend {
@@ -561,9 +546,9 @@
     border-radius: 50%; display: inline-block;
   }
   .farol-dot { color: var(--text); }
-  .farol-dot.vencida::before { background: #FF6666; }
-  .farol-dot.atencao::before { background: #f39c12; }
-  .farol-dot.prazo::before   { background: #3BB33B; }
+  .farol-dot.vencida::before { background: var(--red-soft); }
+  .farol-dot.atencao::before { background: var(--yellow); }
+  .farol-dot.prazo::before   { background: var(--green); }
 
   @media (max-width: 900px) {
     .adh-cards  { grid-template-columns: 1fr; }
@@ -949,9 +934,9 @@
           <div class="adh-label">Aderência</div>
           <div class="adh-value" id="adhValue">—</div>
           <div class="adh-deltas">
-            <div class="adh-delta">No Prazo<b id="adhDeltaPrazo" style="color:#3BB33B">—</b></div>
-            <div class="adh-delta">Em Atenção<b id="adhDeltaAtencao" style="color:#f39c12">—</b></div>
-            <div class="adh-delta">Vencidos<b id="adhDeltaVencida" style="color:#FF6666">—</b></div>
+            <div class="adh-delta">No Prazo<b id="adhDeltaPrazo" style="color:var(--green)">—</b></div>
+            <div class="adh-delta">Em Atenção<b id="adhDeltaAtencao" style="color:var(--yellow)">—</b></div>
+            <div class="adh-delta">Vencidos<b id="adhDeltaVencida" style="color:var(--red-soft)">—</b></div>
           </div>
         </div>
       </div>
@@ -960,9 +945,9 @@
       <div class="card" style="margin-bottom:24px">
         <div class="card-title" style="margin-bottom:6px">Aderência Mensal (%)</div>
         <div class="chart-legend">
-          <span class="lg-item"><span class="lg-dot" style="background:#3BB33B"></span> ≥ 98%</span>
-          <span class="lg-item"><span class="lg-dot" style="background:#f39c12"></span> 85% a 98%</span>
-          <span class="lg-item"><span class="lg-dot" style="background:#FF6666"></span> &lt; 85%</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≥ 98%</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 85% a 98%</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 85%</span>
         </div>
         <div style="position:relative;height:320px">
           <canvas id="chartMensal"></canvas>
@@ -1124,6 +1109,8 @@ let FILTERS = { ano: [], vigencia: [], unidade: [], placa: [] };
 function toggleTheme() {
   const isLight = document.body.classList.toggle('light-mode');
   localStorage.setItem('femsa_theme', isLight ? 'light' : 'dark');
+  // Re-renderiza gráficos com as cores do tema
+  if (DATA.vehicles.length) renderMensalChart();
   const icon = document.getElementById('themeIcon');
   // Troca ícone sol ↔ lua
   if (isLight) {
@@ -1507,11 +1494,14 @@ function renderMensalChart() {
     return parseFloat((set.size / totalFrota * 100).toFixed(1));
   });
 
-  // Cor por cluster: ≥98 verde | 85–98 amarelo | <85 vermelho
+  // Cor por cluster: ≥98 verde | 85–98 amarelo | <85 vermelho (mais saturado no modo claro)
+  const isLight = document.body.classList.contains('light-mode');
+  const rgbGreen = isLight ? '11,165,11'  : '59,179,59';
+  const rgbRed   = isLight ? '255,0,0'    : '255,102,102';
   const clusterColor = (p, alpha) =>
-    p >= 98 ? `rgba(59,179,59,${alpha})` :
+    p >= 98 ? `rgba(${rgbGreen},${alpha})` :
     p >= 85 ? `rgba(243,156,18,${alpha})` :
-              `rgba(255,102,102,${alpha})`;
+              `rgba(${rgbRed},${alpha})`;
 
   const barColors = meses.map((m, i) => {
     const p = pcts[i];
@@ -1545,7 +1535,7 @@ function renderMensalChart() {
           datalabels: {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
-            color: '#fff',
+            color: isLight ? '#111' : '#fff',
             font: { family: 'Montserrat', size: 10, weight: '700' },
             formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
           }
@@ -1571,7 +1561,7 @@ function renderMensalChart() {
       },
       scales: {
         x: {
-          ticks: { color: '#94A3B8', font: { family: 'Montserrat', size: 11 } },
+          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 11 } },
           grid: { display: false },
           border: { display: false }
         },
