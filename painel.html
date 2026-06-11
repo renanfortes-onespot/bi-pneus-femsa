@@ -914,6 +914,19 @@
     margin-top: 12px; line-height: 1.5; opacity: 0.8;
   }
 
+  .drill-select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--red);
+    border-radius: 5px; padding: 6px 10px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text); cursor: pointer;
+    font-family: var(--font); outline: none;
+  }
+  .drill-select option { background: #111; color: #eee; }
+  body.light-mode .drill-select { background: rgba(0,0,0,0.04); color: #111; }
+  body.light-mode .drill-select option { background: #fff; color: #111; }
+
   @media (max-width: 900px) {
     .saude-chart-row { grid-template-columns: 1fr; }
   }
@@ -1078,11 +1091,18 @@
 
       <!-- RANKING -->
       <div class="adh-table-wrap">
-        <div class="adh-table-title">Ranking — Pior para Melhor</div>
+        <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Ranking — Pior para Melhor</span>
+          <select id="saudeDrill" class="drill-select" onchange="renderSaude()">
+            <option value="placa">Por Placa</option>
+            <option value="tipo">Por Tipo de Veículo</option>
+            <option value="pneu">Por Pneu</option>
+          </select>
+        </div>
         <table class="adh-table">
           <thead><tr>
             <th>#</th>
-            <th>Placa</th>
+            <th id="thDrill">Placa</th>
             <th>MM Média</th>
             <th>Vida Média</th>
             <th>Recapes</th>
@@ -1651,13 +1671,28 @@ function renderSaude() {
   // ---- gráfico mensal ----
   renderSaudeMensalChart();
 
-  // ---- ranking por placa ----
-  const porPlaca = {};
+  // ---- ranking com drill (tipo de veículo / placa / pneu) ----
+  const drill = document.getElementById('saudeDrill')?.value || 'placa';
+
+  const tipoPorPlaca = {};
+  DATA.vehicles.forEach(v => { tipoPorPlaca[v.placa] = v.tipo || '—'; });
+
+  const chaveDrill = t =>
+    drill === 'tipo' ? (tipoPorPlaca[t.placa] || '—') :
+    drill === 'pneu' ? (t.serial || '—') :
+                       t.placa;
+
+  document.getElementById('thDrill').textContent =
+    drill === 'tipo' ? 'Tipo de Veículo' :
+    drill === 'pneu' ? 'Nº de Fogo' : 'Placa';
+
+  const grupos = {};
   tires.forEach(t => {
-    (porPlaca[t.placa] = porPlaca[t.placa] || []).push(t);
+    const k = chaveDrill(t);
+    (grupos[k] = grupos[k] || []).push(t);
   });
 
-  const ranking = Object.entries(porPlaca).map(([placa, pneus]) => {
+  const ranking = Object.entries(grupos).map(([chave, pneus]) => {
     const sc      = media(pneus.map(t => scoreComposto(tireScores(t))).filter(v => v !== null));
     const mmM     = media(pneus.filter(t => t.menorMM > 0).map(t => t.menorMM));
     const idadesP = pneus.map(t => parseDOT(t.dot)).filter(v => v !== null);
@@ -1665,14 +1700,15 @@ function renderSaude() {
     const ampM    = media(pneus.map(t => t.amplitude));
     const comP    = pneus.filter(t => t.pressaoIdeal > 0);
     const calibP  = comP.length ? (comP.filter(t => !t.pressaoNOK).length / comP.length * 100) : null;
-    return { placa, score: sc, mm: mmM, idade: idadesP.length ? media(idadesP) : null, recapes: recM, amp: ampM, calib: calibP };
+    const sub     = drill === 'pneu' ? (pneus[0].placa || 'estoque') : `${pneus.length} pneus`;
+    return { chave, sub, score: sc, mm: mmM, idade: idadesP.length ? media(idadesP) : null, recapes: recM, amp: ampM, calib: calibP };
   }).filter(r => r.score !== null)
     .sort((a, b) => a.score - b.score); // pior primeiro
 
   document.getElementById('tbodySaudeRanking').innerHTML = ranking.map((r, i) => `
     <tr>
       <td style="color:var(--text-muted)">${i + 1}</td>
-      <td><strong>${r.placa}</strong></td>
+      <td><strong>${r.chave}</strong> <span style="font-size:10px;color:var(--text-muted)">${r.sub}</span></td>
       <td>${r.mm !== null ? fmtBR(r.mm) + ' mm' : '—'}</td>
       <td>${fmtIdade(r.idade)}</td>
       <td>${fmtBR(r.recapes, 2)}</td>
