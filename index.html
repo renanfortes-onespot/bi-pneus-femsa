@@ -929,28 +929,6 @@
         </div>
       </div>
 
-      <!-- 3 CARDS STATUS -->
-      <div class="adh-cards">
-        <div class="adh-card adh-card-green">
-          <div class="adh-card-label">No Prazo</div>
-          <div class="adh-card-value" id="adhNoPrazoVal">—</div>
-          <div class="adh-card-sub" id="adhNoPrazoPct">—</div>
-          <div class="adh-card-rule">≤ 20 dias</div>
-        </div>
-        <div class="adh-card adh-card-yellow">
-          <div class="adh-card-label">Em Atenção</div>
-          <div class="adh-card-value" id="adhAtencaoVal">—</div>
-          <div class="adh-card-sub" id="adhAtencaoPct">—</div>
-          <div class="adh-card-rule">21 a 30 dias</div>
-        </div>
-        <div class="adh-card adh-card-red">
-          <div class="adh-card-label">Vencida</div>
-          <div class="adh-card-value" id="adhVencidaVal">—</div>
-          <div class="adh-card-sub" id="adhVencidaPct">—</div>
-          <div class="adh-card-rule">&gt; 30 dias</div>
-        </div>
-      </div>
-
       <!-- GRÁFICO ADERÊNCIA MENSAL -->
       <div class="card" style="margin-bottom:24px">
         <div class="card-title" style="margin-bottom:6px">Aderência Mensal (%)</div>
@@ -1419,14 +1397,6 @@ function renderPainel() {
   document.getElementById('adhDeltaPrazo').textContent   = noPrazo;
   document.getElementById('adhDeltaAtencao').textContent = emAten;
   document.getElementById('adhDeltaVencida').textContent = vencida;
-
-  const pctFmt = n => (n / total * 100).toFixed(1).replace('.', ',') + '%';
-  document.getElementById('adhNoPrazoVal').textContent = noPrazo;
-  document.getElementById('adhNoPrazoPct').textContent = pctFmt(noPrazo) + ' da frota';
-  document.getElementById('adhAtencaoVal').textContent = emAten;
-  document.getElementById('adhAtencaoPct').textContent = pctFmt(emAten) + ' da frota';
-  document.getElementById('adhVencidaVal').textContent = vencida;
-  document.getElementById('adhVencidaPct').textContent = pctFmt(vencida) + ' da frota';
 
   // Tabelas
   const ordenados = [...lista]
