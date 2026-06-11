@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BI Pneus — FEMSA</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* ===================== RESET & BASE ===================== */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,21 +15,25 @@
   :root {
     --red:       #E30613;
     --red-dark:  #b30510;
-    --red-glow:  rgba(227,6,19,0.15);
-    --bg:        #0f0f0f;
-    --surface:   #161616;
-    --surface2:  #1c1c1c;
-    --border:    #262626;
+    --red-glow:  rgba(227,6,19,0.08);
+    --bg:        #0a0a0a;
+    --surface:   rgba(255,255,255,0.04);
+    --surface2:  rgba(255,255,255,0.06);
+    --border:    rgba(255,255,255,0.07);
     --text:      #f0f0f0;
-    --text-muted:#888;
+    --text-muted:#666;
     --green:     #2ecc71;
     --yellow:    #f39c12;
     --orange:    #e67e22;
-    --font:      'Segoe UI', system-ui, sans-serif;
+    --font:      'Montserrat', 'Segoe UI', system-ui, sans-serif;
   }
 
   body {
-    background: var(--bg);
+    background:
+      radial-gradient(ellipse 80% 60% at 100% 0%, rgba(100,0,5,0.28) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 0% 100%, rgba(80,0,4,0.18) 0%, transparent 55%),
+      #0a0a0a;
+    background-attachment: fixed;
     color: var(--text);
     font-family: var(--font);
     min-height: 100vh;
@@ -227,6 +234,8 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 20px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   .card-title {
