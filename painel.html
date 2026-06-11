@@ -1089,7 +1089,7 @@
       <!-- GRÁFICO PONTUAÇÃO MENSAL + PESOS -->
       <div class="saude-chart-row">
         <div class="card">
-          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px">
             <div class="card-title" style="margin-bottom:0">Evolução Mensal</div>
             <div class="chart-chips">
               <button class="chip active" data-met="score" onclick="setSaudeMetric('score',this)">Pontuação</button>
@@ -1122,13 +1122,13 @@
 
       <!-- RANKING -->
       <div class="adh-table-wrap">
-        <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between">
+        <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
           <span>Ranking — Pior para Melhor</span>
-          <select id="saudeDrill" class="drill-select" onchange="renderSaude()">
-            <option value="placa">Por Placa</option>
-            <option value="tipo">Por Tipo de Veículo</option>
-            <option value="pneu">Por Pneu</option>
-          </select>
+          <div class="chart-chips">
+            <button class="chip active" data-drill="placa" onclick="setSaudeDrill('placa',this)">Por Placa</button>
+            <button class="chip" data-drill="tipo" onclick="setSaudeDrill('tipo',this)">Por Tipo</button>
+            <button class="chip" data-drill="pneu" onclick="setSaudeDrill('pneu',this)">Por Pneu</button>
+          </div>
         </div>
         <table class="adh-table">
           <thead><tr>
@@ -1703,7 +1703,7 @@ function renderSaude() {
   renderSaudeMensalChart();
 
   // ---- ranking com drill (tipo de veículo / placa / pneu) ----
-  const drill = document.getElementById('saudeDrill')?.value || 'placa';
+  const drill = SAUDE_DRILL;
 
   const tipoPorPlaca = {};
   DATA.vehicles.forEach(v => { tipoPorPlaca[v.placa] = v.tipo || '—'; });
@@ -1753,10 +1753,18 @@ function renderSaude() {
 }
 
 let SAUDE_METRIC = 'score';
+let SAUDE_DRILL  = 'placa';
+
+function setSaudeDrill(d, btn) {
+  SAUDE_DRILL = d;
+  document.querySelectorAll('[data-drill]').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderSaude();
+}
 
 function setSaudeMetric(met, btn) {
   SAUDE_METRIC = met;
-  document.querySelectorAll('.chart-chips .chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('[data-met]').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
   renderSaudeMensalChart();
 }
