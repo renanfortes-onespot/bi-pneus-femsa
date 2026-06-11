@@ -914,6 +914,29 @@
     margin-top: 12px; line-height: 1.5; opacity: 0.8;
   }
 
+  .chart-chips {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+
+  .chip {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 5px; padding: 5px 12px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-muted); cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+  }
+  .chip:hover { color: var(--text); border-color: rgba(227,6,19,0.4); }
+  .chip.active {
+    background: rgba(227,6,19,0.15);
+    border-color: var(--red);
+    color: var(--red);
+  }
+  body.light-mode .chip { background: rgba(0,0,0,0.04); color: #555; }
+  body.light-mode .chip.active { background: rgba(227,6,19,0.10); color: var(--red); }
+
   .drill-select {
     background: rgba(255,255,255,0.04);
     border: 1px solid var(--red);
@@ -1066,8 +1089,16 @@
       <!-- GRÁFICO PONTUAÇÃO MENSAL + PESOS -->
       <div class="saude-chart-row">
         <div class="card">
-          <div class="card-title" style="margin-bottom:6px">Pontuação Mensal</div>
-          <div class="chart-legend">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:6px">
+            <div class="card-title" style="margin-bottom:0">Evolução Mensal</div>
+            <div class="chart-chips">
+              <button class="chip active" data-met="score" onclick="setSaudeMetric('score',this)">Pontuação</button>
+              <button class="chip" data-met="mm" onclick="setSaudeMetric('mm',this)">MM Média</button>
+              <button class="chip" data-met="calib" onclick="setSaudeMetric('calib',this)">Calibragem</button>
+              <button class="chip" data-met="amp" onclick="setSaudeMetric('amp',this)">Amplitude</button>
+            </div>
+          </div>
+          <div class="chart-legend" id="saudeLegend">
             <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≥ 80</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 60 a 80</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 60</span>
@@ -1721,6 +1752,43 @@ function renderSaude() {
   `).join('');
 }
 
+let SAUDE_METRIC = 'score';
+
+function setSaudeMetric(met, btn) {
+  SAUDE_METRIC = met;
+  document.querySelectorAll('.chart-chips .chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderSaudeMensalChart();
+}
+
+// Config por métrica: cluster de cor, formatação e legenda
+const SAUDE_METRICAS = {
+  score: {
+    label: 'Pontuação',
+    fmt: v => v.toFixed(1).replace('.', ','),
+    cluster: v => v >= 80 ? 'g' : v >= 60 ? 'y' : 'r',
+    legenda: [['g','≥ 80'], ['y','60 a 80'], ['r','< 60']]
+  },
+  mm: {
+    label: 'MM Média',
+    fmt: v => v.toFixed(1).replace('.', ',') + ' mm',
+    cluster: v => v > 6 ? 'g' : v > 3 ? 'y' : 'r',
+    legenda: [['g','> 6mm'], ['y','3 a 6mm'], ['r','≤ 3mm']]
+  },
+  calib: {
+    label: 'Calibragem (% OK)',
+    fmt: v => v.toFixed(1).replace('.', ',') + '%',
+    cluster: v => v >= 98 ? 'g' : v >= 85 ? 'y' : 'r',
+    legenda: [['g','≥ 98%'], ['y','85% a 98%'], ['r','< 85%']]
+  },
+  amp: {
+    label: 'Amplitude Média',
+    fmt: v => v.toFixed(1).replace('.', ',') + ' mm',
+    cluster: v => v <= 2 ? 'g' : v <= 5 ? 'y' : 'r',
+    legenda: [['g','≤ 2mm'], ['y','2 a 5mm'], ['r','> 5mm']]
+  }
+};
+
 function renderSaudeMensalChart() {
   const anoAtivo = FILTERS.ano.length === 1 ? parseInt(FILTERS.ano[0]) : new Date().getFullYear();
   const hoje     = new Date();
@@ -1735,8 +1803,10 @@ function renderSaudeMensalChart() {
   const veiculosFiltrados = getFilteredVehicles();
   const idsFiltrados = new Set(veiculosFiltrados.map(v => v.id));
 
-  // Score mensal a partir das medições de inspeção (mm, amplitude, pressão)
-  const scores = meses.map(m => {
+  const med = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+
+  // Agregados mensais a partir das medições de inspeção
+  const valores = meses.map(m => {
     if (isFuturo(m)) return null;
     const medidas = DATA.inspections.filter(i => {
       if (!idsFiltrados.has(i.veiculoId)) return false;
@@ -1745,51 +1815,58 @@ function renderSaudeMensalChart() {
     });
     if (!medidas.length) return null;
 
-    const sMM = [], sAmp = [], sStatus = [];
+    const sMM = [], sAmp = [], sStatus = [], mmVals = [], ampVals = [];
     let comP = 0, okP = 0;
     medidas.forEach(x => {
       if (x.menorMM > 0) {
+        mmVals.push(x.menorMM);
         sMM.push(clamp01((x.menorMM - 2) / 8) * 100);
         sStatus.push(x.menorMM < 2 ? 0 : x.menorMM <= 3 ? 33 : x.menorMM <= 6 ? 66 : 100);
       }
+      ampVals.push(x.amplitude);
       sAmp.push(clamp01(1 - x.amplitude / 5) * 100);
       if (x.pressaoIdeal > 0) { comP++; if (!x.pressaoNOK) okP++; }
     });
 
-    const med = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-    return scoreComposto({
-      mm:     med(sMM),
-      calib:  comP > 0 ? (okP / comP * 100) : null,
-      status: med(sStatus),
-      amp:    med(sAmp),
-      dot:    null,
-      recape: null
-    });
+    switch (SAUDE_METRIC) {
+      case 'mm':    return med(mmVals);
+      case 'calib': return comP > 0 ? (okP / comP * 100) : null;
+      case 'amp':   return med(ampVals);
+      default:
+        return scoreComposto({
+          mm:     med(sMM),
+          calib:  comP > 0 ? (okP / comP * 100) : null,
+          status: med(sStatus),
+          amp:    med(sAmp),
+          dot:    null,
+          recape: null
+        });
+    }
   });
+
+  const cfg = SAUDE_METRICAS[SAUDE_METRIC];
+
+  // Legenda dinâmica
+  const corVar = { g: 'var(--green)', y: 'var(--yellow)', r: 'var(--red-soft)' };
+  document.getElementById('saudeLegend').innerHTML = cfg.legenda.map(([c, txt]) =>
+    `<span class="lg-item"><span class="lg-dot" style="background:${corVar[c]}"></span> ${txt}</span>`
+  ).join('');
 
   const isLight = document.body.classList.contains('light-mode');
-  const rgbGreen = isLight ? '11,165,11' : '59,179,59';
-  const rgbRed   = isLight ? '255,0,0'   : '255,102,102';
-  const cor = (s, alpha) =>
-    s >= 80 ? `rgba(${rgbGreen},${alpha})` :
-    s >= 60 ? `rgba(243,156,18,${alpha})` :
-              `rgba(${rgbRed},${alpha})`;
+  const rgb = {
+    g: isLight ? '11,165,11' : '59,179,59',
+    y: '243,156,18',
+    r: isLight ? '255,0,0' : '255,102,102'
+  };
+  const cor = (v, alpha) => `rgba(${rgb[cfg.cluster(v)]},${alpha})`;
 
   const vigFiltros = FILTERS.vigencia;
-  const barColors = meses.map((m, i) => {
-    const s = scores[i];
-    if (s === null) return 'rgba(255,255,255,0.03)';
+  const hlMes = (m) => {
     const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
-    const hl = vigFiltros.length === 0 || vigFiltros.includes(mv);
-    return cor(s, hl ? 0.65 : 0.15);
-  });
-  const barBorders = meses.map((m, i) => {
-    const s = scores[i];
-    if (s === null) return 'transparent';
-    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
-    const hl = vigFiltros.length === 0 || vigFiltros.includes(mv);
-    return cor(s, hl ? 1 : 0.25);
-  });
+    return vigFiltros.length === 0 || vigFiltros.includes(mv);
+  };
+  const barColors  = meses.map((m, i) => valores[i] === null ? 'rgba(255,255,255,0.03)' : cor(valores[i], hlMes(m) ? 0.65 : 0.15));
+  const barBorders = meses.map((m, i) => valores[i] === null ? 'transparent' : cor(valores[i], hlMes(m) ? 1 : 0.25));
 
   destroyChart('chartSaudeMensal');
   charts.chartSaudeMensal = new Chart(document.getElementById('chartSaudeMensal'), {
@@ -1797,8 +1874,8 @@ function renderSaudeMensalChart() {
       labels: meses.map(m => m.label),
       datasets: [{
         type: 'bar',
-        label: 'Pontuação',
-        data: scores,
+        label: cfg.label,
+        data: valores,
         backgroundColor: barColors,
         borderColor: barBorders,
         borderWidth: 1.5,
@@ -1808,7 +1885,7 @@ function renderSaudeMensalChart() {
           anchor: 'end', align: 'end', offset: 2,
           color: isLight ? '#111' : '#fff',
           font: { family: 'Montserrat', size: 12, weight: '700' },
-          formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',')
+          formatter: v => v === null ? '' : cfg.fmt(v)
         }
       }]
     },
@@ -1824,7 +1901,7 @@ function renderSaudeMensalChart() {
           borderColor: '#1E2D40', borderWidth: 1,
           titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
           callbacks: {
-            label: ctx => ctx.parsed.y === null ? '—' : 'Pontuação: ' + ctx.parsed.y.toFixed(1).replace('.', ',')
+            label: ctx => ctx.parsed.y === null ? '—' : cfg.label + ': ' + cfg.fmt(ctx.parsed.y)
           }
         }
       },
