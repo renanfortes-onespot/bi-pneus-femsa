@@ -868,7 +868,7 @@
   /* gráfico + pesos lado a lado */
   .saude-chart-row {
     display: grid;
-    grid-template-columns: 1fr 280px;
+    grid-template-columns: 1fr 440px;
     gap: 14px; margin-bottom: 24px;
     align-items: stretch;
   }
@@ -880,24 +880,33 @@
   }
 
   .pesos-head {
-    display: flex; justify-content: space-between;
+    display: grid;
+    grid-template-columns: 105px 1fr 38px;
+    gap: 10px;
     font-size: 9px; font-weight: 700;
     color: var(--text-muted); text-transform: uppercase;
     letter-spacing: 0.8px; padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 4px;
   }
+  .pesos-head span:last-child { text-align: right; }
 
   .pesos-row {
-    display: flex; justify-content: space-between;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 105px 1fr 38px;
+    gap: 10px; align-items: center;
     font-size: 12px; color: var(--text-muted);
     padding: 9px 0;
     border-bottom: 1px solid rgba(255,255,255,0.03);
   }
+
+  .pr-desc {
+    font-size: 10px; color: var(--text-muted);
+    opacity: 0.85; line-height: 1.4;
+  }
   body.light-mode .pesos-row { border-bottom-color: rgba(0,0,0,0.04); color: #555; }
   .pesos-row:last-of-type { border-bottom: none; }
-  .pesos-row b { color: var(--text); font-weight: 800; font-size: 13px; }
+  .pesos-row b { color: var(--text); font-weight: 800; font-size: 13px; text-align: right; }
   body.light-mode .pesos-row b { color: #111; }
 
   .pesos-note {
@@ -1050,19 +1059,19 @@
             <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 60 a 80</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 60</span>
           </div>
-          <div style="position:relative;height:320px">
+          <div style="position:relative;height:240px">
             <canvas id="chartSaudeMensal"></canvas>
           </div>
         </div>
         <div class="card pesos-card">
           <div class="pesos-title">Distribuição dos Pesos</div>
-          <div class="pesos-head"><span>Indicador</span><span>Peso</span></div>
-          <div class="pesos-row"><span>Milimetragem</span><b>30%</b></div>
-          <div class="pesos-row"><span>Calibragem</span><b>20%</b></div>
-          <div class="pesos-row"><span>Status do Pneu</span><b>20%</b></div>
-          <div class="pesos-row"><span>Amplitude</span><b>15%</b></div>
-          <div class="pesos-row"><span>Vida (DOT)</span><b>10%</b></div>
-          <div class="pesos-row"><span>Recapes</span><b>5%</b></div>
+          <div class="pesos-head"><span>Indicador</span><span class="ph-desc">Como pontua</span><span>Peso</span></div>
+          <div class="pesos-row"><span>Milimetragem</span><span class="pr-desc">Linear: 2mm = 0 pts · 10mm = 100 pts</span><b>30%</b></div>
+          <div class="pesos-row"><span>Calibragem</span><span class="pr-desc">Pressão dentro de ±15% da ideal = 100 · fora = 0</span><b>20%</b></div>
+          <div class="pesos-row"><span>Status do Pneu</span><span class="pr-desc">Bloquear 0 · Recapar 33 · Regular 66 · Bom 100</span><b>20%</b></div>
+          <div class="pesos-row"><span>Amplitude</span><span class="pr-desc">Linear: 0mm = 100 pts · ≥5mm = 0 pts</span><b>15%</b></div>
+          <div class="pesos-row"><span>Vida (DOT)</span><span class="pr-desc">Linear: novo = 100 pts · ≥5 anos = 0 pts</span><b>10%</b></div>
+          <div class="pesos-row"><span>Recapes</span><span class="pr-desc">Vida 1 = 100 pts · última vida = 0 pts</span><b>5%</b></div>
           <div class="pesos-note">Pneus sem dado em um indicador têm o peso redistribuído entre os demais.</div>
         </div>
       </div>
