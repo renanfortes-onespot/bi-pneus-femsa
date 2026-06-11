@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BI Pneus — FEMSA</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -917,7 +918,7 @@
 
       <!-- GRÁFICO ADERÊNCIA MENSAL -->
       <div class="card" style="margin-bottom:24px">
-        <div class="card-title">Aderência Mensal — Veículos Inspecionados</div>
+        <div class="card-title">Aderência Mensal (%)</div>
         <div style="position:relative;height:240px">
           <canvas id="chartMensal"></canvas>
         </div>
@@ -1417,40 +1418,50 @@ function renderMensalChart() {
 
   const meses = Array.from({ length: 12 }, (_, i) => ({
     ano: anoAtivo, mes: i,
-    label: new Date(anoAtivo, i, 1).toLocaleDateString('pt-BR', { month: 'short' }) + '. ' + String(anoAtivo).slice(2)
+    label: new Date(anoAtivo, i, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
   }));
 
-  // Meses filtrados por vigência (para highlight)
   const vigFiltros = FILTERS.vigencia; // ['MM/AAAA', ...]
   const isFuturo = m => new Date(m.ano, m.mes, 1) > new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
   const totalFrota = DATA.vehicles.length || 1;
 
-  const counts = meses.map(m => {
+  // % de aderência mensal = veículos inspecionados no mês / frota total
+  const pcts = meses.map(m => {
     if (isFuturo(m)) return null;
     const set = new Set();
     DATA.inspections.forEach(i => {
       const d = new Date(i.dataInspecao);
       if (d.getFullYear() === m.ano && d.getMonth() === m.mes) set.add(i.veiculoId);
     });
-    return set.size;
+    return parseFloat((set.size / totalFrota * 100).toFixed(1));
   });
 
-  const pcts = counts.map(c => c === null ? null : parseFloat((c / totalFrota * 100).toFixed(1)));
+  // Cor por cluster: ≥98 verde | 85–98 amarelo | <85 vermelho
+  const clusterColor = (p, alpha) =>
+    p >= 98 ? `rgba(39,174,96,${alpha})` :
+    p >= 85 ? `rgba(230,168,23,${alpha})` :
+              `rgba(227,6,19,${alpha})`;
 
-  // Cores das barras: destaque se mês está no filtro de vigência (ou todos destacados se sem filtro)
   const barColors = meses.map((m, i) => {
-    if (counts[i] === null) return 'rgba(255,255,255,0.04)'; // futuro
+    const p = pcts[i];
+    if (p === null) return 'rgba(255,255,255,0.03)';
     const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
     const highlighted = vigFiltros.length === 0 || vigFiltros.includes(mv);
-    return highlighted ? 'rgba(227,6,19,0.70)' : 'rgba(227,6,19,0.18)';
+    return clusterColor(p, highlighted ? 0.65 : 0.15);
   });
 
-  const pointColors = meses.map((m, i) => {
-    if (counts[i] === null) return 'transparent';
+  const barBorders = meses.map((m, i) => {
+    const p = pcts[i];
+    if (p === null) return 'transparent';
     const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
-    return vigFiltros.length === 0 || vigFiltros.includes(mv) ? '#fff' : 'rgba(255,255,255,0.3)';
+    const highlighted = vigFiltros.length === 0 || vigFiltros.includes(mv);
+    return clusterColor(p, highlighted ? 1 : 0.25);
   });
+
+  // Linhas de meta tracejadas com marcadores (estilo painel referência)
+  const meta100 = meses.map(m => isFuturo(m) ? null : 100);
+  const meta85  = meses.map(m => isFuturo(m) ? null : 85);
 
   destroyChart('chartMensal');
   charts.chartMensal = new Chart(document.getElementById('chartMensal'), {
@@ -1459,40 +1470,66 @@ function renderMensalChart() {
       datasets: [
         {
           type: 'bar',
-          label: 'Veículos Inspecionados',
-          data: counts,
+          label: 'Aderência',
+          data: pcts,
           backgroundColor: barColors,
+          borderColor: barBorders,
+          borderWidth: 1.5,
           borderRadius: 3,
-          yAxisID: 'y'
+          datalabels: {
+            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+            anchor: 'end', align: 'end', offset: 2,
+            color: '#fff',
+            font: { family: 'Montserrat', size: 10, weight: '700' },
+            formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
+          }
         },
         {
           type: 'line',
-          label: '% da Frota',
-          data: pcts,
+          label: 'Meta 100%',
+          data: meta100,
           borderColor: 'rgba(255,255,255,0.85)',
           borderWidth: 2,
-          pointBackgroundColor: pointColors,
-          pointBorderColor: pointColors,
-          pointRadius: 5,
-          tension: 0.35,
+          borderDash: [6, 5],
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#fff',
+          pointRadius: 3.5,
+          pointStyle: 'circle',
+          fill: false,
           spanGaps: false,
-          yAxisID: 'y2'
+          datalabels: { display: false }
+        },
+        {
+          type: 'line',
+          label: 'Mínimo 85%',
+          data: meta85,
+          borderColor: 'rgba(56,189,248,0.85)',
+          borderWidth: 2,
+          borderDash: [6, 5],
+          pointBackgroundColor: '#38BDF8',
+          pointBorderColor: '#38BDF8',
+          pointRadius: 3.5,
+          pointStyle: 'circle',
+          fill: false,
+          spanGaps: false,
+          datalabels: { display: false }
         }
       ]
     },
+    plugins: [ChartDataLabels],
     options: {
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
       plugins: {
         legend: {
-          labels: { color: '#aaa', font: { family: 'Montserrat', size: 11 }, boxWidth: 10, padding: 16 }
+          labels: { color: '#aaa', font: { family: 'Montserrat', size: 11 }, boxWidth: 10, padding: 16, usePointStyle: false }
         },
         tooltip: {
           backgroundColor: 'rgba(0,0,0,0.85)',
           titleColor: '#fff', bodyColor: '#ccc',
           callbacks: {
-            label: ctx => ctx.dataset.yAxisID === 'y2'
-              ? (ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) + '% da frota' : '—')
-              : (ctx.parsed.y !== null ? ctx.parsed.y + ' veículos' : '—')
+            label: ctx => ctx.parsed.y === null ? '—' :
+              ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1).replace('.', ',') + '%'
           }
         }
       },
@@ -1502,15 +1539,13 @@ function renderMensalChart() {
           grid: { color: 'rgba(255,255,255,0.03)' }
         },
         y: {
-          position: 'left',
-          ticks: { color: '#777', font: { family: 'Montserrat', size: 11 } },
+          min: 0, max: 115,
+          ticks: {
+            color: '#777', font: { family: 'Montserrat', size: 11 },
+            callback: v => v > 100 ? '' : v + '%',
+            stepSize: 20
+          },
           grid: { color: 'rgba(255,255,255,0.05)' }
-        },
-        y2: {
-          position: 'right',
-          min: 0, max: 100,
-          ticks: { color: '#999', font: { family: 'Montserrat', size: 11 }, callback: v => v + '%' },
-          grid: { display: false }
         }
       }
     }
