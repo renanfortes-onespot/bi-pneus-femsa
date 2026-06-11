@@ -864,6 +864,50 @@
   @media (max-width: 540px) {
     .saude-cards { grid-template-columns: 1fr; }
   }
+
+  /* gráfico + pesos lado a lado */
+  .saude-chart-row {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 14px; margin-bottom: 24px;
+    align-items: stretch;
+  }
+
+  .pesos-title {
+    font-size: 13px; font-weight: 800;
+    color: var(--red); text-transform: uppercase;
+    letter-spacing: 0.6px; margin-bottom: 14px;
+  }
+
+  .pesos-head {
+    display: flex; justify-content: space-between;
+    font-size: 9px; font-weight: 700;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.8px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+
+  .pesos-row {
+    display: flex; justify-content: space-between;
+    align-items: center;
+    font-size: 12px; color: var(--text-muted);
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  body.light-mode .pesos-row { border-bottom-color: rgba(0,0,0,0.04); color: #555; }
+  .pesos-row:last-of-type { border-bottom: none; }
+  .pesos-row b { color: var(--text); font-weight: 800; font-size: 13px; }
+  body.light-mode .pesos-row b { color: #111; }
+
+  .pesos-note {
+    font-size: 10px; color: var(--text-muted);
+    margin-top: 12px; line-height: 1.5; opacity: 0.8;
+  }
+
+  @media (max-width: 900px) {
+    .saude-chart-row { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -997,16 +1041,29 @@
         </div>
       </div>
 
-      <!-- GRÁFICO PONTUAÇÃO MENSAL -->
-      <div class="card" style="margin-bottom:24px">
-        <div class="card-title" style="margin-bottom:6px">Pontuação Mensal</div>
-        <div class="chart-legend">
-          <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≥ 80</span>
-          <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 60 a 80</span>
-          <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 60</span>
+      <!-- GRÁFICO PONTUAÇÃO MENSAL + PESOS -->
+      <div class="saude-chart-row">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:6px">Pontuação Mensal</div>
+          <div class="chart-legend">
+            <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≥ 80</span>
+            <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 60 a 80</span>
+            <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 60</span>
+          </div>
+          <div style="position:relative;height:320px">
+            <canvas id="chartSaudeMensal"></canvas>
+          </div>
         </div>
-        <div style="position:relative;height:320px">
-          <canvas id="chartSaudeMensal"></canvas>
+        <div class="card pesos-card">
+          <div class="pesos-title">Distribuição dos Pesos</div>
+          <div class="pesos-head"><span>Indicador</span><span>Peso</span></div>
+          <div class="pesos-row"><span>Milimetragem</span><b>30%</b></div>
+          <div class="pesos-row"><span>Calibragem</span><b>20%</b></div>
+          <div class="pesos-row"><span>Status do Pneu</span><b>20%</b></div>
+          <div class="pesos-row"><span>Amplitude</span><b>15%</b></div>
+          <div class="pesos-row"><span>Vida (DOT)</span><b>10%</b></div>
+          <div class="pesos-row"><span>Recapes</span><b>5%</b></div>
+          <div class="pesos-note">Pneus sem dado em um indicador têm o peso redistribuído entre os demais.</div>
         </div>
       </div>
 
