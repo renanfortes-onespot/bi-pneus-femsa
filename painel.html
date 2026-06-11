@@ -816,6 +816,54 @@
     margin-bottom: 14px; align-items: center;
     flex-wrap: wrap;
   }
+
+  /* ===================== SAÚDE DOS PNEUS ===================== */
+  .saude-cards {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px; margin-bottom: 24px;
+  }
+
+  .saude-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 3px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  body.light-mode .saude-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(0,0,0,0.07);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.16);
+    color: #111;
+  }
+
+  .saude-card .sc-label {
+    font-size: 10px; font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  .saude-card .sc-value {
+    font-size: 24px; font-weight: 800;
+    color: var(--text); line-height: 1.1; margin-top: 2px;
+  }
+  body.light-mode .saude-card .sc-value { color: #111; }
+
+  .saude-card .sc-sub {
+    font-size: 10px; color: var(--text-muted); margin-top: 5px;
+  }
+  .saude-card .sc-sub b { font-weight: 700; }
+
+  @media (max-width: 1000px) {
+    .saude-cards { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 540px) {
+    .saude-cards { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -837,7 +885,7 @@
           </svg>
         </a>
         <div>
-          <div class="topbar-title" id="pageTitle">Painel Geral</div>
+          <div class="topbar-title" id="pageTitle">Saúde dos Pneus</div>
           <div class="topbar-sub">BI Gestão de Pneus — FEMSA</div>
         </div>
       </div>
@@ -905,7 +953,84 @@
   <div class="content">
 
     <!-- ========== PAINEL GERAL ========== -->
-    <div class="page active" id="page-painel">
+    <!-- ========== SAÚDE DOS PNEUS ========== -->
+    <div class="page active" id="page-saude">
+
+      <!-- HERO SCORE -->
+      <div class="adh-hero">
+        <div class="adh-hero-left">
+          <div class="adh-label">Saúde dos Pneus</div>
+          <div class="adh-value" id="saudeScore">—</div>
+          <div class="adh-deltas">
+            <div class="adh-delta">Pneus Avaliados<b id="saudePneus" style="color:var(--text)">—</b></div>
+            <div class="adh-delta">Veículos<b id="saudeVeiculos" style="color:var(--text)">—</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 CARDS INDICADORES -->
+      <div class="saude-cards">
+        <div class="saude-card">
+          <div class="sc-label">MM Média</div>
+          <div class="sc-value" id="scMM">—</div>
+          <div class="sc-sub" id="scMMSub">menor sulco médio</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Vida Média</div>
+          <div class="sc-value" id="scVida">—</div>
+          <div class="sc-sub" id="scVidaSub">idade pelo DOT</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label"># de Recapes</div>
+          <div class="sc-value" id="scRecapes">—</div>
+          <div class="sc-sub" id="scRecapesSub">média por pneu</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Amplitude Média</div>
+          <div class="sc-value" id="scAmplitude">—</div>
+          <div class="sc-sub" id="scAmplitudeSub">desgaste irregular</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Calibragem</div>
+          <div class="sc-value" id="scCalibragem">—</div>
+          <div class="sc-sub" id="scCalibragemSub">pneus com pressão OK</div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO PONTUAÇÃO MENSAL -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-title" style="margin-bottom:6px">Pontuação Mensal</div>
+        <div class="chart-legend">
+          <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≥ 80</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 60 a 80</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 60</span>
+        </div>
+        <div style="position:relative;height:320px">
+          <canvas id="chartSaudeMensal"></canvas>
+        </div>
+      </div>
+
+      <!-- RANKING -->
+      <div class="adh-table-wrap">
+        <div class="adh-table-title">Ranking — Pior para Melhor</div>
+        <table class="adh-table">
+          <thead><tr>
+            <th>#</th>
+            <th>Placa</th>
+            <th>MM Média</th>
+            <th>Vida Média</th>
+            <th>Recapes</th>
+            <th>Amplitude</th>
+            <th>Calibragem</th>
+            <th class="col-dias">Pontuação ↑</th>
+          </tr></thead>
+          <tbody id="tbodySaudeRanking"></tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <div class="page" id="page-painel">
 
       <!-- HERO ADERÊNCIA -->
       <div class="adh-hero">
@@ -1089,7 +1214,7 @@ function toggleTheme() {
   const isLight = document.body.classList.toggle('light-mode');
   localStorage.setItem('femsa_theme', isLight ? 'light' : 'dark');
   // Re-renderiza gráficos com as cores do tema
-  if (DATA.vehicles.length) renderMensalChart();
+  if (DATA.vehicles.length) { renderMensalChart(); renderSaudeMensalChart(); }
   const icon = document.getElementById('themeIcon');
   // Troca ícone sol ↔ lua
   if (isLight) {
@@ -1238,12 +1363,13 @@ function navigate(page) {
   el.classList.add('active');
 
   const titles = {
+    saude: 'Saúde dos Pneus',
     painel: 'Painel Geral',
     milimetragem: 'Milimetragem',
     pressao: 'Pressão dos Pneus',
     eixos: 'Visão de Eixos'
   };
-  document.getElementById('pageTitle').textContent = titles[page] || 'Painel Geral';
+  document.getElementById('pageTitle').textContent = titles[page] || 'Saúde dos Pneus';
 }
 
 // Abre o módulo indicado na URL (?page=milimetragem etc.)
@@ -1354,11 +1480,262 @@ async function fetchProxy(endpoint) {
 // RENDER ALL
 // ============================================================
 function renderAll() {
+  renderSaude();
   renderPainel();
   renderMilimetragem();
   renderPressao();
   renderEixosFilters();
   renderEixos();
+}
+
+// ============================================================
+// SAÚDE DOS PNEUS
+// ============================================================
+const SCORE_PESOS = { mm: 0.30, calib: 0.20, status: 0.20, amp: 0.15, dot: 0.10, recape: 0.05 };
+
+function parseDOT(dot) {
+  // DOT formato WWAA (semana/ano). Retorna idade em anos ou null.
+  if (!dot || !/^\d{4}$/.test(String(dot).trim())) return null;
+  const s = String(dot).trim();
+  const ww = parseInt(s.slice(0, 2));
+  const aa = parseInt(s.slice(2));
+  if (ww < 1 || ww > 53) return null;
+  const ano = 2000 + aa;
+  const fab = new Date(ano, 0, 1 + (ww - 1) * 7);
+  if (fab > new Date()) return null;
+  return (Date.now() - fab.getTime()) / (365.25 * 86400000);
+}
+
+function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+
+// Scores individuais 0–100 (null = sem dado, excluído do cálculo)
+function tireScores(t) {
+  const s = {};
+  s.mm     = t.menorMM > 0 ? clamp01((t.menorMM - 2) / 8) * 100 : null;
+  s.calib  = t.pressaoIdeal > 0 ? (t.pressaoNOK ? 0 : 100) : null;
+  s.status = { 'Bloquear': 0, 'Recapar': 33, 'Regular': 66, 'Bom Estado': 100 }[t.statusMM] ?? null;
+  s.amp    = clamp01(1 - t.amplitude / 5) * 100;
+  const idade = parseDOT(t.dot);
+  s.dot    = idade !== null ? clamp01(1 - idade / 5) * 100 : null;
+  const maxC = t.maxCiclos > 1 ? t.maxCiclos : 5;
+  s.recape = clamp01(1 - (t.cicloVida - 1) / (maxC - 1)) * 100;
+  return s;
+}
+
+function scoreComposto(scores) {
+  // Média ponderada ignorando componentes sem dado (renormaliza pesos)
+  let soma = 0, pesoTotal = 0;
+  for (const [k, peso] of Object.entries(SCORE_PESOS)) {
+    if (scores[k] !== null && scores[k] !== undefined && !isNaN(scores[k])) {
+      soma += scores[k] * peso;
+      pesoTotal += peso;
+    }
+  }
+  return pesoTotal > 0 ? soma / pesoTotal : null;
+}
+
+function scoreCluster(s) {
+  return s >= 80 ? 'var(--green)' : s >= 60 ? 'var(--yellow)' : 'var(--red-soft)';
+}
+
+function fmtBR(n, dec = 1) {
+  return n.toFixed(dec).replace('.', ',');
+}
+
+function fmtIdade(anos) {
+  if (anos === null || isNaN(anos)) return '—';
+  if (anos < 1) return Math.round(anos * 12) + ' meses';
+  return fmtBR(anos, 1) + ' anos';
+}
+
+function renderSaude() {
+  const tires = getFilteredTires().filter(t => t.status === 'INSTALLED' && t.placa);
+  if (!tires.length) return;
+
+  // ---- agregados gerais ----
+  const media = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+
+  const mms        = tires.filter(t => t.menorMM > 0).map(t => t.menorMM);
+  const idades     = tires.map(t => parseDOT(t.dot)).filter(v => v !== null);
+  const recapes    = tires.map(t => Math.max(0, (t.cicloVida || 1) - 1));
+  const amps       = tires.map(t => t.amplitude);
+  const comPressao = tires.filter(t => t.pressaoIdeal > 0);
+  const pctOK      = comPressao.length ? (comPressao.filter(t => !t.pressaoNOK).length / comPressao.length * 100) : null;
+
+  // Score geral = média dos scores por pneu
+  const scoresGeral = tires.map(t => scoreComposto(tireScores(t))).filter(v => v !== null);
+  const scoreGeral  = media(scoresGeral);
+
+  const elScore = document.getElementById('saudeScore');
+  elScore.textContent = scoreGeral !== null ? fmtBR(scoreGeral, 1) : '—';
+  elScore.style.color = scoreCluster(scoreGeral ?? 0);
+
+  const placas = [...new Set(tires.map(t => t.placa))];
+  document.getElementById('saudePneus').textContent    = tires.length;
+  document.getElementById('saudeVeiculos').textContent = placas.length;
+
+  // ---- cards ----
+  document.getElementById('scMM').textContent         = mms.length ? fmtBR(media(mms)) + ' mm' : '—';
+  document.getElementById('scVida').textContent       = idades.length ? fmtIdade(media(idades)) : '—';
+  document.getElementById('scVidaSub').textContent    = idades.length ? `DOT lido em ${idades.length} de ${tires.length} pneus` : 'sem DOT válido';
+  document.getElementById('scRecapes').textContent    = fmtBR(media(recapes), 2);
+  document.getElementById('scAmplitude').textContent  = fmtBR(media(amps)) + ' mm';
+  document.getElementById('scCalibragem').textContent = pctOK !== null ? fmtBR(pctOK) + '%' : '—';
+
+  // ---- gráfico mensal ----
+  renderSaudeMensalChart();
+
+  // ---- ranking por placa ----
+  const porPlaca = {};
+  tires.forEach(t => {
+    (porPlaca[t.placa] = porPlaca[t.placa] || []).push(t);
+  });
+
+  const ranking = Object.entries(porPlaca).map(([placa, pneus]) => {
+    const sc      = media(pneus.map(t => scoreComposto(tireScores(t))).filter(v => v !== null));
+    const mmM     = media(pneus.filter(t => t.menorMM > 0).map(t => t.menorMM));
+    const idadesP = pneus.map(t => parseDOT(t.dot)).filter(v => v !== null);
+    const recM    = media(pneus.map(t => Math.max(0, (t.cicloVida || 1) - 1)));
+    const ampM    = media(pneus.map(t => t.amplitude));
+    const comP    = pneus.filter(t => t.pressaoIdeal > 0);
+    const calibP  = comP.length ? (comP.filter(t => !t.pressaoNOK).length / comP.length * 100) : null;
+    return { placa, score: sc, mm: mmM, idade: idadesP.length ? media(idadesP) : null, recapes: recM, amp: ampM, calib: calibP };
+  }).filter(r => r.score !== null)
+    .sort((a, b) => a.score - b.score); // pior primeiro
+
+  document.getElementById('tbodySaudeRanking').innerHTML = ranking.map((r, i) => `
+    <tr>
+      <td style="color:var(--text-muted)">${i + 1}</td>
+      <td><strong>${r.placa}</strong></td>
+      <td>${r.mm !== null ? fmtBR(r.mm) + ' mm' : '—'}</td>
+      <td>${fmtIdade(r.idade)}</td>
+      <td>${fmtBR(r.recapes, 2)}</td>
+      <td>${fmtBR(r.amp)} mm</td>
+      <td>${r.calib !== null ? fmtBR(r.calib) + '%' : '—'}</td>
+      <td style="text-align:right">
+        <span class="td-dias" style="color:${scoreCluster(r.score)}">${fmtBR(r.score, 1)}</span>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderSaudeMensalChart() {
+  const anoAtivo = FILTERS.ano.length === 1 ? parseInt(FILTERS.ano[0]) : new Date().getFullYear();
+  const hoje     = new Date();
+
+  const meses = Array.from({ length: 12 }, (_, i) => ({
+    ano: anoAtivo, mes: i,
+    label: new Date(anoAtivo, i, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
+  }));
+
+  const isFuturo = m => new Date(m.ano, m.mes, 1) > new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+
+  const veiculosFiltrados = getFilteredVehicles();
+  const idsFiltrados = new Set(veiculosFiltrados.map(v => v.id));
+
+  // Score mensal a partir das medições de inspeção (mm, amplitude, pressão)
+  const scores = meses.map(m => {
+    if (isFuturo(m)) return null;
+    const medidas = DATA.inspections.filter(i => {
+      if (!idsFiltrados.has(i.veiculoId)) return false;
+      const d = new Date(i.dataInspecao);
+      return d.getFullYear() === m.ano && d.getMonth() === m.mes;
+    });
+    if (!medidas.length) return null;
+
+    const sMM = [], sAmp = [], sStatus = [];
+    let comP = 0, okP = 0;
+    medidas.forEach(x => {
+      if (x.menorMM > 0) {
+        sMM.push(clamp01((x.menorMM - 2) / 8) * 100);
+        sStatus.push(x.menorMM < 2 ? 0 : x.menorMM <= 3 ? 33 : x.menorMM <= 6 ? 66 : 100);
+      }
+      sAmp.push(clamp01(1 - x.amplitude / 5) * 100);
+      if (x.pressaoIdeal > 0) { comP++; if (!x.pressaoNOK) okP++; }
+    });
+
+    const med = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    return scoreComposto({
+      mm:     med(sMM),
+      calib:  comP > 0 ? (okP / comP * 100) : null,
+      status: med(sStatus),
+      amp:    med(sAmp),
+      dot:    null,
+      recape: null
+    });
+  });
+
+  const isLight = document.body.classList.contains('light-mode');
+  const rgbGreen = isLight ? '11,165,11' : '59,179,59';
+  const rgbRed   = isLight ? '255,0,0'   : '255,102,102';
+  const cor = (s, alpha) =>
+    s >= 80 ? `rgba(${rgbGreen},${alpha})` :
+    s >= 60 ? `rgba(243,156,18,${alpha})` :
+              `rgba(${rgbRed},${alpha})`;
+
+  const vigFiltros = FILTERS.vigencia;
+  const barColors = meses.map((m, i) => {
+    const s = scores[i];
+    if (s === null) return 'rgba(255,255,255,0.03)';
+    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
+    const hl = vigFiltros.length === 0 || vigFiltros.includes(mv);
+    return cor(s, hl ? 0.65 : 0.15);
+  });
+  const barBorders = meses.map((m, i) => {
+    const s = scores[i];
+    if (s === null) return 'transparent';
+    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
+    const hl = vigFiltros.length === 0 || vigFiltros.includes(mv);
+    return cor(s, hl ? 1 : 0.25);
+  });
+
+  destroyChart('chartSaudeMensal');
+  charts.chartSaudeMensal = new Chart(document.getElementById('chartSaudeMensal'), {
+    data: {
+      labels: meses.map(m => m.label),
+      datasets: [{
+        type: 'bar',
+        label: 'Pontuação',
+        data: scores,
+        backgroundColor: barColors,
+        borderColor: barBorders,
+        borderWidth: 1.5,
+        borderRadius: 3,
+        datalabels: {
+          display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+          anchor: 'end', align: 'end', offset: 2,
+          color: isLight ? '#111' : '#fff',
+          font: { family: 'Montserrat', size: 12, weight: '700' },
+          formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',')
+        }
+      }]
+    },
+    plugins: [ChartDataLabels],
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#141B26',
+          titleColor: '#E30613', bodyColor: '#F1F5F9',
+          borderColor: '#1E2D40', borderWidth: 1,
+          titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
+          callbacks: {
+            label: ctx => ctx.parsed.y === null ? '—' : 'Pontuação: ' + ctx.parsed.y.toFixed(1).replace('.', ',')
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } },
+          grid: { display: false },
+          border: { display: false }
+        },
+        y: { display: false, grace: '10%' }
+      }
+    }
+  });
 }
 
 // ============================================================
