@@ -1238,6 +1238,16 @@ function getFilteredVehicles() {
   return v;
 }
 
+function getFilteredTires() {
+  let t = DATA.tires;
+  if (FILTERS.placa.length) t = t.filter(x => FILTERS.placa.includes(x.placa));
+  if (FILTERS.unidade.length) {
+    const placasUnidade = new Set(DATA.vehicles.filter(v => FILTERS.unidade.includes(v.tipo)).map(v => v.placa));
+    t = t.filter(x => placasUnidade.has(x.placa));
+  }
+  return t;
+}
+
 function getFilteredInspections() {
   let i = DATA.inspections;
   if (FILTERS.ano.length)      i = i.filter(x => FILTERS.ano.includes(String(new Date(x.dataInspecao).getFullYear())));
@@ -1385,20 +1395,35 @@ function renderAll() {
 function renderPainel() {
   const vehicles = getFilteredVehicles();
   const insps    = getFilteredInspections();
-  const totalFrota = DATA.vehicles.length; // total real para %
 
-  // Última inspeção por veículo (usando TODOS os dados para calcular dias corretos)
-  const ultimaInspAll = {};
-  DATA.inspections.forEach(i => {
-    if (!ultimaInspAll[i.veiculoId] || new Date(i.dataInspecao) > new Date(ultimaInspAll[i.veiculoId].dataInspecao)) {
-      ultimaInspAll[i.veiculoId] = i;
+  // Data de referência: hoje, ou fim do período filtrado (vigência/ano)
+  const hoje = new Date();
+  let refDate = hoje;
+  if (FILTERS.vigencia.length) {
+    // fim do mês mais recente selecionado
+    const fins = FILTERS.vigencia.map(mv => {
+      const [m, a] = mv.split('/').map(Number);
+      return new Date(a, m, 0, 23, 59, 59); // último dia do mês
+    });
+    refDate = new Date(Math.max(...fins));
+  } else if (FILTERS.ano.length) {
+    const maxAno = Math.max(...FILTERS.ano.map(Number));
+    refDate = new Date(maxAno, 11, 31, 23, 59, 59);
+  }
+  if (refDate > hoje) refDate = hoje;
+
+  // Última inspeção por veículo DENTRO do período filtrado
+  const ultimaInsp = {};
+  insps.forEach(i => {
+    if (!ultimaInsp[i.veiculoId] || new Date(i.dataInspecao) > new Date(ultimaInsp[i.veiculoId].dataInspecao)) {
+      ultimaInsp[i.veiculoId] = i;
     }
   });
 
-  // Classificar veículos filtrados
+  // Classificar veículos filtrados (dias recalculados contra refDate)
   const lista = vehicles.map(v => {
-    const u = ultimaInspAll[v.id];
-    const dias = u ? u.dias : null;
+    const u = ultimaInsp[v.id];
+    const dias = u ? Math.floor((refDate - new Date(u.dataInspecao)) / 86400000) : null;
     let status = 'sem';
     if (dias !== null) {
       if (dias <= 20)      status = 'prazo';
@@ -1465,13 +1490,17 @@ function renderMensalChart() {
   const vigFiltros = FILTERS.vigencia; // ['MM/AAAA', ...]
   const isFuturo = m => new Date(m.ano, m.mes, 1) > new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
-  const totalFrota = DATA.vehicles.length || 1;
+  // Respeita filtros de unidade/placa (vigência só destaca, ano define o eixo)
+  const veiculosFiltrados = getFilteredVehicles();
+  const idsFiltrados = new Set(veiculosFiltrados.map(v => v.id));
+  const totalFrota = veiculosFiltrados.length || 1;
 
-  // % de aderência mensal = veículos inspecionados no mês / frota total
+  // % de aderência mensal = veículos inspecionados no mês / frota filtrada
   const pcts = meses.map(m => {
     if (isFuturo(m)) return null;
     const set = new Set();
     DATA.inspections.forEach(i => {
+      if (!idsFiltrados.has(i.veiculoId)) return;
       const d = new Date(i.dataInspecao);
       if (d.getFullYear() === m.ano && d.getMonth() === m.mes) set.add(i.veiculoId);
     });
@@ -1559,7 +1588,7 @@ function renderMensalChart() {
 // MILIMETRAGEM
 // ============================================================
 function renderMilimetragem() {
-  const tires = DATA.tires.filter(t => t.status === 'INSTALLED');
+  const tires = getFilteredTires().filter(t => t.status === 'INSTALLED');
 
   const bloquear = tires.filter(t => t.statusMM === 'Bloquear').length;
   const recapar  = tires.filter(t => t.statusMM === 'Recapar').length;
@@ -1666,7 +1695,7 @@ function filtrarTodosMM() {
 // PRESSÃO
 // ============================================================
 function renderPressao() {
-  const tires    = DATA.tires.filter(t => t.status === 'INSTALLED');
+  const tires    = getFilteredTires().filter(t => t.status === 'INSTALLED');
   const nok      = tires.filter(t => t.pressaoNOK);
   const ok       = tires.filter(t => !t.pressaoNOK);
   const nokPct   = tires.length > 0 ? ((nok.length / tires.length) * 100).toFixed(1) : 0;
@@ -1781,7 +1810,7 @@ function renderEixos() {
   const tipo      = document.getElementById('filterTipoVeiculo').value;
   const q         = (document.getElementById('searchVeiculo').value || '').toLowerCase();
 
-  let veiculos = DATA.vehicles.filter(v => {
+  let veiculos = getFilteredVehicles().filter(v => {
     if (veiculoId && v.id != veiculoId) return false;
     if (tipo && v.tipo !== tipo) return false;
     if (q && !v.placa.toLowerCase().includes(q) && !v.frota.toLowerCase().includes(q)) return false;
