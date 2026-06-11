@@ -154,13 +154,13 @@
 
   .topbar {
     background: #141414;
-    border-bottom: 2px solid var(--red);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
     position: sticky; top: 0; z-index: 50;
     box-shadow: 0 2px 12px rgba(0,0,0,0.2);
   }
 
   /* Topbar mantém cor escura nos dois modos */
-  body.light-mode .topbar { background: #141414; border-bottom-color: var(--red); }
+  body.light-mode .topbar { background: #141414; }
   body.light-mode .topbar-sub { color: #94A3B8; }
   body.light-mode .status-badge { color: #94A3B8; }
   body.light-mode .theme-btn { color: #94A3B8; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
@@ -224,18 +224,18 @@
   .ms-btn {
     display: flex; align-items: center; gap: 8px;
     background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border);
+    border: 1px solid var(--red);
     border-radius: 5px; padding: 6px 12px;
     font-size: 10px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.6px;
-    color: var(--text); cursor: pointer;
+    color: #F1F5F9; cursor: pointer;
     white-space: nowrap; min-width: 100px;
     font-family: var(--font);
     transition: border-color 0.15s, background 0.15s;
   }
   .ms-btn:hover, .ms-btn.open {
-    border-color: rgba(227,6,19,0.5);
-    background: rgba(227,6,19,0.06);
+    border-color: var(--red);
+    background: rgba(227,6,19,0.12);
   }
   .ms-btn .ms-arrow { margin-left: auto; opacity: 0.5; font-size: 9px; }
   .ms-btn .ms-count {
