@@ -18,7 +18,7 @@
     --red-glow:  rgba(227,6,19,0.08);
     --bg:        #0a0a0a;
     --surface:   rgba(255,255,255,0.04);
-    --surface2:  rgba(255,255,255,0.06);
+    --surface2:  rgba(255,255,255,0.07);
     --border:    rgba(255,255,255,0.07);
     --text:      #f0f0f0;
     --text-muted:#666;
@@ -26,7 +26,33 @@
     --yellow:    #f39c12;
     --orange:    #e67e22;
     --font:      'Montserrat', 'Segoe UI', system-ui, sans-serif;
+    --header-bg: rgba(10,10,10,0.80);
   }
+
+  /* ===== LIGHT MODE ===== */
+  body.light-mode {
+    --bg:        #f0f0f0;
+    --surface:   rgba(0,0,0,0.04);
+    --surface2:  rgba(0,0,0,0.07);
+    --border:    rgba(0,0,0,0.10);
+    --text:      #1a1a1a;
+    --text-muted:#777;
+    --header-bg: rgba(240,240,240,0.90);
+  }
+
+  body.light-mode {
+    background:
+      radial-gradient(ellipse 80% 60% at 100% 0%, rgba(227,6,19,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 0% 100%, rgba(227,6,19,0.04) 0%, transparent 55%),
+      #f0f0f0;
+  }
+
+  body.light-mode .sidebar {
+    background: rgba(255,255,255,0.85);
+    border-right-color: rgba(0,0,0,0.08);
+  }
+
+  body.light-mode .adh-table thead tr { background: var(--red); }
 
   body {
     background:
@@ -98,32 +124,117 @@
   }
 
   .topbar {
-    height: 56px; background: var(--surface);
+    background: var(--header-bg);
     border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+
+  .topbar-row1 {
+    height: 48px;
     display: flex; align-items: center;
     justify-content: space-between;
-    padding: 0 28px; position: sticky; top: 0; z-index: 50;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
   }
 
-  .topbar-title { font-size: 15px; font-weight: 600; }
+  .topbar-title { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
+  .topbar-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 
-  .topbar-right {
-    display: flex; align-items: center; gap: 12px;
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .icon-btn {
+    background: rgba(227,6,19,0.12);
+    border: 1px solid rgba(227,6,19,0.25);
+    border-radius: 5px; padding: 5px 7px;
+    cursor: pointer; color: var(--red);
+    display: flex; align-items: center;
+    transition: background 0.15s;
+  }
+  .icon-btn:hover  { background: rgba(227,6,19,0.25); }
+  .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .theme-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 5px; padding: 5px 7px;
+    cursor: pointer; color: var(--text-muted);
+    display: flex; align-items: center;
+    transition: background 0.15s;
+  }
+  .theme-btn:hover { background: rgba(255,255,255,0.12); }
+
+  .status-badge {
+    font-size: 10px; font-weight: 600;
+    background: rgba(227,6,19,0.10);
+    border: 1px solid rgba(227,6,19,0.20);
+    border-radius: 4px; padding: 3px 10px;
+    color: var(--text-muted); white-space: nowrap;
   }
 
-  .btn-refresh {
+  /* ===== FILTER BAR ===== */
+  .filter-bar {
+    display: flex; align-items: center;
+    gap: 8px; padding: 8px 24px;
+    flex-wrap: wrap;
+  }
+
+  .ms-wrap { position: relative; }
+
+  .ms-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 5px; padding: 6px 12px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text); cursor: pointer;
+    white-space: nowrap; min-width: 100px;
+    font-family: var(--font);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .ms-btn:hover, .ms-btn.open {
+    border-color: rgba(227,6,19,0.5);
+    background: rgba(227,6,19,0.06);
+  }
+  .ms-btn .ms-arrow { margin-left: auto; opacity: 0.5; font-size: 9px; }
+  .ms-btn .ms-count {
     background: var(--red); color: #fff;
-    border: none; border-radius: 6px;
-    padding: 7px 16px; font-size: 12px;
-    cursor: pointer; font-weight: 600;
-    display: flex; align-items: center; gap: 6px;
-    transition: background 0.2s;
+    border-radius: 10px; padding: 1px 6px;
+    font-size: 9px; margin-left: 4px;
   }
 
-  .btn-refresh:hover { background: var(--red-dark); }
-  .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ms-panel {
+    position: absolute; top: calc(100% + 4px); left: 0;
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 8px; min-width: 200px;
+    max-height: 260px; overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+    z-index: 200; display: none;
+  }
+  body.light-mode .ms-panel { background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+  .ms-panel.open { display: block; }
 
-  .last-update { font-size: 11px; color: var(--text-muted); }
+  .ms-search {
+    width: 100%; border: none;
+    border-bottom: 1px solid var(--border);
+    background: transparent; color: var(--text);
+    padding: 8px 12px; font-size: 12px;
+    outline: none; font-family: var(--font);
+  }
+
+  .ms-option {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; font-size: 12px;
+    cursor: pointer; color: var(--text);
+    transition: background 0.1s;
+  }
+  .ms-option:hover { background: var(--surface2); }
+  .ms-option input[type=checkbox] { accent-color: var(--red); cursor: pointer; }
+  .ms-option.select-all { border-bottom: 1px solid var(--border); font-weight: 700; font-size: 11px; color: var(--text-muted); }
 
   .content { padding: 28px; flex: 1; }
 
@@ -691,12 +802,69 @@
 <!-- MAIN -->
 <main class="main">
   <header class="topbar">
-    <span class="topbar-title" id="pageTitle">Painel Geral</span>
-    <div class="topbar-right">
-      <span class="last-update" id="lastUpdate">—</span>
-      <button class="btn-refresh" onclick="loadData(true)" id="btnRefresh">
-        ↺ Atualizar
-      </button>
+    <div class="topbar-row1">
+      <div>
+        <div class="topbar-title" id="pageTitle">Painel Geral</div>
+        <div class="topbar-sub">BI Gestão de Pneus — FEMSA</div>
+      </div>
+      <div class="topbar-right">
+        <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Alternar modo claro/escuro">
+          <svg id="themeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <button class="icon-btn" onclick="loadData(true)" id="btnRefresh" title="Atualizar dados">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+        </button>
+        <span class="status-badge" id="lastUpdate">—</span>
+      </div>
+    </div>
+    <div class="filter-bar" id="filterBar">
+      <div class="ms-wrap" id="wrap-ano">
+        <button class="ms-btn" onclick="toggleMs('ano')">
+          ANO <span class="ms-count" id="cnt-ano" style="display:none"></span><span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-panel" id="panel-ano">
+          <input class="ms-search" placeholder="Buscar..." oninput="filterMs(this,'panel-ano')">
+          <div class="ms-option select-all"><label><input type="checkbox" onchange="selectAll('panel-ano',this)"> Todos</label></div>
+          <div id="opts-ano"></div>
+        </div>
+      </div>
+      <div class="ms-wrap" id="wrap-vigencia">
+        <button class="ms-btn" onclick="toggleMs('vigencia')">
+          VIGÊNCIA <span class="ms-count" id="cnt-vigencia" style="display:none"></span><span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-panel" id="panel-vigencia">
+          <input class="ms-search" placeholder="Buscar..." oninput="filterMs(this,'panel-vigencia')">
+          <div class="ms-option select-all"><label><input type="checkbox" onchange="selectAll('panel-vigencia',this)"> Todos</label></div>
+          <div id="opts-vigencia"></div>
+        </div>
+      </div>
+      <div class="ms-wrap" id="wrap-unidade">
+        <button class="ms-btn" onclick="toggleMs('unidade')">
+          UNIDADE <span class="ms-count" id="cnt-unidade" style="display:none"></span><span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-panel" id="panel-unidade">
+          <input class="ms-search" placeholder="Buscar..." oninput="filterMs(this,'panel-unidade')">
+          <div class="ms-option select-all"><label><input type="checkbox" onchange="selectAll('panel-unidade',this)"> Todos</label></div>
+          <div id="opts-unidade"></div>
+        </div>
+      </div>
+      <div class="ms-wrap" id="wrap-placa">
+        <button class="ms-btn" onclick="toggleMs('placa')">
+          PLACA <span class="ms-count" id="cnt-placa" style="display:none"></span><span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-panel" id="panel-placa">
+          <input class="ms-search" placeholder="Buscar placa..." oninput="filterMs(this,'panel-placa')">
+          <div class="ms-option select-all"><label><input type="checkbox" onchange="selectAll('panel-placa',this)"> Todos</label></div>
+          <div id="opts-placa"></div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -734,6 +902,14 @@
           <div class="adh-card-value" id="adhVencidaVal">—</div>
           <div class="adh-card-sub" id="adhVencidaPct">—</div>
           <div class="adh-card-rule">&gt; 30 dias</div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO ADERÊNCIA MENSAL -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-title">Aderência Mensal — Veículos Inspecionados</div>
+        <div style="position:relative;height:240px">
+          <canvas id="chartMensal"></canvas>
         </div>
       </div>
 
@@ -884,6 +1060,133 @@ const PROXY_URL = 'https://script.google.com/macros/s/AKfycbyf4YINsNjg8TirI-uZo_
 // ============================================================
 let DATA = { vehicles: [], tires: [], inspections: [] };
 let charts = {};
+let FILTERS = { ano: [], vigencia: [], unidade: [], placa: [] };
+
+// ============================================================
+// TEMA
+// ============================================================
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('femsa_theme', isLight ? 'light' : 'dark');
+  const icon = document.getElementById('themeIcon');
+  // Troca ícone sol ↔ lua
+  if (isLight) {
+    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  } else {
+    icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  }
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem('femsa_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  }
+})();
+
+// ============================================================
+// MULTI-SELECT DROPDOWNS
+// ============================================================
+function toggleMs(key) {
+  const panel = document.getElementById('panel-' + key);
+  const btn   = panel.previousElementSibling;
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+  if (isOpen) {
+    document.addEventListener('click', function handler(e) {
+      if (!document.getElementById('wrap-' + key).contains(e.target)) {
+        panel.classList.remove('open');
+        btn.classList.remove('open');
+        document.removeEventListener('click', handler);
+      }
+    });
+  }
+}
+
+function filterMs(input, panelId) {
+  const q = input.value.toLowerCase();
+  document.querySelectorAll(`#${panelId} .ms-opt`).forEach(el => {
+    el.style.display = el.dataset.val.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function selectAll(panelId, cb) {
+  document.querySelectorAll(`#${panelId} .ms-opt input`).forEach(c => {
+    c.checked = cb.checked;
+    c.dispatchEvent(new Event('change'));
+  });
+}
+
+function buildFilter(key, values) {
+  const container = document.getElementById('opts-' + key);
+  if (!container) return;
+  FILTERS[key] = [];
+  container.innerHTML = values.map(v => `
+    <div class="ms-option ms-opt" data-val="${v}">
+      <label style="display:flex;align-items:center;gap:8px;width:100%;cursor:pointer">
+        <input type="checkbox" checked data-key="${key}" data-val="${v}"
+          onchange="onFilterChange('${key}')">
+        ${v}
+      </label>
+    </div>`).join('');
+  // Todos marcados = nenhum filtro ativo
+}
+
+function onFilterChange(key) {
+  const checked = [...document.querySelectorAll(`#opts-${key} input:checked`)].map(c => c.dataset.val);
+  const all     = [...document.querySelectorAll(`#opts-${key} input`)].map(c => c.dataset.val);
+  FILTERS[key] = checked.length === all.length ? [] : checked;
+  // Atualiza contador no botão
+  const cnt = document.getElementById('cnt-' + key);
+  if (FILTERS[key].length > 0) {
+    cnt.textContent = FILTERS[key].length;
+    cnt.style.display = '';
+  } else {
+    cnt.style.display = 'none';
+  }
+  renderAll();
+}
+
+function populateFilters() {
+  const insps = DATA.inspections;
+  const vehs  = DATA.vehicles;
+
+  const anos = [...new Set(insps.map(i => new Date(i.dataInspecao).getFullYear()))].sort((a,b)=>b-a);
+  const meses = [...new Set(insps.map(i => {
+    const d = new Date(i.dataInspecao);
+    return `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  }))].sort().reverse();
+  const unidades = [...new Set(vehs.map(v => v.tipo).filter(Boolean))].sort();
+  const placas   = [...new Set(vehs.map(v => v.placa).filter(Boolean))].sort();
+
+  buildFilter('ano',      anos.map(String));
+  buildFilter('vigencia', meses);
+  buildFilter('unidade',  unidades);
+  buildFilter('placa',    placas);
+}
+
+function getFilteredVehicles() {
+  let v = DATA.vehicles;
+  if (FILTERS.unidade.length) v = v.filter(x => FILTERS.unidade.includes(x.tipo));
+  if (FILTERS.placa.length)   v = v.filter(x => FILTERS.placa.includes(x.placa));
+  return v;
+}
+
+function getFilteredInspections() {
+  let i = DATA.inspections;
+  if (FILTERS.ano.length)      i = i.filter(x => FILTERS.ano.includes(String(new Date(x.dataInspecao).getFullYear())));
+  if (FILTERS.vigencia.length) {
+    i = i.filter(x => {
+      const d = new Date(x.dataInspecao);
+      const mv = `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      return FILTERS.vigencia.includes(mv);
+    });
+  }
+  if (FILTERS.placa.length) i = i.filter(x => FILTERS.placa.includes(x.placa));
+  return i;
+}
 
 // ============================================================
 // NAVIGATION
@@ -948,6 +1251,7 @@ async function loadData(forceRefresh = false) {
           DATA = cached.data;
           document.getElementById('lastUpdate').textContent =
             '📦 Cache: ' + formatCacheTime(cached.ts);
+          populateFilters();
           renderAll();
           document.getElementById('btnRefresh').disabled = false;
           return;
@@ -971,10 +1275,10 @@ async function loadData(forceRefresh = false) {
         '🔄 Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
     }
 
+    populateFilters();
     renderAll();
   } catch(e) {
     console.error(e);
-    // Se falhou mas há cache (mesmo expirado), usa
     try {
       const raw = localStorage.getItem(CACHE_KEY);
       if (raw) {
@@ -982,6 +1286,7 @@ async function loadData(forceRefresh = false) {
         DATA = obj.data;
         document.getElementById('lastUpdate').textContent =
           '⚠️ Cache antigo: ' + formatCacheTime(obj.ts);
+        populateFilters();
         renderAll();
         return;
       }
@@ -1014,20 +1319,21 @@ function renderAll() {
 // PAINEL GERAL — ADERÊNCIA
 // ============================================================
 function renderPainel() {
-  const vehicles = DATA.vehicles;
-  const insps    = DATA.inspections;
+  const vehicles = getFilteredVehicles();
+  const insps    = getFilteredInspections();
+  const totalFrota = DATA.vehicles.length; // total real para %
 
-  // Última inspeção por veículo
-  const ultimaInsp = {};
-  insps.forEach(i => {
-    if (!ultimaInsp[i.veiculoId] || new Date(i.dataInspecao) > new Date(ultimaInsp[i.veiculoId].dataInspecao)) {
-      ultimaInsp[i.veiculoId] = i;
+  // Última inspeção por veículo (usando TODOS os dados para calcular dias corretos)
+  const ultimaInspAll = {};
+  DATA.inspections.forEach(i => {
+    if (!ultimaInspAll[i.veiculoId] || new Date(i.dataInspecao) > new Date(ultimaInspAll[i.veiculoId].dataInspecao)) {
+      ultimaInspAll[i.veiculoId] = i;
     }
   });
 
-  // Classificar veículos
+  // Classificar veículos filtrados
   const lista = vehicles.map(v => {
-    const u = ultimaInsp[v.id];
+    const u = ultimaInspAll[v.id];
     const dias = u ? u.dias : null;
     let status = 'sem';
     if (dias !== null) {
@@ -1038,26 +1344,20 @@ function renderPainel() {
     return { ...v, dias, dataInsp: u ? u.dataInspecao : null, status };
   });
 
-  const total    = lista.length;
-  const noPrazo  = lista.filter(v => v.status === 'prazo').length;
-  const emAten   = lista.filter(v => v.status === 'atencao').length;
-  const vencida  = lista.filter(v => v.status === 'vencida').length;
-  const semInsp  = lista.filter(v => v.status === 'sem').length;
+  const total   = lista.length || 1;
+  const noPrazo = lista.filter(v => v.status === 'prazo').length;
+  const emAten  = lista.filter(v => v.status === 'atencao').length;
+  const vencida = lista.filter(v => v.status === 'vencida').length;
 
-  const aderentes   = noPrazo + emAten;
-  const pct         = total > 0 ? (aderentes / total * 100) : 0;
-  const pctStr      = pct.toFixed(1).replace('.', ',') + '%';
+  const pct    = (noPrazo + emAten) / total * 100;
+  const pctStr = pct.toFixed(1).replace('.', ',') + '%';
+  const corAd  = pct >= 98 ? 'var(--green)' : pct >= 85 ? 'var(--yellow)' : 'var(--red)';
 
-  // Cor aderência
-  const corAd = pct >= 98 ? 'var(--green)' : pct >= 85 ? 'var(--yellow)' : 'var(--red)';
-
-  // Hero
   const elVal = document.getElementById('adhValue');
   elVal.textContent = pctStr;
   elVal.style.color = corAd;
 
-  // Cards
-  const pctFmt = n => total > 0 ? (n / total * 100).toFixed(1).replace('.', ',') + '%' : '0%';
+  const pctFmt = n => (n / total * 100).toFixed(1).replace('.', ',') + '%';
   document.getElementById('adhNoPrazoVal').textContent = noPrazo;
   document.getElementById('adhNoPrazoPct').textContent = pctFmt(noPrazo) + ' da frota';
   document.getElementById('adhAtencaoVal').textContent = emAten;
@@ -1065,7 +1365,7 @@ function renderPainel() {
   document.getElementById('adhVencidaVal').textContent = vencida;
   document.getElementById('adhVencidaPct').textContent = pctFmt(vencida) + ' da frota';
 
-  // Tabelas — ordenadas do mais vencido para o menos
+  // Tabelas
   const ordenados = [...lista]
     .filter(v => v.dias !== null)
     .sort((a, b) => (b.dias ?? 0) - (a.dias ?? 0));
@@ -1074,24 +1374,93 @@ function renderPainel() {
     const cls   = v.status;
     const label = cls === 'vencida' ? 'Vencida' : cls === 'atencao' ? 'Em Atenção' : 'No Prazo';
     const data  = v.dataInsp ? new Date(v.dataInsp).toLocaleDateString('pt-BR') : '—';
-    return `
-      <tr>
-        <td><strong>${v.placa}</strong></td>
-        <td>${data}</td>
-        <td><span class="farol-dot ${cls}">${label}</span></td>
-        <td style="text-align:right">
-          <span class="td-dias ${cls}">${v.dias}</span>
-        </td>
-      </tr>`;
+    return `<tr>
+      <td><strong>${v.placa}</strong></td>
+      <td>${data}</td>
+      <td><span class="farol-dot ${cls}">${label}</span></td>
+      <td style="text-align:right"><span class="td-dias ${cls}">${v.dias}</span></td>
+    </tr>`;
   };
 
   const semRow = '<tr><td colspan="4" class="empty">✅ Todos em dia</td></tr>';
+  document.getElementById('tbodyAdhMM').innerHTML    = ordenados.length ? ordenados.map(rowTabela).join('') : semRow;
+  document.getElementById('tbodyAdhCalib').innerHTML = ordenados.length ? ordenados.map(rowTabela).join('') : semRow;
 
-  document.getElementById('tbodyAdhMM').innerHTML =
-    ordenados.length ? ordenados.map(rowTabela).join('') : semRow;
+  renderMensalChart();
+}
 
-  document.getElementById('tbodyAdhCalib').innerHTML =
-    ordenados.length ? ordenados.map(rowTabela).join('') : semRow;
+// ============================================================
+// GRÁFICO ADERÊNCIA MENSAL
+// ============================================================
+function renderMensalChart() {
+  const hoje = new Date();
+  const meses = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+    meses.push({ ano: d.getFullYear(), mes: d.getMonth(), label: d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) });
+  }
+
+  const totalFrota = DATA.vehicles.length || 1;
+
+  const counts = meses.map(m => {
+    const veicInspecionados = new Set();
+    DATA.inspections.forEach(i => {
+      const d = new Date(i.dataInspecao);
+      if (d.getFullYear() === m.ano && d.getMonth() === m.mes) {
+        veicInspecionados.add(i.veiculoId);
+      }
+    });
+    return veicInspecionados.size;
+  });
+
+  const pcts = counts.map(c => parseFloat((c / totalFrota * 100).toFixed(1)));
+
+  destroyChart('chartMensal');
+  charts.chartMensal = new Chart(document.getElementById('chartMensal'), {
+    data: {
+      labels: meses.map(m => m.label),
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Veículos Inspecionados',
+          data: counts,
+          backgroundColor: 'rgba(227,6,19,0.55)',
+          borderColor: '#E30613',
+          borderWidth: 1,
+          borderRadius: 4,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: '% da Frota',
+          data: pcts,
+          borderColor: '#fff',
+          backgroundColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 2,
+          pointBackgroundColor: '#fff',
+          pointRadius: 4,
+          tension: 0.4,
+          yAxisID: 'y2'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#aaa', font: { family: 'Montserrat', size: 11 }, boxWidth: 12 } },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleColor: '#fff', bodyColor: '#ccc',
+          callbacks: { label: ctx => ctx.dataset.yAxisID === 'y2' ? ctx.parsed.y.toFixed(1) + '%' : ctx.parsed.y + ' veículos' }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#888', font: { family: 'Montserrat', size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y:  { position: 'left',  ticks: { color: '#888', font: { family: 'Montserrat', size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        y2: { position: 'right', ticks: { color: '#aaa', font: { family: 'Montserrat', size: 11 }, callback: v => v + '%' }, grid: { display: false } }
+      }
+    }
+  });
 }
 
 // ============================================================
