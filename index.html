@@ -500,9 +500,21 @@
     border-radius: 5px; padding: 3px 10px;
     min-width: 32px; text-align: center;
   }
-  .td-dias.vencida  { background: rgba(255,102,102,0.18); color: #FF6666; }
-  .td-dias.atencao  { background: rgba(243,156,18,0.18); color: #f39c12; }
-  .td-dias.prazo    { background: rgba(59,179,59,0.18); color: #3BB33B; }
+  .td-dias.vencida  { color: #FF6666; }
+  .td-dias.atencao  { color: #f39c12; }
+  .td-dias.prazo    { color: #3BB33B; }
+
+  /* legenda do gráfico */
+  .chart-legend {
+    display: flex; gap: 18px; margin-bottom: 12px;
+  }
+  .lg-item {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10px; color: var(--text-muted); font-weight: 600;
+  }
+  .lg-dot {
+    width: 9px; height: 9px; border-radius: 2px; display: inline-block;
+  }
 
   /* farol */
   .farol-dot {
@@ -513,11 +525,9 @@
     content: ''; width: 7px; height: 7px;
     border-radius: 50%; display: inline-block;
   }
-  .farol-dot.vencida { color: #FF6666; }
+  .farol-dot { color: var(--text); }
   .farol-dot.vencida::before { background: #FF6666; }
-  .farol-dot.atencao { color: #f39c12; }
   .farol-dot.atencao::before { background: #f39c12; }
-  .farol-dot.prazo   { color: #3BB33B; }
   .farol-dot.prazo::before   { background: #3BB33B; }
 
   @media (max-width: 900px) {
@@ -937,7 +947,12 @@
 
       <!-- GRÁFICO ADERÊNCIA MENSAL -->
       <div class="card" style="margin-bottom:24px">
-        <div class="card-title">Aderência Mensal (%)</div>
+        <div class="card-title" style="margin-bottom:6px">Aderência Mensal (%)</div>
+        <div class="chart-legend">
+          <span class="lg-item"><span class="lg-dot" style="background:#3BB33B"></span> ≥ 98%</span>
+          <span class="lg-item"><span class="lg-dot" style="background:#f39c12"></span> 85% a 98%</span>
+          <span class="lg-item"><span class="lg-dot" style="background:#FF6666"></span> &lt; 85%</span>
+        </div>
         <div style="position:relative;height:240px">
           <canvas id="chartMensal"></canvas>
         </div>
@@ -951,7 +966,7 @@
             <thead><tr>
               <th>Placa</th>
               <th>Última Leitura</th>
-              <th>Farol</th>
+              <th>Status</th>
               <th class="col-dias">Dias ↓</th>
             </tr></thead>
             <tbody id="tbodyAdhMM"></tbody>
@@ -963,7 +978,7 @@
             <thead><tr>
               <th>Placa</th>
               <th>Última Leitura</th>
-              <th>Farol</th>
+              <th>Status</th>
               <th class="col-dias">Dias ↓</th>
             </tr></thead>
             <tbody id="tbodyAdhCalib"></tbody>
@@ -1478,10 +1493,6 @@ function renderMensalChart() {
     return clusterColor(p, highlighted ? 1 : 0.25);
   });
 
-  // Linhas de meta tracejadas com marcadores (estilo painel referência)
-  const meta100 = meses.map(m => isFuturo(m) ? null : 100);
-  const meta85  = meses.map(m => isFuturo(m) ? null : 85);
-
   destroyChart('chartMensal');
   charts.chartMensal = new Chart(document.getElementById('chartMensal'), {
     data: {
@@ -1502,36 +1513,6 @@ function renderMensalChart() {
             font: { family: 'Montserrat', size: 10, weight: '700' },
             formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
           }
-        },
-        {
-          type: 'line',
-          label: 'Meta 100%',
-          data: meta100,
-          borderColor: 'rgba(255,255,255,0.85)',
-          borderWidth: 2,
-          borderDash: [6, 5],
-          pointBackgroundColor: '#fff',
-          pointBorderColor: '#fff',
-          pointRadius: 3.5,
-          pointStyle: 'circle',
-          fill: false,
-          spanGaps: false,
-          datalabels: { display: false }
-        },
-        {
-          type: 'line',
-          label: 'Mínimo 85%',
-          data: meta85,
-          borderColor: 'rgba(56,189,248,0.85)',
-          borderWidth: 2,
-          borderDash: [6, 5],
-          pointBackgroundColor: '#38BDF8',
-          pointBorderColor: '#38BDF8',
-          pointRadius: 3.5,
-          pointStyle: 'circle',
-          fill: false,
-          spanGaps: false,
-          datalabels: { display: false }
         }
       ]
     },
@@ -1540,9 +1521,7 @@ function renderMensalChart() {
       responsive: true, maintainAspectRatio: false,
       layout: { padding: { top: 18 } },
       plugins: {
-        legend: {
-          labels: { color: '#94A3B8', font: { family: 'Montserrat', size: 11 }, boxWidth: 10, padding: 16, usePointStyle: false }
-        },
+        legend: { display: false },
         tooltip: {
           backgroundColor: '#141B26',
           titleColor: '#E30613', bodyColor: '#F1F5F9',
@@ -1560,11 +1539,10 @@ function renderMensalChart() {
           grid: { color: 'rgba(255,255,255,0.06)' }
         },
         y: {
-          min: 0, max: 115,
+          grace: '10%',
           ticks: {
             color: '#94A3B8', font: { family: 'Montserrat', size: 9 },
-            callback: v => v > 100 ? '' : v + '%',
-            stepSize: 20
+            callback: v => v.toFixed(0) + '%'
           },
           grid: { color: 'rgba(255,255,255,0.06)' }
         }
