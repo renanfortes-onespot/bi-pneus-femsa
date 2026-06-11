@@ -228,6 +228,169 @@
     .grid-2, .grid-3 { grid-template-columns: 1fr; }
   }
 
+  /* ===================== PAINEL ADERÊNCIA ===================== */
+  .adh-hero {
+    margin-bottom: 32px;
+  }
+
+  .adh-label {
+    font-size: 14px; font-weight: 700;
+    color: var(--text); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 4px;
+  }
+
+  .adh-value {
+    font-size: 72px; font-weight: 800;
+    line-height: 1; margin-bottom: 8px;
+  }
+
+  .adh-meta {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .adh-yoy {
+    font-size: 11px; color: var(--text-muted);
+    margin-top: 4px; opacity: 0.6;
+  }
+
+  /* 3 CARDS */
+  .adh-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px; margin-bottom: 32px;
+  }
+
+  .adh-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    position: relative; overflow: hidden;
+  }
+
+  .adh-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+  }
+
+  .adh-card-green::before { background: var(--green); }
+  .adh-card-yellow::before { background: var(--yellow); }
+  .adh-card-red::before    { background: var(--red); }
+
+  .adh-card-label {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted); margin-bottom: 10px;
+  }
+
+  .adh-card-value {
+    font-size: 42px; font-weight: 800;
+    line-height: 1; margin-bottom: 4px;
+  }
+
+  .adh-card-green .adh-card-value { color: var(--green); }
+  .adh-card-yellow .adh-card-value { color: var(--yellow); }
+  .adh-card-red .adh-card-value    { color: var(--red); }
+
+  .adh-card-sub {
+    font-size: 18px; font-weight: 600;
+    color: var(--text-muted); margin-bottom: 6px;
+  }
+
+  .adh-card-rule {
+    font-size: 11px; color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  /* TABELAS LADO A LADO */
+  .adh-tables {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px; margin-bottom: 24px;
+  }
+
+  .adh-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .adh-table-title {
+    font-size: 14px; font-weight: 700;
+    padding: 16px 20px 12px;
+    color: var(--text);
+    letter-spacing: 0.3px;
+  }
+
+  .adh-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .adh-table thead tr {
+    background: var(--red);
+  }
+
+  .adh-table thead th {
+    padding: 9px 16px;
+    text-align: left; font-weight: 600;
+    font-size: 12px; color: #fff;
+    white-space: nowrap;
+  }
+
+  .adh-table thead th.col-dias { text-align: right; }
+
+  .adh-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .adh-table tbody tr:last-child { border-bottom: none; }
+  .adh-table tbody tr:hover { background: var(--surface2); }
+
+  .adh-table tbody td {
+    padding: 8px 16px; color: var(--text);
+    white-space: nowrap;
+  }
+
+  .adh-table .td-dias {
+    text-align: right; font-weight: 700;
+    font-size: 13px;
+  }
+
+  .td-dias.vencida  { color: #fff; background: rgba(227,6,19,0.55); border-radius: 4px; padding: 2px 8px; }
+  .td-dias.atencao  { color: #fff; background: rgba(243,156,18,0.55); border-radius: 4px; padding: 2px 8px; }
+  .td-dias.prazo    { color: #fff; background: rgba(46,204,113,0.35); border-radius: 4px; padding: 2px 8px; }
+
+  .farol-dot {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600;
+  }
+
+  .farol-dot::before {
+    content: ''; display: inline-block;
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+
+  .farol-dot.vencida { color: #ff4d57; }
+  .farol-dot.vencida::before { background: #E30613; }
+  .farol-dot.atencao { color: var(--yellow); }
+  .farol-dot.atencao::before { background: var(--yellow); }
+  .farol-dot.prazo   { color: var(--green); }
+  .farol-dot.prazo::before   { background: var(--green); }
+
+  @media (max-width: 900px) {
+    .adh-cards  { grid-template-columns: 1fr; }
+    .adh-tables { grid-template-columns: 1fr; }
+    .adh-value  { font-size: 52px; }
+  }
+
   /* ===================== CARD ===================== */
   .card {
     background: var(--surface);
@@ -541,59 +704,67 @@
 
     <!-- ========== PAINEL GERAL ========== -->
     <div class="page active" id="page-painel">
-      <div class="kpi-grid" id="kpiGrid"></div>
 
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-title">Aderência às Aferições</div>
-          <div class="gauge-wrap">
-            <div class="gauge-value" id="gaugeAderencia">—</div>
-            <div class="gauge-label">dos veículos aferidos</div>
-            <div class="gauge-meta" id="gaugeMeta">Meta: 100%</div>
-          </div>
-          <div style="margin-top:16px" id="aderenciaBarras"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Status de Aferição por Veículo</div>
-          <div class="chart-wrap">
-            <canvas id="chartAderencia"></canvas>
-          </div>
+      <!-- HERO ADERÊNCIA -->
+      <div class="adh-hero">
+        <div class="adh-hero-left">
+          <div class="adh-label">Aderência</div>
+          <div class="adh-value" id="adhValue">—</div>
+          <div class="adh-meta">Meta: 100%</div>
+          <div class="adh-yoy">Base de dados insuficiente para comparação YoY</div>
         </div>
       </div>
 
-      <div class="grid-3">
-        <div class="card">
-          <div class="card-title">Status Milimetragem</div>
-          <div class="chart-wrap">
-            <canvas id="chartMM"></canvas>
-          </div>
+      <!-- 3 CARDS STATUS -->
+      <div class="adh-cards">
+        <div class="adh-card adh-card-green">
+          <div class="adh-card-label">No Prazo</div>
+          <div class="adh-card-value" id="adhNoPrazoVal">—</div>
+          <div class="adh-card-sub" id="adhNoPrazoPct">—</div>
+          <div class="adh-card-rule">≤ 20 dias</div>
         </div>
-        <div class="card">
-          <div class="card-title">Pressão dos Pneus</div>
-          <div class="chart-wrap">
-            <canvas id="chartPressao"></canvas>
-          </div>
+        <div class="adh-card adh-card-yellow">
+          <div class="adh-card-label">Em Atenção</div>
+          <div class="adh-card-value" id="adhAtencaoVal">—</div>
+          <div class="adh-card-sub" id="adhAtencaoPct">—</div>
+          <div class="adh-card-rule">21 a 30 dias</div>
         </div>
-        <div class="card">
-          <div class="card-title">Desgaste Irregular (Amplitude > 5mm)</div>
-          <div class="gauge-wrap">
-            <div class="gauge-value orange" id="gaugeAmplitude">—</div>
-            <div class="gauge-label">dos pneus instalados</div>
-          </div>
-          <div style="margin-top:12px" id="amplitudeInfo"></div>
+        <div class="adh-card adh-card-red">
+          <div class="adh-card-label">Vencida</div>
+          <div class="adh-card-value" id="adhVencidaVal">—</div>
+          <div class="adh-card-sub" id="adhVencidaPct">—</div>
+          <div class="adh-card-rule">&gt; 30 dias</div>
         </div>
       </div>
 
-      <p class="section-title">Veículos sem Aferição Recente (Vencidos)</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Placa</th><th>Frota</th><th>Tipo</th>
-            <th>Última Aferição</th><th>Dias</th><th>Status</th>
-          </tr></thead>
-          <tbody id="tbodyVencidos"></tbody>
-        </table>
+      <!-- TABELAS LADO A LADO -->
+      <div class="adh-tables">
+        <div class="adh-table-wrap">
+          <div class="adh-table-title">Milimetragem</div>
+          <table class="adh-table">
+            <thead><tr>
+              <th>Placa</th>
+              <th>Última Leitura</th>
+              <th>Farol</th>
+              <th class="col-dias">Dias ↓</th>
+            </tr></thead>
+            <tbody id="tbodyAdhMM"></tbody>
+          </table>
+        </div>
+        <div class="adh-table-wrap">
+          <div class="adh-table-title">Calibragem</div>
+          <table class="adh-table">
+            <thead><tr>
+              <th>Placa</th>
+              <th>Última Leitura</th>
+              <th>Farol</th>
+              <th class="col-dias">Dias ↓</th>
+            </tr></thead>
+            <tbody id="tbodyAdhCalib"></tbody>
+          </table>
+        </div>
       </div>
+
     </div>
 
     <!-- ========== MILIMETRAGEM ========== -->
@@ -840,14 +1011,13 @@ function renderAll() {
 }
 
 // ============================================================
-// PAINEL GERAL
+// PAINEL GERAL — ADERÊNCIA
 // ============================================================
 function renderPainel() {
-  const tires      = DATA.tires.filter(t => t.status === 'INSTALLED');
-  const vehicles   = DATA.vehicles;
-  const insps      = DATA.inspections;
+  const vehicles = DATA.vehicles;
+  const insps    = DATA.inspections;
 
-  // Última aferição por veículo
+  // Última inspeção por veículo
   const ultimaInsp = {};
   insps.forEach(i => {
     if (!ultimaInsp[i.veiculoId] || new Date(i.dataInspecao) > new Date(ultimaInsp[i.veiculoId].dataInspecao)) {
@@ -855,155 +1025,73 @@ function renderPainel() {
     }
   });
 
-  // Aderência
-  let noPrazo = 0, emAtencao = 0, vencidos = 0, semInsp = 0;
-  vehicles.forEach(v => {
+  // Classificar veículos
+  const lista = vehicles.map(v => {
     const u = ultimaInsp[v.id];
-    if (!u) { semInsp++; return; }
-    const dias = u.dias;
-    if (dias <= 20)      noPrazo++;
-    else if (dias <= 30) emAtencao++;
-    else                 vencidos++;
+    const dias = u ? u.dias : null;
+    let status = 'sem';
+    if (dias !== null) {
+      if (dias <= 20)      status = 'prazo';
+      else if (dias <= 30) status = 'atencao';
+      else                 status = 'vencida';
+    }
+    return { ...v, dias, dataInsp: u ? u.dataInspecao : null, status };
   });
 
-  const total = vehicles.length;
-  const aderentes = noPrazo + emAtencao;
-  const aderenciaPct = total > 0 ? ((aderentes / total) * 100).toFixed(1) : 0;
+  const total    = lista.length;
+  const noPrazo  = lista.filter(v => v.status === 'prazo').length;
+  const emAten   = lista.filter(v => v.status === 'atencao').length;
+  const vencida  = lista.filter(v => v.status === 'vencida').length;
+  const semInsp  = lista.filter(v => v.status === 'sem').length;
 
-  // MM stats
-  const bloquear = tires.filter(t => t.statusMM === 'Bloquear').length;
-  const recapar  = tires.filter(t => t.statusMM === 'Recapar').length;
-  const regular  = tires.filter(t => t.statusMM === 'Regular').length;
-  const bom      = tires.filter(t => t.statusMM === 'Bom Estado').length;
+  const aderentes   = noPrazo + emAten;
+  const pct         = total > 0 ? (aderentes / total * 100) : 0;
+  const pctStr      = pct.toFixed(1).replace('.', ',') + '%';
 
-  // Pressão NOK
-  const pressaoNOK = tires.filter(t => t.pressaoNOK).length;
-  const pressaoPct = tires.length > 0 ? ((pressaoNOK / tires.length) * 100).toFixed(1) : 0;
+  // Cor aderência
+  const corAd = pct >= 98 ? 'var(--green)' : pct >= 85 ? 'var(--yellow)' : 'var(--red)';
 
-  // Amplitude
-  const irregulares = tires.filter(t => t.amplitude > 5).length;
-  const ampPct = tires.length > 0 ? ((irregulares / tires.length) * 100).toFixed(1) : 0;
+  // Hero
+  const elVal = document.getElementById('adhValue');
+  elVal.textContent = pctStr;
+  elVal.style.color = corAd;
 
-  // KPIs
-  document.getElementById('kpiGrid').innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-label">Veículos Ativos</div>
-      <div class="kpi-value">${total}</div>
-      <div class="kpi-sub">Frota FEMSA</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Pneus Instalados</div>
-      <div class="kpi-value">${tires.length}</div>
-      <div class="kpi-sub">de ${DATA.tires.length} totais</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Pneus para Bloquear</div>
-      <div class="kpi-value ${bloquear > 0 ? 'red' : 'green'}">${bloquear}</div>
-      <div class="kpi-sub">Sulco < 2mm</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Pneus para Recapar</div>
-      <div class="kpi-value ${recapar > 0 ? 'orange' : 'green'}">${recapar}</div>
-      <div class="kpi-sub">Sulco ≤ 3mm</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Pressão NOK</div>
-      <div class="kpi-value ${pressaoNOK > 0 ? 'red' : 'green'}">${pressaoPct}%</div>
-      <div class="kpi-sub">${pressaoNOK} pneus fora da faixa</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Desgaste Irregular</div>
-      <div class="kpi-value ${irregulares > 0 ? 'orange' : 'green'}">${ampPct}%</div>
-      <div class="kpi-sub">${irregulares} pneus com amplitude > 5mm</div>
-    </div>
-  `;
+  // Cards
+  const pctFmt = n => total > 0 ? (n / total * 100).toFixed(1).replace('.', ',') + '%' : '0%';
+  document.getElementById('adhNoPrazoVal').textContent = noPrazo;
+  document.getElementById('adhNoPrazoPct').textContent = pctFmt(noPrazo) + ' da frota';
+  document.getElementById('adhAtencaoVal').textContent = emAten;
+  document.getElementById('adhAtencaoPct').textContent = pctFmt(emAten) + ' da frota';
+  document.getElementById('adhVencidaVal').textContent = vencida;
+  document.getElementById('adhVencidaPct').textContent = pctFmt(vencida) + ' da frota';
 
-  // Gauge aderência
-  const cor = aderenciaPct >= 80 ? 'var(--green)' : aderenciaPct >= 50 ? 'var(--yellow)' : 'var(--red)';
-  document.getElementById('gaugeAderencia').style.color = cor;
-  document.getElementById('gaugeAderencia').textContent = aderenciaPct + '%';
-  document.getElementById('gaugeMeta').textContent = `Meta: 100% · ${aderentes} de ${total} veículos`;
+  // Tabelas — ordenadas do mais vencido para o menos
+  const ordenados = [...lista]
+    .filter(v => v.dias !== null)
+    .sort((a, b) => (b.dias ?? 0) - (a.dias ?? 0));
 
-  // Barras aderência
-  document.getElementById('aderenciaBarras').innerHTML = `
-    ${barra('No Prazo', noPrazo, total, 'var(--green)')}
-    ${barra('Em Atenção', emAtencao, total, 'var(--yellow)')}
-    ${barra('Vencidos', vencidos, total, 'var(--red)')}
-    ${semInsp > 0 ? barra('Sem Inspeção', semInsp, total, 'var(--text-muted)') : ''}
-  `;
+  const rowTabela = v => {
+    const cls   = v.status;
+    const label = cls === 'vencida' ? 'Vencida' : cls === 'atencao' ? 'Em Atenção' : 'No Prazo';
+    const data  = v.dataInsp ? new Date(v.dataInsp).toLocaleDateString('pt-BR') : '—';
+    return `
+      <tr>
+        <td><strong>${v.placa}</strong></td>
+        <td>${data}</td>
+        <td><span class="farol-dot ${cls}">${label}</span></td>
+        <td style="text-align:right">
+          <span class="td-dias ${cls}">${v.dias}</span>
+        </td>
+      </tr>`;
+  };
 
-  // Gráfico aderência (donut)
-  destroyChart('chartAderencia');
-  charts.chartAderencia = new Chart(document.getElementById('chartAderencia'), {
-    type: 'doughnut',
-    data: {
-      labels: ['No Prazo', 'Em Atenção', 'Vencidos', 'Sem Inspeção'],
-      datasets: [{ data: [noPrazo, emAtencao, vencidos, semInsp],
-        backgroundColor: ['#2ecc71','#f39c12','#E30613','#555'],
-        borderWidth: 0, hoverOffset: 4
-      }]
-    },
-    options: chartDonutOptions()
-  });
+  const semRow = '<tr><td colspan="4" class="empty">✅ Todos em dia</td></tr>';
 
-  // Gráfico MM
-  destroyChart('chartMM');
-  charts.chartMM = new Chart(document.getElementById('chartMM'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Bom Estado', 'Regular', 'Recapar', 'Bloquear'],
-      datasets: [{ data: [bom, regular, recapar, bloquear],
-        backgroundColor: ['#2ecc71','#f39c12','#e67e22','#E30613'],
-        borderWidth: 0
-      }]
-    },
-    options: chartDonutOptions()
-  });
+  document.getElementById('tbodyAdhMM').innerHTML =
+    ordenados.length ? ordenados.map(rowTabela).join('') : semRow;
 
-  // Gráfico Pressão
-  destroyChart('chartPressao');
-  charts.chartPressao = new Chart(document.getElementById('chartPressao'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Pressão OK', 'Pressão NOK'],
-      datasets: [{ data: [tires.length - pressaoNOK, pressaoNOK],
-        backgroundColor: ['#2ecc71','#E30613'],
-        borderWidth: 0
-      }]
-    },
-    options: chartDonutOptions()
-  });
-
-  // Gauge amplitude
-  document.getElementById('gaugeAmplitude').textContent = ampPct + '%';
-  document.getElementById('amplitudeInfo').innerHTML = `
-    <div style="font-size:12px;color:var(--text-muted);text-align:center">
-      ${irregulares} pneus com desgaste irregular<br>
-      de ${tires.length} pneus instalados
-    </div>
-  `;
-
-  // Tabela vencidos
-  const vencidosVeiculos = vehicles.filter(v => {
-    const u = ultimaInsp[v.id];
-    return !u || u.dias > 30;
-  }).map(v => {
-    const u = ultimaInsp[v.id];
-    return { ...v, dias: u ? u.dias : null, dataInsp: u ? u.dataInspecao : null };
-  }).sort((a, b) => (b.dias || 9999) - (a.dias || 9999));
-
-  document.getElementById('tbodyVencidos').innerHTML = vencidosVeiculos.length === 0
-    ? '<tr><td colspan="6" class="empty">✅ Todos os veículos estão com aferição em dia</td></tr>'
-    : vencidosVeiculos.map(v => `
-        <tr>
-          <td><strong>${v.placa}</strong></td>
-          <td>${v.frota}</td>
-          <td>${v.tipo}</td>
-          <td>${v.dataInsp ? new Date(v.dataInsp).toLocaleDateString('pt-BR') : '—'}</td>
-          <td style="text-align:right"><strong style="color:var(--red)">${v.dias ?? '—'}</strong></td>
-          <td>${v.dias === null ? badgeHtml('Sem Inspeção','gray') : badgeHtml('Vencida','red')}</td>
-        </tr>
-      `).join('');
+  document.getElementById('tbodyAdhCalib').innerHTML =
+    ordenados.length ? ordenados.map(rowTabela).join('') : semRow;
 }
 
 // ============================================================
