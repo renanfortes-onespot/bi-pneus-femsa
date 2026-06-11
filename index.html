@@ -522,7 +522,7 @@
     <span class="topbar-title" id="pageTitle">Painel Geral</span>
     <div class="topbar-right">
       <span class="last-update" id="lastUpdate">—</span>
-      <button class="btn-refresh" onclick="loadData()" id="btnRefresh">
+      <button class="btn-refresh" onclick="loadData(true)" id="btnRefresh">
         ↺ Atualizar
       </button>
     </div>
@@ -724,18 +724,59 @@ function navigate(page) {
 }
 
 // ============================================================
+// CACHE (localStorage, TTL 1h)
+// ============================================================
+const CACHE_KEY = 'bipneus_cache';
+const CACHE_TTL = 60 * 60 * 1000; // 1 hora em ms
+
+function saveCache(data) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch(e) { /* sem espaço */ }
+}
+
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (Date.now() - obj.ts > CACHE_TTL) return null;
+    return obj;
+  } catch(e) { return null; }
+}
+
+function formatCacheTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ============================================================
 // LOAD DATA
 // ============================================================
-async function loadData() {
-  showLoading('Carregando veículos...');
+async function loadData(forceRefresh = false) {
   document.getElementById('btnRefresh').disabled = true;
 
   try {
-    // Se PROXY_URL não configurado, usa dados mock para demonstração
     if (PROXY_URL === 'SUA_URL_DO_APPS_SCRIPT_AQUI') {
       DATA = getMockData();
+      document.getElementById('lastUpdate').textContent = 'Dados de demonstração';
     } else {
-      setLoadingText('Buscando veículos...');
+      // Tenta usar cache
+      if (!forceRefresh) {
+        const cached = loadCache();
+        if (cached) {
+          DATA = cached.data;
+          document.getElementById('lastUpdate').textContent =
+            '📦 Cache: ' + formatCacheTime(cached.ts);
+          renderAll();
+          document.getElementById('btnRefresh').disabled = false;
+          return;
+        }
+      }
+
+      // Busca API
+      showLoading('Carregando dados da API...');
+      setLoadingText('Buscando veículos, pneus e inspeções...');
       const [v, t, i] = await Promise.all([
         fetchProxy('vehicles'),
         fetchProxy('tires'),
@@ -744,14 +785,27 @@ async function loadData() {
       DATA.vehicles    = v;
       DATA.tires       = t;
       DATA.inspections = i;
-    }
 
-    document.getElementById('lastUpdate').textContent =
-      'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+      saveCache(DATA);
+      document.getElementById('lastUpdate').textContent =
+        '🔄 Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+    }
 
     renderAll();
   } catch(e) {
     console.error(e);
+    // Se falhou mas há cache (mesmo expirado), usa
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const obj = JSON.parse(raw);
+        DATA = obj.data;
+        document.getElementById('lastUpdate').textContent =
+          '⚠️ Cache antigo: ' + formatCacheTime(obj.ts);
+        renderAll();
+        return;
+      }
+    } catch(_) {}
     alert('Erro ao carregar dados: ' + e.message);
   } finally {
     hideLoading();
