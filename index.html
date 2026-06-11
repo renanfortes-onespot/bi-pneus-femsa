@@ -68,8 +68,8 @@
   body.light-mode .adh-card,
   body.light-mode .adh-table-wrap {
     background: #FFFFFF;
-    border: 1px solid transparent;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    border: 1px solid rgba(0,0,0,0.07);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.16);
     color: #111;
   }
   body.light-mode .card-title,
@@ -530,10 +530,10 @@
   }
   .lg-item {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 10px; color: var(--text-muted); font-weight: 600;
+    font-size: 12px; color: var(--text-muted); font-weight: 600;
   }
   .lg-dot {
-    width: 9px; height: 9px; border-radius: 2px; display: inline-block;
+    width: 11px; height: 11px; border-radius: 2px; display: inline-block;
   }
 
   /* farol */
@@ -1536,7 +1536,7 @@ function renderMensalChart() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: 10, weight: '700' },
+            font: { family: 'Montserrat', size: 12, weight: '700' },
             formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
           }
         }
@@ -1561,7 +1561,7 @@ function renderMensalChart() {
       },
       scales: {
         x: {
-          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 11 } },
+          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } },
           grid: { display: false },
           border: { display: false }
         },
