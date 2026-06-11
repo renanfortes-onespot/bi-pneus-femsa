@@ -470,23 +470,24 @@
     font-size: 13px;
   }
 
-  .adh-table thead tr { background: var(--red); }
+  .adh-table thead tr { background: rgba(120,5,12,0.18); }
+  body.light-mode .adh-table thead tr { background: rgba(227,6,19,0.07); }
 
   .adh-table thead th {
     padding: 8px 18px; text-align: left;
     font-weight: 600; font-size: 11px;
-    color: #fff; white-space: nowrap;
+    color: var(--text-muted); white-space: nowrap;
     letter-spacing: 0.4px;
   }
   .adh-table thead th.col-dias { text-align: right; }
 
   .adh-table tbody tr {
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.02);
     transition: background 0.12s;
   }
-  body.light-mode .adh-table tbody tr { border-bottom-color: rgba(0,0,0,0.05); }
+  body.light-mode .adh-table tbody tr { border-bottom-color: rgba(0,0,0,0.03); }
   .adh-table tbody tr:last-child { border-bottom: none; }
-  .adh-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+  .adh-table tbody tr:hover { background: rgba(255,255,255,0.03); }
 
   .adh-table tbody td {
     padding: 9px 18px; white-space: nowrap;
