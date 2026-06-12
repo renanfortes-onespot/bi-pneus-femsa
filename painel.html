@@ -956,7 +956,7 @@
     text-align: center; margin-bottom: 14px;
   }
   .veh-vert-placa {
-    font-size: 22px; font-weight: 800; color: var(--red);
+    font-size: 22px; font-weight: 800; color: var(--text);
   }
   .veh-vert-info {
     font-size: 13px; color: var(--text-muted); margin-top: 4px;
@@ -1001,13 +1001,18 @@
   .tire-v .tv-mm     { font-size: 15px; font-weight: 800; margin: 2px 0; }
   .tire-v .tv-sub    { color: var(--text-muted); font-size: 11px; line-height: 1.4; }
 
+  .title-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block; margin-right: 9px;
+  }
+
   .sug-item {
     display: flex; gap: 10px; align-items: flex-start;
     padding: 12px 0; font-size: 13px; line-height: 1.6;
     border-bottom: 1px solid rgba(255,255,255,0.04);
   }
   .sug-item:last-child { border-bottom: none; }
-  .sug-icon { font-size: 16px; flex-shrink: 0; }
+  .sug-icon { display: none; }
   .sug-item b { font-weight: 700; }
   .sug-ganho { color: var(--green); font-weight: 700; }
 
@@ -1377,11 +1382,11 @@
       <!-- DUAS VISÕES LADO A LADO -->
       <div class="eixos-duplo">
         <div class="card">
-          <div class="card-title" style="color:var(--red-soft)">⚠ Pior Placa — Milimetragem</div>
+          <div class="card-title"><span class="title-dot" style="background:var(--red-soft)"></span>Pior Placa — Milimetragem</div>
           <div id="eixosPior"></div>
         </div>
         <div class="card">
-          <div class="card-title" style="color:var(--green)">✔ Como Fica Após o Plano</div>
+          <div class="card-title"><span class="title-dot" style="background:var(--green)"></span>Como Fica Após o Plano</div>
           <div id="eixosSugestao"></div>
         </div>
       </div>
@@ -2483,7 +2488,7 @@ function renderEixos() {
   elPior.innerHTML = renderVehVertical(pior.v, pneusPior, pior.mm);
   elSug.innerHTML  = res.plano
     ? renderVehVertical(pior.v, res.plano.conjunto, res.plano.mmNova)
-    : '<div class="empty">✅ Sem necessidade de remontagem — siga as sugestões pontuais abaixo</div>';
+    : '<div class="empty">Sem necessidade de remontagem — siga as sugestões pontuais abaixo</div>';
   elTxt.innerHTML  = res.html;
 
   // Placas compatíveis: mesmo tipo, pneus bons (melhor MM) e marcas em comum
@@ -2824,7 +2829,7 @@ function gerarSugestoes(pior, pneusPior, par) {
 
   const html = sugestoes.length
     ? sugestoes.join('')
-    : '<div class="empty">✅ Nenhuma ação recomendada — eixos equilibrados em sulco, marca e geminados</div>';
+    : '<div class="empty">Nenhuma ação recomendada — eixos equilibrados em sulco, marca e geminados</div>';
 
   return { html, plano };
 }
