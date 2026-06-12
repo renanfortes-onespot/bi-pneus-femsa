@@ -2524,16 +2524,30 @@ function gerarSugestoes(pior, pneusPior, par) {
       </span></div>`);
   });
 
-  // ---- 1. RECAPAGEM DE CONJUNTO ----
-  const naFaixaRecape = pneusPior.filter(t => t.menorMM > 0 && t.menorMM <= 3);
-  if (naFaixaRecape.length >= 4) {
+  // ---- 1. PULL POINT E RECAPAGEM DE CONJUNTO ----
+  // Engenharia: o ponto ideal de retirada (pull point) é entre 3 e 4 mm — abaixo de 3 mm
+  // a carcaça começa a sofrer perfurações que comprometem a recapabilidade (Goodyear/recapadoras).
+  const naJanelaRecape = pneusPior.filter(t => t.menorMM > 0 && t.menorMM <= 4);
+  const abaixoJanela   = naJanelaRecape.filter(t => t.menorMM < 3);
+  if (naJanelaRecape.length >= 4) {
     sugestoes.push(`
       <div class="sug-item"><span class="sug-icon">🏭</span><span>
-        <b>Recapagem de conjunto na ${placa}:</b> <b>${naFaixaRecape.length} pneus</b> já estão na faixa de
-        recapagem (≤ 3 mm). Recapar o conjunto de uma vez padroniza diâmetro e banda — ao retornar,
-        montar os <b>recapados na tração</b> e mover os melhores pneus atuais para o <b>direcional</b>.
-        Geminados de mesmo diâmetro reduzem arraste e desgaste irregular.
+        <b>Recapagem de conjunto na ${placa}:</b> <b>${naJanelaRecape.length} pneus</b> estão na janela
+        ideal de recape (3–4 mm de sulco)${abaixoJanela.length ? `, sendo <b>${abaixoJanela.length} já abaixo de 3 mm</b> — cada km rodado agora expõe a carcaça a perfurações que podem inviabilizar a recapagem (perda do ativo)` : ''}.
+        Recapar o conjunto de uma vez padroniza diâmetro e banda; ao retornar, montar os
+        <b>recapados na tração</b> e os melhores pneus novos no <b>direcional</b>.
       </span></div>`);
+  } else {
+    // Pull point individual: pneus já abaixo de 3mm rodando = risco à carcaça
+    abaixoJanela.forEach(t => {
+      sugestoes.push(`
+        <div class="sug-item"><span class="sug-icon">🏭</span><span>
+          <b>Pull point passado — ${placa}:</b> o pneu <b>${t.serial}</b> (${fmt(t.menorMM)} mm, ${pos(t)})
+          já está abaixo do ponto ideal de retirada (3–4 mm). Enviar para recape o quanto antes:
+          abaixo de 3 mm a banda deixa de proteger a carcaça e o risco de perder a recapabilidade
+          (e o valor residual do pneu) cresce a cada km.
+        </span></div>`);
+    });
   }
 
   // ---- 2. DIRECIONAL: melhores sulcos e SOMENTE pneu novo (V1) ----
@@ -2568,9 +2582,10 @@ function gerarSugestoes(pior, pneusPior, par) {
           <div class="sug-item"><span class="sug-icon">⚠️</span><span>
             <b>Geminados desparelhados no ${e.label} da ${placa}:</b> <b>${a.serial}</b> (${fmt(a.menorMM)} mm)
             e <b>${b.serial}</b> (${fmt(b.menorMM)} mm) rodam juntos com
-            <b>${fmt(Math.abs(a.menorMM - b.menorMM))} mm</b> de diferença de sulco — o pneu maior arrasta
-            o menor e sobrecarrega o eixo. Parear geminados com sulcos o mais próximos possível
-            (acima de 3 mm de diferença o prejuízo quilométrico é comprovado).
+            <b>${fmt(Math.abs(a.menorMM - b.menorMM))} mm</b> de diferença de sulco.
+            Engenharia (RMA): o limite para geminados é ~3,2 mm de sulco (¼" de diâmetro) — acima disso
+            o pneu maior assume <b>~270 kg a mais de carga</b>, o menor é arrastado ("morte por scrubbing"),
+            e o conjunto perde <b>5 a 20% da vida útil</b>. Reparear pelos sulcos mais próximos.
           </span></div>`);
       }
 
@@ -2600,9 +2615,9 @@ function gerarSugestoes(pior, pneusPior, par) {
         <div class="sug-item"><span class="sug-icon">✖️</span><span>
           <b>Rodízio em X entre eixos da ${placa}:</b> o ${maisGasto.label} está com média
           <b>${fmt(Math.min(m2, m3))} mm</b> contra <b>${fmt(Math.max(m2, m3))} mm</b> do ${menosGasto.label}.
-          Fazer o rodízio em <b>padrão X</b> (cruzando lados entre os dois eixos) — é o padrão recomendado
-          para conjuntos de tração dupla e deve entrar na rotina a cada ~10 mil km, junto com alinhamento
-          e balanceamento.
+          Norma de engenharia (RMA) para tandem de tração: a diferença média de diâmetro entre os dois
+          eixos não deve passar de ¼" (~3 mm de sulco). Fazer o rodízio em <b>padrão X</b> (cruzando lados
+          entre os dois eixos), na rotina de ~10 mil km junto com alinhamento e balanceamento.
         </span></div>`);
     }
   }
