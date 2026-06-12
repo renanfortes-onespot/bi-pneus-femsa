@@ -2538,14 +2538,43 @@ function gerarSugestoes(pior, pneusPior, par) {
         <b>recapados na tração</b> e os melhores pneus novos no <b>direcional</b>.
       </span></div>`);
   } else {
-    // Pull point individual: pneus já abaixo de 3mm rodando = risco à carcaça
+    // Pull point individual — mas NUNCA recapar 1 pneu isolado de um geminado:
+    // a banda nova volta com ~13-15mm e desparelharia com o par gasto (mismatch >> 3,2mm).
+    // Regra: avaliar o par geminado e o eixo inteiro.
     abaixoJanela.forEach(t => {
+      // localiza o eixo e o par geminado do pneu
+      const eixoDoPneu = eixos.find(e => e.posicoes.includes(t.posicao));
+      let parceiro = null;
+      if (eixoDoPneu && eixoDoPneu.posicoes.length === 4) {
+        const pares = [[eixoDoPneu.posicoes[0], eixoDoPneu.posicoes[1]], [eixoDoPneu.posicoes[2], eixoDoPneu.posicoes[3]]];
+        const par = pares.find(p => p.includes(t.posicao));
+        const posParceiro = par ? par.find(p => p !== t.posicao) : null;
+        parceiro = posParceiro ? mapa[posParceiro] : null;
+      }
+
+      const eixoPneus = (eixoDoPneu?.pneus || []).filter(x => x.menorMM > 0);
+      const eixoMedia = eixoPneus.length ? eixoPneus.reduce((s, x) => s + x.menorMM, 0) / eixoPneus.length : null;
+      const eixoTodoGasto = eixoMedia !== null && eixoMedia <= 5;
+
+      let recomendacao;
+      if (eixoTodoGasto && eixoPneus.length >= 2) {
+        recomendacao = `O ${eixoDoPneu.label} inteiro está gasto (média ${fmt(eixoMedia)} mm) —
+          <b>recapar o eixo completo de uma vez</b>: um recapado novo (~14 mm) ao lado de pneus com
+          ${fmt(eixoMedia)} mm criaria mismatch muito acima do limite de 3,2 mm. Recapando o conjunto,
+          os diâmetros voltam casados e a banda é padronizada.`;
+      } else if (parceiro && parceiro.menorMM > 0) {
+        recomendacao = `<b>Recapar junto com o geminado ${parceiro.serial}</b> (${fmt(parceiro.menorMM)} mm):
+          a banda nova volta com ~14 mm e, sozinha, desparelharia o par (mismatch de
+          ~${fmt(14 - parceiro.menorMM)} mm — o limite é 3,2 mm).`;
+      } else {
+        recomendacao = `Enviar para recape o quanto antes.`;
+      }
+
       sugestoes.push(`
         <div class="sug-item"><span class="sug-icon">🏭</span><span>
           <b>Pull point passado — ${placa}:</b> o pneu <b>${t.serial}</b> (${fmt(t.menorMM)} mm, ${pos(t)})
-          já está abaixo do ponto ideal de retirada (3–4 mm). Enviar para recape o quanto antes:
-          abaixo de 3 mm a banda deixa de proteger a carcaça e o risco de perder a recapabilidade
-          (e o valor residual do pneu) cresce a cada km.
+          já está abaixo do ponto ideal de retirada (3–4 mm) — abaixo de 3 mm a banda deixa de proteger
+          a carcaça e o risco de perder a recapabilidade cresce a cada km. ${recomendacao}
         </span></div>`);
     });
   }
