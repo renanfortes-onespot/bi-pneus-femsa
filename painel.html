@@ -937,6 +937,78 @@
   body.light-mode .chip { background: rgba(0,0,0,0.04); color: #555; }
   body.light-mode .chip.active { background: rgba(227,6,19,0.10); color: var(--red); }
 
+  /* ===== VISÃO DE EIXOS — VERTICAL ===== */
+  .eixos-duplo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .eixos-duplo { grid-template-columns: 1fr; } }
+
+  .veh-vert {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+  }
+
+  .veh-vert-head {
+    text-align: center; margin-bottom: 14px;
+  }
+  .veh-vert-placa {
+    font-size: 20px; font-weight: 800; color: var(--red);
+  }
+  .veh-vert-info {
+    font-size: 11px; color: var(--text-muted); margin-top: 4px;
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  }
+  .veh-vert-info strong { color: var(--text); }
+  .veh-vert-score {
+    font-size: 12px; font-weight: 700; margin-top: 6px;
+  }
+
+  .axle-v {
+    display: flex; align-items: center; gap: 10px;
+    justify-content: center;
+  }
+
+  .axle-v-label {
+    font-size: 9px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    text-align: center; margin: 10px 0 4px;
+  }
+
+  .axle-bar {
+    width: 44px; height: 5px;
+    background: var(--border); border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .axle-side-v { display: flex; gap: 4px; }
+
+  .tire-v {
+    width: 92px; background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 7px 8px;
+    font-size: 10px;
+  }
+  .tire-v.bom      { border-color: var(--green); }
+  .tire-v.regular  { border-color: var(--yellow); }
+  .tire-v.recapar  { border-color: var(--orange); }
+  .tire-v.bloquear { border-color: var(--red-soft); }
+  .tire-v .tv-pos    { font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
+  .tire-v .tv-serial { font-weight: 700; font-size: 11px; }
+  .tire-v .tv-mm     { font-size: 13px; font-weight: 800; margin: 2px 0; }
+  .tire-v .tv-sub    { color: var(--text-muted); font-size: 9px; line-height: 1.4; }
+
+  .sug-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 12px 0; font-size: 13px; line-height: 1.6;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .sug-item:last-child { border-bottom: none; }
+  .sug-icon { font-size: 16px; flex-shrink: 0; }
+  .sug-item b { font-weight: 700; }
+  .sug-ganho { color: var(--green); font-weight: 700; }
+
   .drill-select {
     background: rgba(255,255,255,0.04);
     border: 1px solid var(--red);
@@ -1293,23 +1365,30 @@
 
     <!-- ========== VISÃO DE EIXOS ========== -->
     <div class="page" id="page-eixos">
-      <div class="eixo-filter">
-        <select id="filterVeiculo" onchange="renderEixos()">
-          <option value="">Todos os veículos</option>
-        </select>
-        <select id="filterTipoVeiculo" onchange="renderEixos()">
-          <option value="">Todos os tipos</option>
-        </select>
-        <input class="search-box" type="text" placeholder="Buscar placa ou frota..."
-          id="searchVeiculo" oninput="renderEixos()" style="width:200px">
+      <div class="chart-legend" style="margin-bottom:16px">
+        <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> Bom Estado</span>
+        <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> Regular</span>
+        <span class="lg-item"><span class="lg-dot" style="background:var(--orange)"></span> Recapar</span>
+        <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> Bloquear</span>
       </div>
-      <div class="tooltip-info">
-        💡 Cores: <span style="color:var(--green)">■ Bom Estado</span> &nbsp;
-        <span style="color:var(--yellow)">■ Regular</span> &nbsp;
-        <span style="color:var(--orange)">■ Recapar</span> &nbsp;
-        <span style="color:var(--red)">■ Bloquear</span>
+
+      <!-- DUAS VISÕES LADO A LADO -->
+      <div class="eixos-duplo">
+        <div class="card">
+          <div class="card-title" style="color:var(--red-soft)">⚠ Pior Placa — Milimetragem</div>
+          <div id="eixosPior"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="color:var(--green)">↔ Sugestão de Rodízio — Placa Compatível</div>
+          <div id="eixosSugestao"></div>
+        </div>
       </div>
-      <div id="eixosContainer"></div>
+
+      <!-- SUGESTÕES -->
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">Sugestões de Rodízio</div>
+        <div id="eixosTexto"></div>
+      </div>
     </div>
 
   </div><!-- /content -->
@@ -2338,54 +2417,171 @@ function filtrarPressao() {
 // ============================================================
 // EIXOS
 // ============================================================
-function renderEixosFilters() {
-  const sel = document.getElementById('filterVeiculo');
-  const selTipo = document.getElementById('filterTipoVeiculo');
-
-  DATA.vehicles.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v.id; opt.textContent = `${v.placa} — ${v.frota}`;
-    sel.appendChild(opt);
-  });
-
-  const tipos = [...new Set(DATA.vehicles.map(v => v.tipo))].sort();
-  tipos.forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t; opt.textContent = t;
-    selTipo.appendChild(opt);
-  });
-}
+function renderEixosFilters() { /* obsoleto — filtros globais na topbar */ }
 
 function renderEixos() {
-  const veiculoId = document.getElementById('filterVeiculo').value;
-  const tipo      = document.getElementById('filterTipoVeiculo').value;
-  const q         = (document.getElementById('searchVeiculo').value || '').toLowerCase();
+  const elPior = document.getElementById('eixosPior');
+  const elSug  = document.getElementById('eixosSugestao');
+  const elTxt  = document.getElementById('eixosTexto');
+  if (!elPior) return;
 
-  let veiculos = getFilteredVehicles().filter(v => {
-    if (veiculoId && v.id != veiculoId) return false;
-    if (tipo && v.tipo !== tipo) return false;
-    if (q && !v.placa.toLowerCase().includes(q) && !v.frota.toLowerCase().includes(q)) return false;
-    return true;
+  const vehicles = getFilteredVehicles();
+
+  // Pneus instalados por veículo
+  const pneusPorVeiculo = {};
+  DATA.tires.filter(t => t.status === 'INSTALLED').forEach(t => {
+    if (!pneusPorVeiculo[t.veiculoId]) pneusPorVeiculo[t.veiculoId] = [];
+    pneusPorVeiculo[t.veiculoId].push(t);
   });
 
-  const container = document.getElementById('eixosContainer');
+  const media = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+  const mmMedia = v => {
+    const ps = (pneusPorVeiculo[v.id] || []).filter(t => t.menorMM > 0);
+    return ps.length ? media(ps.map(t => t.menorMM)) : null;
+  };
 
-  if (veiculos.length === 0) {
-    container.innerHTML = '<div class="empty">Nenhum veículo encontrado</div>';
+  // Pior placa por MM (já respeitando filtros globais)
+  const comPneus = vehicles
+    .map(v => ({ v, mm: mmMedia(v) }))
+    .filter(x => x.mm !== null)
+    .sort((a, b) => a.mm - b.mm);
+
+  if (!comPneus.length) {
+    elPior.innerHTML = elSug.innerHTML = '<div class="empty">Sem dados de pneus</div>';
+    elTxt.innerHTML = '';
     return;
   }
 
-  // Mapa pneus por veículo
-  const pneusPorVeiculo = {};
-  DATA.tires.filter(t => t.status === 'INSTALLED').forEach(t => {
-    if (!pneusPorVeiculo[t.veiculoId]) pneusPorVeiculo[t.veiculoId] = {};
-    pneusPorVeiculo[t.veiculoId][t.posicao] = t;
+  const pior      = comPneus[0];
+  const pneusPior = pneusPorVeiculo[pior.v.id] || [];
+  const marcasPior = new Set(pneusPior.map(t => t.marca).filter(Boolean));
+
+  // Candidato: mesmo tipo, marcas compatíveis, melhor MM (busca em toda a frota, não só filtrados)
+  const candidatos = DATA.vehicles
+    .filter(v => v.id !== pior.v.id && v.tipo === pior.v.tipo)
+    .map(v => {
+      const ps = pneusPorVeiculo[v.id] || [];
+      const mm = ps.filter(t => t.menorMM > 0).length ? media(ps.filter(t => t.menorMM > 0).map(t => t.menorMM)) : null;
+      const marcasComuns = ps.filter(t => marcasPior.has(t.marca)).length;
+      return { v, mm, marcasComuns, pneus: ps };
+    })
+    .filter(c => c.mm !== null)
+    .sort((a, b) => (b.marcasComuns - a.marcasComuns) || (b.mm - a.mm));
+
+  const par = candidatos[0] || null;
+
+  elPior.innerHTML = renderVehVertical(pior.v, pneusPior, pior.mm);
+  elSug.innerHTML  = par
+    ? renderVehVertical(par.v, par.pneus, par.mm)
+    : '<div class="empty">Nenhuma placa compatível do mesmo tipo</div>';
+
+  // ---- SUGESTÕES ----
+  const sugestoes = [];
+
+  // 1. Rodízio entre placas: pneus piores da pior placa × melhores do par (mesma marca)
+  if (par) {
+    const pioresPneus = [...pneusPior].filter(t => t.menorMM > 0).sort((a, b) => a.menorMM - b.menorMM);
+    const melhoresPar = [...par.pneus].filter(t => t.menorMM > 0).sort((a, b) => b.menorMM - a.menorMM);
+    const usados = new Set();
+    pioresPneus.slice(0, 3).forEach(pw => {
+      const match = melhoresPar.find(pb =>
+        !usados.has(pb.serial) && pb.marca === pw.marca && (pb.menorMM - pw.menorMM) > 2
+      );
+      if (match) {
+        usados.add(match.serial);
+        sugestoes.push(`
+          <div class="sug-item"><span class="sug-icon">↔</span><span>
+            <b>Rodízio entre placas:</b> trocar o pneu <b>${pw.serial}</b>
+            (${fmt(pw.menorMM)} mm, ${pw.marca}, ${pw.nomePosicao || pw.posicao}) da <b>${pior.v.placa}</b>
+            pelo <b>${match.serial}</b> (${fmt(match.menorMM)} mm, ${match.marca}, ${match.nomePosicao || match.posicao}) da <b>${par.v.placa}</b>
+            — <span class="sug-ganho">ganho de ${fmt(match.menorMM - pw.menorMM)} mm</span> na posição crítica.
+          </span></div>`);
+      }
+    });
+  }
+
+  // 2. Rodízio interno na pior placa
+  const ordInt = [...pneusPior].filter(t => t.menorMM > 0).sort((a, b) => a.menorMM - b.menorMM);
+  if (ordInt.length >= 2) {
+    const piorP = ordInt[0], melhorP = ordInt[ordInt.length - 1];
+    if (melhorP.menorMM - piorP.menorMM > 3 && piorP.direcional && !melhorP.direcional) {
+      sugestoes.push(`
+        <div class="sug-item"><span class="sug-icon">🔄</span><span>
+          <b>Rodízio interno na ${pior.v.placa}:</b> o pneu <b>${piorP.serial}</b>
+          (${fmt(piorP.menorMM)} mm) está no <b>eixo direcional</b> — trocar com o
+          <b>${melhorP.serial}</b> (${fmt(melhorP.menorMM)} mm, ${melhorP.nomePosicao || melhorP.posicao}):
+          o direcional deve ter os melhores sulcos por segurança.
+        </span></div>`);
+    } else if (melhorP.menorMM - piorP.menorMM > 3) {
+      sugestoes.push(`
+        <div class="sug-item"><span class="sug-icon">🔄</span><span>
+          <b>Rodízio interno na ${pior.v.placa}:</b> diferença de
+          <b>${fmt(melhorP.menorMM - piorP.menorMM)} mm</b> entre o pneu <b>${piorP.serial}</b>
+          (${fmt(piorP.menorMM)} mm, ${piorP.nomePosicao || piorP.posicao}) e o <b>${melhorP.serial}</b>
+          (${fmt(melhorP.menorMM)} mm, ${melhorP.nomePosicao || melhorP.posicao}) — equalizar o desgaste com rodízio.
+        </span></div>`);
+    }
+  }
+
+  // 3. Alertas de bloqueio
+  pneusPior.filter(t => t.statusMM === 'Bloquear').forEach(t => {
+    sugestoes.push(`
+      <div class="sug-item"><span class="sug-icon">⛔</span><span>
+        <b>Bloquear:</b> o pneu <b>${t.serial}</b> (${fmt(t.menorMM)} mm, ${t.nomePosicao || t.posicao})
+        da <b>${pior.v.placa}</b> está abaixo de 2 mm — retirar de circulação imediatamente.
+      </span></div>`);
   });
 
-  container.innerHTML = veiculos.map(v => {
-    const pneus = pneusPorVeiculo[v.id] || {};
-    return renderVehicleCard(v, pneus);
-  }).join('');
+  elTxt.innerHTML = sugestoes.length
+    ? sugestoes.join('')
+    : '<div class="empty">✅ Nenhuma ação recomendada — milimetragens equilibradas</div>';
+}
+
+function renderVehVertical(v, pneusArr, mmMed) {
+  const pneus = {};
+  pneusArr.forEach(t => { pneus[t.posicao] = t; });
+
+  const eixosConfig = getEixosConfig(v.tipo, v.pneusEsperados);
+  const corMed = mmMed > 6 ? 'var(--green)' : mmMed > 3 ? 'var(--yellow)' : 'var(--red-soft)';
+
+  const tireBox = pos => {
+    const t = pneus[pos];
+    if (!t) return `<div class="tire-v"><div class="tv-pos">${pos}</div><div class="tv-sub" style="margin-top:6px">Vazio</div></div>`;
+    const cls = { 'Bloquear': 'bloquear', 'Recapar': 'recapar', 'Regular': 'regular', 'Bom Estado': 'bom' }[t.statusMM] || '';
+    return `
+      <div class="tire-v ${cls}">
+        <div class="tv-pos">${t.nomePosicao || pos}</div>
+        <div class="tv-serial">${t.serial}</div>
+        <div class="tv-mm" style="color:${corMM(t.statusMM)}">${fmt(t.menorMM)} mm</div>
+        <div class="tv-sub">${t.marca}${t.banda ? ' · ' + t.banda : ''} · V${t.cicloVida}</div>
+      </div>`;
+  };
+
+  return `
+    <div class="veh-vert">
+      <div class="veh-vert-head">
+        <div class="veh-vert-placa">${v.placa}</div>
+        <div class="veh-vert-info">
+          <span>Frota: <strong>${v.frota}</strong></span>
+          <span>Tipo: <strong>${v.tipo}</strong></span>
+          <span>${v.marca} ${v.modelo}</span>
+        </div>
+        <div class="veh-vert-score" style="color:${corMed}">MM média: ${fmt(mmMed)} mm</div>
+      </div>
+      ${eixosConfig.map(eixo => {
+        const dir = eixo.posicoes.filter(p => p.toString()[1] === '1');
+        const esq = eixo.posicoes.filter(p => p.toString()[1] === '2');
+        return `
+          <div>
+            <div class="axle-v-label">${eixo.label}</div>
+            <div class="axle-v">
+              <div class="axle-side-v">${esq.map(tireBox).join('')}</div>
+              <div class="axle-bar"></div>
+              <div class="axle-side-v">${dir.map(tireBox).join('')}</div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
 }
 
 function renderVehicleCard(v, pneus) {
