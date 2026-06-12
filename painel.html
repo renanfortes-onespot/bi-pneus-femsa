@@ -2709,9 +2709,15 @@ function renderPressaoMensalCharts() {
     v => v.toFixed(1).replace('.', ',') + '%', 'Calibragem OK');
 
   // Alta e Baixa Pressão Mensal (#): duas linhas com marcadores
+  // (mês filtrado em destaque, demais esmaecidos — como nas barras)
   const altaVals  = porMes.map(x => x === null ? null : x.alta);
   const baixaVals = porMes.map(x => x === null ? null : x.baixa);
-  const corAlta   = isLight ? '#FF0000' : '#FF6666';
+  const hlArr     = meses.map(m => hlMes(m));
+  const rgbAlta   = isLight ? '255,0,0' : '255,102,102';
+  const rgbBaixa  = '56,189,248';
+  const corPt  = (rgbStr, i) => `rgba(${rgbStr},${hlArr[i] ? 1 : 0.18})`;
+  const corSeg = rgbStr => ctx =>
+    `rgba(${rgbStr},${hlArr[ctx.p0DataIndex] && hlArr[ctx.p1DataIndex] ? 0.9 : 0.15})`;
 
   destroyChart('chartDesvioMensal');
   charts['chartDesvioMensal'] = new Chart(document.getElementById('chartDesvioMensal'), {
@@ -2720,26 +2726,30 @@ function renderPressaoMensalCharts() {
       datasets: [
         {
           type: 'line', label: '# Alta Pressão', data: altaVals,
-          borderColor: corAlta, borderWidth: 2,
-          pointBackgroundColor: corAlta, pointBorderColor: corAlta,
+          borderColor: `rgba(${rgbAlta},0.9)`, borderWidth: 2,
+          segment: { borderColor: corSeg(rgbAlta) },
+          pointBackgroundColor: meses.map((m, i) => corPt(rgbAlta, i)),
+          pointBorderColor: meses.map((m, i) => corPt(rgbAlta, i)),
           pointRadius: 4, tension: 0.35, spanGaps: false,
           datalabels: {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'top', offset: 4,
-            color: corAlta,
+            color: ctx => corPt(rgbAlta, ctx.dataIndex),
             font: { family: 'Montserrat', size: 12, weight: '700' },
             formatter: v => v === null ? '' : v
           }
         },
         {
           type: 'line', label: '# Baixa Pressão', data: baixaVals,
-          borderColor: '#38BDF8', borderWidth: 2,
-          pointBackgroundColor: '#38BDF8', pointBorderColor: '#38BDF8',
+          borderColor: `rgba(${rgbBaixa},0.9)`, borderWidth: 2,
+          segment: { borderColor: corSeg(rgbBaixa) },
+          pointBackgroundColor: meses.map((m, i) => corPt(rgbBaixa, i)),
+          pointBorderColor: meses.map((m, i) => corPt(rgbBaixa, i)),
           pointRadius: 4, tension: 0.35, spanGaps: false,
           datalabels: {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'bottom', offset: 4,
-            color: '#38BDF8',
+            color: ctx => corPt(rgbBaixa, ctx.dataIndex),
             font: { family: 'Montserrat', size: 12, weight: '700' },
             formatter: v => v === null ? '' : v
           }
