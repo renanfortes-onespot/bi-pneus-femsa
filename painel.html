@@ -1315,9 +1315,10 @@
 
 <script>
 // ============================================================
-// CONFIG
+// CONFIG — Supabase (dados carregados pelo loader 1x/hora)
 // ============================================================
-const PROXY_URL = 'https://script.google.com/macros/s/AKfycbyf4YINsNjg8TirI-uZo_C0KnEsABz2TDGiJ4ehG69asqYogzbdMyvzGNCGfDUnqzi-/exec';
+const SUPABASE_URL = 'https://qqcnavptvfcthuidzipj.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_6GvYIjIoAYQSzFaWTiSptQ_VP8ravoC';
 
 // ============================================================
 // STATE
@@ -1531,40 +1532,23 @@ async function loadData(forceRefresh = false) {
   document.getElementById('btnRefresh').disabled = true;
 
   try {
-    if (PROXY_URL === 'SUA_URL_DO_APPS_SCRIPT_AQUI') {
-      DATA = getMockData();
-      document.getElementById('lastUpdate').textContent = 'Dados de demonstração';
-    } else {
-      // Tenta usar cache
-      if (!forceRefresh) {
-        const cached = loadCache();
-        if (cached) {
-          DATA = cached.data;
-          document.getElementById('lastUpdate').textContent =
-            '📦 Cache: ' + formatCacheTime(cached.ts);
-          populateFilters();
-          renderAll();
-          document.getElementById('btnRefresh').disabled = false;
-          return;
-        }
-      }
+    showLoading('Carregando dados...');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/snapshot?select=endpoint,data,updated_at`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    });
+    if (!res.ok) throw new Error(`Supabase ${res.status}`);
+    const rows = await res.json();
+    if (!rows.length) throw new Error('Sem dados no Supabase — aguarde a primeira carga do loader');
 
-      // Busca API
-      showLoading('Carregando dados da API...');
-      setLoadingText('Buscando veículos, pneus e inspeções...');
-      const [v, t, i] = await Promise.all([
-        fetchProxy('vehicles'),
-        fetchProxy('tires'),
-        fetchProxy('inspections')
-      ]);
-      DATA.vehicles    = v;
-      DATA.tires       = t;
-      DATA.inspections = i;
+    rows.forEach(r => { DATA[r.endpoint] = r.data; });
+    DATA.vehicles    = DATA.vehicles    || [];
+    DATA.tires       = DATA.tires       || [];
+    DATA.inspections = DATA.inspections || [];
 
-      saveCache(DATA);
-      document.getElementById('lastUpdate').textContent =
-        '🔄 Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
-    }
+    saveCache(DATA);
+    const ult = rows.map(r => new Date(r.updated_at)).sort((a, b) => b - a)[0];
+    document.getElementById('lastUpdate').textContent =
+      '🔄 Dados de: ' + formatCacheTime(ult.getTime());
 
     populateFilters();
     renderAll();
@@ -1576,7 +1560,7 @@ async function loadData(forceRefresh = false) {
         const obj = JSON.parse(raw);
         DATA = obj.data;
         document.getElementById('lastUpdate').textContent =
-          '⚠️ Cache antigo: ' + formatCacheTime(obj.ts);
+          '⚠️ Cache local: ' + formatCacheTime(obj.ts);
         populateFilters();
         renderAll();
         return;
@@ -1587,12 +1571,6 @@ async function loadData(forceRefresh = false) {
     hideLoading();
     document.getElementById('btnRefresh').disabled = false;
   }
-}
-
-async function fetchProxy(endpoint) {
-  const res = await fetch(`${PROXY_URL}?endpoint=${endpoint}`);
-  if (!res.ok) throw new Error(`Erro ${res.status} em ${endpoint}`);
-  return res.json();
 }
 
 // ============================================================
