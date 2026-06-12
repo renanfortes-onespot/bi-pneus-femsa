@@ -1254,6 +1254,7 @@
             <th>Recapes</th>
             <th>Amplitude</th>
             <th>Calibragem</th>
+            <th>Deflator</th>
             <th class="col-dias">Pontuação ↑</th>
           </tr></thead>
           <tbody id="tbodySaudeRanking"></tbody>
@@ -1993,7 +1994,8 @@ function renderSaude() {
     const comP    = pneus.filter(t => t.pressaoIdeal > 0);
     const calibP  = comP.length ? (comP.filter(t => !t.pressaoNOK).length / comP.length * 100) : null;
     const sub     = drill === 'pneu' ? (pneus[0].placa || 'estoque') : '';
-    return { chave, sub, qtd: pneus.length, score: sc, mm: mmM, idade: idadesP.length ? media(idadesP) : null, recapes: recM, amp: ampM, calib: calibP };
+    const nDef    = pneus.filter(t => t.direcional && t.cicloVida > 1).length;
+    return { chave, sub, qtd: pneus.length, score: sc, mm: mmM, idade: idadesP.length ? media(idadesP) : null, recapes: recM, amp: ampM, calib: calibP, nDef };
   }).filter(r => r.score !== null)
     .sort((a, b) => a.score - b.score); // pior primeiro
 
@@ -2007,6 +2009,9 @@ function renderSaude() {
       <td>${fmtBR(r.recapes, 2)}</td>
       <td>${fmtBR(r.amp)} mm</td>
       <td>${r.calib !== null ? fmtBR(r.calib) + '%' : '—'}</td>
+      <td>${r.nDef > 0
+        ? `<span style="color:var(--red-soft);font-weight:700">${drill === 'pneu' ? '×0,5' : `×0,5 (${r.nDef} pneu${r.nDef > 1 ? 's' : ''})`}</span>`
+        : '<span style="color:var(--text-muted)">—</span>'}</td>
       <td style="text-align:right">
         <span class="td-dias" style="color:${scoreCluster(r.score)}">${fmtBR(r.score, 1)}</span>
       </td>
