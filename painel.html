@@ -2537,11 +2537,26 @@ function gerarSugestoes(pior, pneusPior, par) {
         Recapar o conjunto de uma vez padroniza diâmetro e banda; ao retornar, montar os
         <b>recapados na tração</b> e os melhores pneus novos no <b>direcional</b>.
       </span></div>`);
-  } else {
+  }
+
+  // Plano de remontagem: eixo de tração gasto (média ≤5mm) com pneu crítico (<3mm)
+  // → recapar o eixo inteiro, recapados vão para a TRAÇÃO, pneus da tração vão para o eixo gasto
+  const eixoGasto = tracaoEixos.find(e => {
+    const ps = e.pneus.filter(x => x.menorMM > 0);
+    if (ps.length < 2) return false;
+    const med = ps.reduce((s, x) => s + x.menorMM, 0) / ps.length;
+    return med <= 5 && ps.some(x => x.menorMM < 3);
+  });
+  const eixoDestino = eixoGasto ? tracaoEixos.find(e => e !== eixoGasto) : null;
+  const planoAtivo = !!(eixoGasto && eixoDestino && eixoDestino.pneus.length >= 2);
+
+  if (naJanelaRecape.length < 4) {
     // Pull point individual — mas NUNCA recapar 1 pneu isolado de um geminado:
     // a banda nova volta com ~13-15mm e desparelharia com o par gasto (mismatch >> 3,2mm).
     // Regra: avaliar o par geminado e o eixo inteiro.
     abaixoJanela.forEach(t => {
+      // coberto pelo plano completo (item 6)? não duplica
+      if (planoAtivo && eixoGasto.posicoes.includes(t.posicao)) return;
       // localiza o eixo e o par geminado do pneu
       const eixoDoPneu = eixos.find(e => e.posicoes.includes(t.posicao));
       let parceiro = null;
@@ -2660,7 +2675,7 @@ function gerarSugestoes(pior, pneusPior, par) {
     return amp > 3 || marcas.size > 1;
   });
 
-  if (eixosProblema.length && tracaoPneus.length >= 4) {
+  if (eixosProblema.length && tracaoPneus.length >= 4 && !planoAtivo) {
     // Proposta: agrupar por marca e, dentro do eixo, parear sulcos próximos
     const porMarca = {};
     tracaoPneus.forEach(t => { (porMarca[t.marca] = porMarca[t.marca] || []).push(t); });
@@ -2719,6 +2734,69 @@ function gerarSugestoes(pior, pneusPior, par) {
           </span></div>`);
       }
     });
+  }
+
+  // ---- 6. PLANO COMPLETO: recapar eixo gasto + remontagem (com mapa proposto) ----
+  if (planoAtivo) {
+    const MM_RECAPE = 14;
+
+    // Recapados (eixo gasto) vão para o eixo de tração
+    const recapados = eixoGasto.pneus.map((t, i) => ({
+      ...t,
+      posicao: eixoDestino.posicoes[i],
+      nomePosicao: (mapa[eixoDestino.posicoes[i]] || {}).nomePosicao || eixoDestino.posicoes[i],
+      menorMM: MM_RECAPE,
+      statusMM: 'Bom Estado',
+      cicloVida: t.cicloVida + 1,
+      banda: 'Recape novo'
+    }));
+
+    // Pneus atuais da tração vão para o eixo gasto:
+    // marca de maior sulco médio = EXTERNOS, a outra = INTERNOS (mismatch mínimo por geminado)
+    const posExt = eixoGasto.posicoes.filter(p => String(p).slice(-1) === '1');
+    const posInt = eixoGasto.posicoes.filter(p => String(p).slice(-1) === '2');
+    const movidos = [...eixoDestino.pneus];
+
+    const marcas = [...new Set(movidos.map(t => t.marca))];
+    let exts, ints;
+    if (marcas.length === 2) {
+      const grupos = marcas.map(m => {
+        const g = movidos.filter(t => t.marca === m).sort((a, b) => b.menorMM - a.menorMM);
+        return { marca: m, pneus: g, med: g.reduce((s, t) => s + t.menorMM, 0) / g.length };
+      }).sort((a, b) => b.med - a.med);
+      exts = grupos[0].pneus; ints = grupos[1].pneus;
+    } else {
+      const ord = [...movidos].sort((a, b) => b.menorMM - a.menorMM);
+      exts = ord.slice(0, posExt.length);
+      ints = ord.slice(posExt.length);
+    }
+
+    const remontados = [
+      ...exts.map((t, i) => ({ ...t, posicao: posExt[i], nomePosicao: (mapa[posExt[i]] || {}).nomePosicao || posExt[i] })),
+      ...ints.map((t, i) => ({ ...t, posicao: posInt[i], nomePosicao: (mapa[posInt[i]] || {}).nomePosicao || posInt[i] }))
+    ].filter(t => t.posicao !== undefined);
+
+    const direcionais = eixos[0].pneus;
+    const novoConjunto = [...direcionais, ...recapados, ...remontados];
+    const mmNova = novoConjunto.filter(t => t.menorMM > 0).reduce((s, t) => s + t.menorMM, 0) /
+                   (novoConjunto.filter(t => t.menorMM > 0).length || 1);
+
+    const extMarcas = [...new Set(exts.map(t => t.marca))].join('/');
+    const intMarcas = [...new Set(ints.map(t => t.marca))].join('/');
+
+    sugestoes.push(`
+      <div class="sug-item"><span class="sug-icon">📋</span><span>
+        <b>Plano completo para a ${placa}:</b>
+        <b>1)</b> Recapar o ${eixoGasto.label} inteiro (${eixoGasto.pneus.map(t => `${t.serial} ${fmt(t.menorMM)}`).join(', ')} mm);
+        <b>2)</b> Montar os recapados (~${MM_RECAPE} mm, diâmetros casados) no ${eixoDestino.label} — recapado trabalha melhor na tração;
+        <b>3)</b> Mover os pneus atuais da tração para o ${eixoGasto.label}: <b>${extMarcas} como externos</b> (maior sulco)
+        e <b>${intMarcas} como internos</b> — cada eixo fica com geminados pareados e sem mistura crítica de diâmetro.
+        Resultado: MM média do veículo sobe de <b>${fmt(pior.mm)} mm</b> para <span class="sug-ganho">~${fmt(mmNova)} mm</span>.
+      </span></div>
+      <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border)">
+        <div class="card-title" style="color:var(--blue)">📋 Como fica a ${placa} após o plano</div>
+        ${renderVehVertical({ ...pior.v }, novoConjunto, mmNova)}
+      </div>`);
   }
 
   return sugestoes.length
