@@ -2553,7 +2553,8 @@ function renderVehVertical(v, pneusArr, mmMed) {
         <div class="tv-pos">${t.nomePosicao || pos}</div>
         <div class="tv-serial">${t.serial}</div>
         <div class="tv-mm" style="color:${corMM(t.statusMM)}">${fmt(t.menorMM)} mm</div>
-        <div class="tv-sub">${t.marca}${t.banda ? ' · ' + t.banda : ''} · V${t.cicloVida}</div>
+        <div class="tv-sub">${t.marca} · V${t.cicloVida}</div>
+        ${t.cicloVida > 1 ? `<div class="tv-sub">Banda: ${t.banda || '—'}</div>` : ''}
       </div>`;
   };
 
