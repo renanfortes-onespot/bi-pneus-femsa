@@ -1381,7 +1381,7 @@
           <div id="eixosPior"></div>
         </div>
         <div class="card">
-          <div class="card-title" style="color:var(--green)">↔ Sugestão de Rodízio — Placa Compatível</div>
+          <div class="card-title" style="color:var(--green)">✔ Como Fica Após o Plano</div>
           <div id="eixosSugestao"></div>
         </div>
       </div>
@@ -1390,6 +1390,12 @@
       <div class="card" style="margin-top:20px">
         <div class="card-title">Sugestões de Rodízio</div>
         <div id="eixosTexto"></div>
+      </div>
+
+      <!-- PLACAS COMPATÍVEIS -->
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">Placas Compatíveis para Rodízio — Pneus Bons e Nota Alta</div>
+        <div class="eixos-duplo" id="eixosCompat"></div>
       </div>
     </div>
 
@@ -2472,12 +2478,20 @@ function renderEixos() {
 
   const par = candidatos[0] || null;
 
-  elPior.innerHTML = renderVehVertical(pior.v, pneusPior, pior.mm);
-  elSug.innerHTML  = par
-    ? renderVehVertical(par.v, par.pneus, par.mm)
-    : '<div class="empty">Nenhuma placa compatível do mesmo tipo</div>';
+  const res = gerarSugestoes(pior, pneusPior, par);
 
-  elTxt.innerHTML = gerarSugestoes(pior, pneusPior, par);
+  elPior.innerHTML = renderVehVertical(pior.v, pneusPior, pior.mm);
+  elSug.innerHTML  = res.plano
+    ? renderVehVertical(pior.v, res.plano.conjunto, res.plano.mmNova)
+    : '<div class="empty">✅ Sem necessidade de remontagem — siga as sugestões pontuais abaixo</div>';
+  elTxt.innerHTML  = res.html;
+
+  // Placas compatíveis: mesmo tipo, pneus bons (melhor MM) e marcas em comum
+  const elCompat = document.getElementById('eixosCompat');
+  const top2 = candidatos.filter(c => c.mm >= 5).slice(0, 2);
+  elCompat.innerHTML = top2.length
+    ? top2.map(c => `<div>${renderVehVertical(c.v, c.pneus, c.mm)}</div>`).join('')
+    : '<div class="empty">Nenhuma placa compatível com pneus em bom estado</div>';
 }
 
 // ============================================================
@@ -2488,6 +2502,7 @@ function renderEixos() {
 // ============================================================
 function gerarSugestoes(pior, pneusPior, par) {
   const sugestoes = [];
+  let plano = null;
   const placa = pior.v.placa;
   const pos = t => t.nomePosicao || t.posicao;
   const mapa = {};
@@ -2801,16 +2816,17 @@ function gerarSugestoes(pior, pneusPior, par) {
         <b>mesma marca</b>: ${descDuais} — o par geminado é a unidade crítica (mesmo cubo e carga
         compartilhada): mesma carcaça e mismatch mínimo dentro de cada dual, com o maior sulco como externo.
         Resultado: MM média do veículo sobe de <b>${fmt(pior.mm)} mm</b> para <span class="sug-ganho">~${fmt(mmNova)} mm</span>.
-      </span></div>
-      <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border)">
-        <div class="card-title" style="color:var(--blue)">📋 Como fica a ${placa} após o plano</div>
-        ${renderVehVertical({ ...pior.v }, novoConjunto, mmNova)}
-      </div>`);
+        O mapa proposto está no painel ao lado, "Como Fica Após o Plano".
+      </span></div>`);
+
+    plano = { conjunto: novoConjunto, mmNova };
   }
 
-  return sugestoes.length
+  const html = sugestoes.length
     ? sugestoes.join('')
     : '<div class="empty">✅ Nenhuma ação recomendada — eixos equilibrados em sulco, marca e geminados</div>';
+
+  return { html, plano };
 }
 
 function renderVehVertical(v, pneusArr, mmMed) {
