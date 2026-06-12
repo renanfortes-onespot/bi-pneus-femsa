@@ -1448,6 +1448,8 @@
             <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≤ 5%</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 5% a 15%</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &gt; 15%</span>
+            <span class="lg-item"><span style="width:14px;height:2px;background:var(--text);display:inline-block;border-radius:1px"></span> # Alta Pressão</span>
+            <span class="lg-item"><span style="width:14px;height:2px;background:#38BDF8;display:inline-block;border-radius:1px"></span> # Baixa Pressão</span>
           </div>
           <div style="position:relative;height:240px">
             <canvas id="chartDesvioMensal"></canvas>
@@ -1649,7 +1651,50 @@ function getFilteredVehicles() {
 }
 
 function getFilteredTires() {
-  let t = DATA.tires;
+  let t;
+  const temPeriodo = FILTERS.ano.length || FILTERS.vigencia.length;
+
+  if (!temPeriodo) {
+    t = DATA.tires;
+  } else {
+    // Com filtro de período: reconstrói o estado dos pneus a partir da
+    // ÚLTIMA MEDIÇÃO de inspeção dentro do período (vigência/ano)
+    const insps = getFilteredInspections();
+    const ultimo = {};
+    insps.forEach(i => {
+      if (!i.tireId) return;
+      if (!ultimo[i.tireId] || new Date(i.dataInspecao) > new Date(ultimo[i.tireId].dataInspecao)) {
+        ultimo[i.tireId] = i;
+      }
+    });
+    const cadastro = {};
+    DATA.tires.forEach(x => { cadastro[x.id] = x; });
+
+    t = Object.values(ultimo).map(m => {
+      const c = cadastro[m.tireId] || {};
+      const menor = m.menorMM || 0;
+      const statusMM = menor < 2 ? 'Bloquear' : menor <= 3 ? 'Recapar' : menor <= 6 ? 'Regular' : 'Bom Estado';
+      return {
+        ...c,
+        id: m.tireId,
+        serial: m.serial || c.serial || '',
+        status: 'INSTALLED',
+        veiculoId: m.veiculoId ?? c.veiculoId,
+        placa: m.placa || c.placa || '',
+        frota: m.frota || c.frota || '',
+        posicao: m.posicao ?? c.posicao,
+        mm1: m.mm1, mm2: m.mm2, mm3: m.mm3, mm4: m.mm4,
+        menorMM: menor,
+        amplitude: m.amplitude,
+        statusMM,
+        pressaoIdeal: m.pressaoIdeal,
+        pressaoAtual: m.pressaoMedida,
+        desvioPressao: m.desvioPressao,
+        pressaoNOK: m.pressaoNOK
+      };
+    });
+  }
+
   if (FILTERS.placa.length) t = t.filter(x => FILTERS.placa.includes(x.placa));
   if (FILTERS.unidade.length) {
     const placasUnidade = new Set(DATA.vehicles.filter(v => FILTERS.unidade.includes(v.tipo)).map(v => v.placa));
@@ -2595,7 +2640,12 @@ function renderPressaoMensalCharts() {
     if (!medidas.length) return null;
     const okM = medidas.filter(x => !x.pressaoNOK).length;
     const desvM = medidas.reduce((s, x) => s + Math.abs(x.desvioPressao), 0) / medidas.length;
-    return { ok: okM / medidas.length * 100, desv: desvM };
+    return {
+      ok: okM / medidas.length * 100,
+      desv: desvM,
+      alta: medidas.filter(x => x.desvioPressao > 15).length,
+      baixa: medidas.filter(x => x.desvioPressao < -15).length
+    };
   });
 
   const isLight = document.body.classList.contains('light-mode');
@@ -2656,9 +2706,73 @@ function renderPressaoMensalCharts() {
     v => v >= 98 ? 'g' : v >= 85 ? 'y' : 'r',
     v => v.toFixed(1).replace('.', ',') + '%', 'Calibragem OK');
 
-  montar('chartDesvioMensal', porMes.map(x => x === null ? null : x.desv),
-    v => v <= 5 ? 'g' : v <= 15 ? 'y' : 'r',
-    v => v.toFixed(1).replace('.', ',') + '%', 'Desvio Médio');
+  // Desvio Médio Mensal: barras por cluster + linhas com marcadores (# Alta branca, # Baixa azul)
+  const desvVals  = porMes.map(x => x === null ? null : x.desv);
+  const altaVals  = porMes.map(x => x === null ? null : x.alta);
+  const baixaVals = porMes.map(x => x === null ? null : x.baixa);
+  const clusterDesv = v => v <= 5 ? 'g' : v <= 15 ? 'y' : 'r';
+  const coresD  = meses.map((m, i) => desvVals[i] === null ? 'rgba(255,255,255,0.03)' : `rgba(${rgb[clusterDesv(desvVals[i])]},${hlMes(m) ? 0.65 : 0.15})`);
+  const bordasD = meses.map((m, i) => desvVals[i] === null ? 'transparent' : `rgba(${rgb[clusterDesv(desvVals[i])]},${hlMes(m) ? 1 : 0.25})`);
+  const corLinhaAlta  = isLight ? '#111' : '#FFFFFF';
+
+  destroyChart('chartDesvioMensal');
+  charts['chartDesvioMensal'] = new Chart(document.getElementById('chartDesvioMensal'), {
+    data: {
+      labels: meses.map(m => m.label),
+      datasets: [
+        {
+          type: 'bar', label: 'Desvio Médio', data: desvVals,
+          backgroundColor: coresD, borderColor: bordasD,
+          borderWidth: 1.5, borderRadius: 3, yAxisID: 'y',
+          datalabels: {
+            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+            anchor: 'end', align: 'end', offset: 2,
+            color: isLight ? '#111' : '#fff',
+            font: { family: 'Montserrat', size: 12, weight: '700' },
+            formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
+          }
+        },
+        {
+          type: 'line', label: '# Alta Pressão', data: altaVals,
+          borderColor: corLinhaAlta, borderWidth: 2,
+          pointBackgroundColor: corLinhaAlta, pointBorderColor: corLinhaAlta,
+          pointRadius: 4, tension: 0.35, spanGaps: false, yAxisID: 'y2',
+          datalabels: { display: false }
+        },
+        {
+          type: 'line', label: '# Baixa Pressão', data: baixaVals,
+          borderColor: '#38BDF8', borderWidth: 2,
+          pointBackgroundColor: '#38BDF8', pointBorderColor: '#38BDF8',
+          pointRadius: 4, tension: 0.35, spanGaps: false, yAxisID: 'y2',
+          datalabels: { display: false }
+        }
+      ]
+    },
+    plugins: [ChartDataLabels],
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#141B26', titleColor: '#E30613', bodyColor: '#F1F5F9',
+          borderColor: '#1E2D40', borderWidth: 1,
+          titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
+          callbacks: {
+            label: ctx => ctx.parsed.y === null ? '—' :
+              ctx.dataset.yAxisID === 'y2'
+                ? `${ctx.dataset.label}: ${ctx.parsed.y} pneus`
+                : `Desvio Médio: ${ctx.parsed.y.toFixed(1).replace('.', ',')}%`
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
+        y:  { display: false, grace: '10%' },
+        y2: { display: false, grace: '20%', beginAtZero: true }
+      }
+    }
+  });
 }
 
 // ============================================================
@@ -2674,9 +2788,9 @@ function renderEixos() {
 
   const vehicles = getFilteredVehicles();
 
-  // Pneus instalados por veículo
+  // Pneus instalados por veículo (respeita todos os filtros, inclusive vigência/ano)
   const pneusPorVeiculo = {};
-  DATA.tires.filter(t => t.status === 'INSTALLED').forEach(t => {
+  getFilteredTires().filter(t => t.status === 'INSTALLED').forEach(t => {
     if (!pneusPorVeiculo[t.veiculoId]) pneusPorVeiculo[t.veiculoId] = [];
     pneusPorVeiculo[t.veiculoId].push(t);
   });
