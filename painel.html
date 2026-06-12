@@ -1019,7 +1019,7 @@
       </div>
       <div class="ms-wrap" id="wrap-unidade">
         <button class="ms-btn" onclick="toggleMs('unidade')">
-          UNIDADE <span class="ms-count" id="cnt-unidade" style="display:none"></span><span class="ms-arrow">▾</span>
+          TIPO DE VEÍCULO <span class="ms-count" id="cnt-unidade" style="display:none"></span><span class="ms-arrow">▾</span>
         </button>
         <div class="ms-panel" id="panel-unidade">
           <input class="ms-search" placeholder="Buscar..." oninput="filterMs(this,'panel-unidade')">
@@ -1137,6 +1137,7 @@
           <thead><tr>
             <th>#</th>
             <th id="thDrill">Placa</th>
+            <th>Pneus</th>
             <th>MM Média</th>
             <th>Vida Média</th>
             <th>Recapes</th>
@@ -1719,15 +1720,16 @@ function renderSaude() {
     const ampM    = media(pneus.map(t => t.amplitude));
     const comP    = pneus.filter(t => t.pressaoIdeal > 0);
     const calibP  = comP.length ? (comP.filter(t => !t.pressaoNOK).length / comP.length * 100) : null;
-    const sub     = drill === 'pneu' ? (pneus[0].placa || 'estoque') : `${pneus.length} pneus`;
-    return { chave, sub, score: sc, mm: mmM, idade: idadesP.length ? media(idadesP) : null, recapes: recM, amp: ampM, calib: calibP };
+    const sub     = drill === 'pneu' ? (pneus[0].placa || 'estoque') : '';
+    return { chave, sub, qtd: pneus.length, score: sc, mm: mmM, idade: idadesP.length ? media(idadesP) : null, recapes: recM, amp: ampM, calib: calibP };
   }).filter(r => r.score !== null)
     .sort((a, b) => a.score - b.score); // pior primeiro
 
   document.getElementById('tbodySaudeRanking').innerHTML = ranking.map((r, i) => `
     <tr>
       <td style="color:var(--text-muted)">${i + 1}</td>
-      <td><strong>${r.chave}</strong> <span style="font-size:10px;color:var(--text-muted)">${r.sub}</span></td>
+      <td><strong>${r.chave}</strong>${r.sub ? ` <span style="font-size:10px;color:var(--text-muted)">${r.sub}</span>` : ''}</td>
+      <td>${r.qtd}</td>
       <td>${r.mm !== null ? fmtBR(r.mm) + ' mm' : '—'}</td>
       <td>${fmtIdade(r.idade)}</td>
       <td>${fmtBR(r.recapes, 2)}</td>
