@@ -1405,27 +1405,27 @@
         <div class="saude-card">
           <div class="sc-label">Pneus Aferidos</div>
           <div class="sc-value" id="prCardTotal">—</div>
-          <div class="sc-sub">com pressão ideal cadastrada</div>
+          <div class="sc-sub" id="prCardTotalSub">com pressão ideal cadastrada · Meta: 100% da frota</div>
         </div>
         <div class="saude-card">
           <div class="sc-label">Pressão OK</div>
           <div class="sc-value" id="prCardOK">—</div>
-          <div class="sc-sub">entre 85% e 115% da ideal</div>
+          <div class="sc-sub">entre 85% e 115% da ideal · Meta: ≥ 98%</div>
         </div>
         <div class="saude-card">
           <div class="sc-label">Baixa Pressão</div>
           <div class="sc-value" id="prCardBaixa">—</div>
-          <div class="sc-sub">abaixo de 85% da ideal</div>
+          <div class="sc-sub">abaixo de 85% da ideal · Meta: 0</div>
         </div>
         <div class="saude-card">
           <div class="sc-label">Alta Pressão</div>
           <div class="sc-value" id="prCardAlta">—</div>
-          <div class="sc-sub">acima de 115% da ideal</div>
+          <div class="sc-sub">acima de 115% da ideal · Meta: 0</div>
         </div>
         <div class="saude-card">
           <div class="sc-label">Desvio Médio</div>
           <div class="sc-value" id="prCardDesvio">—</div>
-          <div class="sc-sub">desvio absoluto médio da ideal</div>
+          <div class="sc-sub">desvio absoluto médio da ideal · Meta: ≤ 5%</div>
         </div>
       </div>
 
@@ -1443,12 +1443,9 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-title" style="margin-bottom:6px">Desvio Médio Mensal (%)</div>
+          <div class="card-title" style="margin-bottom:6px">Alta e Baixa Pressão Mensal (#)</div>
           <div class="chart-legend">
-            <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≤ 5%</span>
-            <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 5% a 15%</span>
-            <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &gt; 15%</span>
-            <span class="lg-item"><span style="width:14px;height:2px;background:var(--text);display:inline-block;border-radius:1px"></span> # Alta Pressão</span>
+            <span class="lg-item"><span style="width:14px;height:2px;background:var(--red-soft);display:inline-block;border-radius:1px"></span> # Alta Pressão</span>
             <span class="lg-item"><span style="width:14px;height:2px;background:#38BDF8;display:inline-block;border-radius:1px"></span> # Baixa Pressão</span>
           </div>
           <div style="position:relative;height:240px">
@@ -2574,11 +2571,16 @@ function renderPressao() {
     el.textContent = val;
     if (cor) el.style.color = cor;
   };
-  setCard('prCardTotal', tires.length);
-  setCard('prCardOK', ok.length, 'var(--green)');
-  setCard('prCardBaixa', baixa, baixa > 0 ? 'var(--yellow)' : 'var(--green)');
-  setCard('prCardAlta', alta, alta > 0 ? 'var(--red-soft)' : 'var(--green)');
-  setCard('prCardDesvio', fmtBR(desvioMedio) + '%', desvioMedio <= 5 ? 'var(--green)' : desvioMedio <= 15 ? 'var(--yellow)' : 'var(--red-soft)');
+  // Metas: aferidos = 100% da frota | OK ≥ 98% | Baixa = 0 | Alta = 0 | Desvio ≤ 5%
+  const totalInstalados = getFilteredTires().filter(t => t.status === 'INSTALLED').length;
+  const metaVerde = 'var(--green)', metaVermelho = 'var(--red-soft)';
+  setCard('prCardTotal', tires.length, tires.length >= totalInstalados ? metaVerde : metaVermelho);
+  document.getElementById('prCardTotalSub').textContent =
+    `${totalInstalados ? fmtBR(tires.length / totalInstalados * 100) : '0'}% da frota cadastrada · Meta: 100%`;
+  setCard('prCardOK', ok.length, pctOK >= 98 ? metaVerde : metaVermelho);
+  setCard('prCardBaixa', baixa, baixa === 0 ? metaVerde : metaVermelho);
+  setCard('prCardAlta', alta, alta === 0 ? metaVerde : metaVermelho);
+  setCard('prCardDesvio', fmtBR(desvioMedio) + '%', desvioMedio <= 5 ? metaVerde : metaVermelho);
 
   // Gráficos mensais
   renderPressaoMensalCharts();
@@ -2706,14 +2708,10 @@ function renderPressaoMensalCharts() {
     v => v >= 98 ? 'g' : v >= 85 ? 'y' : 'r',
     v => v.toFixed(1).replace('.', ',') + '%', 'Calibragem OK');
 
-  // Desvio Médio Mensal: barras por cluster + linhas com marcadores (# Alta branca, # Baixa azul)
-  const desvVals  = porMes.map(x => x === null ? null : x.desv);
+  // Alta e Baixa Pressão Mensal (#): duas linhas com marcadores
   const altaVals  = porMes.map(x => x === null ? null : x.alta);
   const baixaVals = porMes.map(x => x === null ? null : x.baixa);
-  const clusterDesv = v => v <= 5 ? 'g' : v <= 15 ? 'y' : 'r';
-  const coresD  = meses.map((m, i) => desvVals[i] === null ? 'rgba(255,255,255,0.03)' : `rgba(${rgb[clusterDesv(desvVals[i])]},${hlMes(m) ? 0.65 : 0.15})`);
-  const bordasD = meses.map((m, i) => desvVals[i] === null ? 'transparent' : `rgba(${rgb[clusterDesv(desvVals[i])]},${hlMes(m) ? 1 : 0.25})`);
-  const corLinhaAlta  = isLight ? '#111' : '#FFFFFF';
+  const corAlta   = isLight ? '#FF0000' : '#FF6666';
 
   destroyChart('chartDesvioMensal');
   charts['chartDesvioMensal'] = new Chart(document.getElementById('chartDesvioMensal'), {
@@ -2721,37 +2719,37 @@ function renderPressaoMensalCharts() {
       labels: meses.map(m => m.label),
       datasets: [
         {
-          type: 'bar', label: 'Desvio Médio', data: desvVals,
-          backgroundColor: coresD, borderColor: bordasD,
-          borderWidth: 1.5, borderRadius: 3, yAxisID: 'y',
+          type: 'line', label: '# Alta Pressão', data: altaVals,
+          borderColor: corAlta, borderWidth: 2,
+          pointBackgroundColor: corAlta, pointBorderColor: corAlta,
+          pointRadius: 4, tension: 0.35, spanGaps: false,
           datalabels: {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
-            anchor: 'end', align: 'end', offset: 2,
-            color: isLight ? '#111' : '#fff',
+            anchor: 'end', align: 'top', offset: 4,
+            color: corAlta,
             font: { family: 'Montserrat', size: 12, weight: '700' },
-            formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
+            formatter: v => v === null ? '' : v
           }
-        },
-        {
-          type: 'line', label: '# Alta Pressão', data: altaVals,
-          borderColor: corLinhaAlta, borderWidth: 2,
-          pointBackgroundColor: corLinhaAlta, pointBorderColor: corLinhaAlta,
-          pointRadius: 4, tension: 0.35, spanGaps: false, yAxisID: 'y2',
-          datalabels: { display: false }
         },
         {
           type: 'line', label: '# Baixa Pressão', data: baixaVals,
           borderColor: '#38BDF8', borderWidth: 2,
           pointBackgroundColor: '#38BDF8', pointBorderColor: '#38BDF8',
-          pointRadius: 4, tension: 0.35, spanGaps: false, yAxisID: 'y2',
-          datalabels: { display: false }
+          pointRadius: 4, tension: 0.35, spanGaps: false,
+          datalabels: {
+            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+            anchor: 'end', align: 'bottom', offset: 4,
+            color: '#38BDF8',
+            font: { family: 'Montserrat', size: 12, weight: '700' },
+            formatter: v => v === null ? '' : v
+          }
         }
       ]
     },
     plugins: [ChartDataLabels],
     options: {
       responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 18 } },
+      layout: { padding: { top: 18, bottom: 8 } },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -2759,17 +2757,13 @@ function renderPressaoMensalCharts() {
           borderColor: '#1E2D40', borderWidth: 1,
           titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
           callbacks: {
-            label: ctx => ctx.parsed.y === null ? '—' :
-              ctx.dataset.yAxisID === 'y2'
-                ? `${ctx.dataset.label}: ${ctx.parsed.y} pneus`
-                : `Desvio Médio: ${ctx.parsed.y.toFixed(1).replace('.', ',')}%`
+            label: ctx => ctx.parsed.y === null ? '—' : `${ctx.dataset.label}: ${ctx.parsed.y} pneus`
           }
         }
       },
       scales: {
         x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
-        y:  { display: false, grace: '10%' },
-        y2: { display: false, grace: '20%', beginAtZero: true }
+        y: { display: false, grace: '15%', beginAtZero: true }
       }
     }
   });
