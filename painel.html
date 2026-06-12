@@ -1382,7 +1382,7 @@
             <th>#</th><th>Serial</th><th>Placa</th><th>Frota</th><th>Posição</th>
             <th>Marca</th><th>Vida</th><th>Marca Banda</th><th>Banda</th>
             <th>mm1</th><th>mm2</th><th>mm3</th><th>mm4</th>
-            <th>Menor MM</th><th>Amplitude</th><th>Status</th>
+            <th>Amplitude</th><th>Menor MM</th><th>Status</th>
           </tr></thead>
           <tbody id="tbodyMM"></tbody>
         </table>
@@ -2359,8 +2359,8 @@ function filtrarMM() {
           <td>${fmt(t.mm2)}</td>
           <td>${fmt(t.mm3)}</td>
           <td>${fmt(t.mm4)}</td>
-          <td><strong>${fmt(t.menorMM)}</strong></td>
           <td style="color:${t.amplitude > 5 ? 'var(--red-soft)' : t.amplitude > 3 ? 'var(--yellow)' : 'var(--green)'};font-weight:700">${fmt(t.amplitude)}</td>
+          <td style="color:${corStatus[t.statusMM] || 'var(--text)'};font-weight:700">${fmt(t.menorMM)}</td>
           <td><span class="farol-dot"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${corStatus[t.statusMM] || 'var(--text-muted)'};margin-right:6px"></span>${t.statusMM}</span></td>
         </tr>
       `).join('');
