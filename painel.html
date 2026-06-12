@@ -52,13 +52,19 @@
   }
 
   body.light-mode {
-    background:
-      radial-gradient(ellipse 100% 60% at 50% -15%, rgba(227,6,19,0.45) 0%, rgba(227,6,19,0.18) 35%, transparent 65%),
-      radial-gradient(ellipse 60% 40% at 0% 55%, rgba(227,6,19,0.14) 0%, transparent 60%),
-      radial-gradient(ellipse 70% 45% at 100% 100%, rgba(180,20,30,0.18) 0%, transparent 60%),
-      linear-gradient(180deg, #F3DFE0 0%, #EEF0F3 50%, #E8EAEE 100%);
+    background: linear-gradient(180deg,
+      #D90511 0%,
+      #E84A55 30%,
+      #F0959C 60%,
+      #F5CDD0 85%,
+      #F2E4E5 100%);
     background-attachment: fixed;
   }
+
+  /* Textos soltos sobre o fundo vermelho (hero, títulos de seção) em branco */
+  body.light-mode .adh-label { color: rgba(255,255,255,0.9); }
+  body.light-mode .adh-delta { color: rgba(255,255,255,0.85); }
+  body.light-mode .adh-hero .adh-value { text-shadow: 0 1px 8px rgba(0,0,0,0.15); }
 
   /* Sidebar continua escura no modo claro */
   body.light-mode .sidebar {
@@ -74,11 +80,11 @@
   body.light-mode .card,
   body.light-mode .adh-card,
   body.light-mode .adh-table-wrap {
-    background: rgba(255,255,255,0.40);
-    border: 1px solid rgba(255,255,255,0.55);
-    box-shadow: 0 4px 20px rgba(120,30,35,0.08);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: rgba(255,255,255,0.28);
+    border: 1px solid rgba(255,255,255,0.45);
+    box-shadow: 0 8px 28px rgba(120,10,18,0.12);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
     color: #111;
   }
   body.light-mode .card-title,
@@ -844,11 +850,11 @@
     box-shadow: 0 2px 12px rgba(0,0,0,0.25);
   }
   body.light-mode .saude-card {
-    background: rgba(255,255,255,0.40);
-    border: 1px solid rgba(255,255,255,0.55);
-    box-shadow: 0 4px 20px rgba(120,30,35,0.08);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: rgba(255,255,255,0.28);
+    border: 1px solid rgba(255,255,255,0.45);
+    box-shadow: 0 8px 28px rgba(120,10,18,0.12);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
     color: #111;
   }
 
