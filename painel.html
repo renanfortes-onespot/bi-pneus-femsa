@@ -1301,47 +1301,92 @@
 
     <!-- ========== MILIMETRAGEM ========== -->
     <div class="page" id="page-milimetragem">
-      <div class="kpi-grid" id="kpiMM"></div>
 
-      <p class="section-title">Ranking de Desgaste Irregular (Amplitude)</p>
-      <div class="tooltip-info">
-        💡 Amplitude = diferença entre o maior e menor sulco do mesmo pneu. Valores altos indicam desgaste irregular.
+      <!-- HERO MM MÉDIA -->
+      <div class="adh-hero">
+        <div class="adh-hero-left">
+          <div class="adh-label">MM Média</div>
+          <div class="adh-value" id="mmHeroVal">—</div>
+        </div>
       </div>
-      <div class="table-controls">
-        <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchAmplitude" oninput="filtrarAmplitude()">
+
+      <!-- 6 CARDS -->
+      <div class="saude-cards" style="grid-template-columns:repeat(6,1fr)">
+        <div class="saude-card">
+          <div class="sc-label">Pneus Aplicados</div>
+          <div class="sc-value" id="mmCardTotal">—</div>
+          <div class="sc-sub">instalados na frota</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Bloquear</div>
+          <div class="sc-value" id="mmCardBloquear">—</div>
+          <div class="sc-sub">sulco &lt; 2mm</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Recapar</div>
+          <div class="sc-value" id="mmCardRecapar">—</div>
+          <div class="sc-sub">sulco ≤ 3mm</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Regular</div>
+          <div class="sc-value" id="mmCardRegular">—</div>
+          <div class="sc-sub">sulco 3–6mm</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Bom Estado</div>
+          <div class="sc-value" id="mmCardBom">—</div>
+          <div class="sc-sub">sulco &gt; 6mm</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Desgaste Irregular</div>
+          <div class="sc-value" id="mmCardIrregular">—</div>
+          <div class="sc-sub" id="mmCardIrregularSub">amplitude &gt; 5mm</div>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table>
+
+      <!-- GRÁFICOS MENSAIS -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:6px">MM Média Mensal</div>
+          <div class="chart-legend">
+            <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> &gt; 6mm</span>
+            <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 3 a 6mm</span>
+            <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> ≤ 3mm</span>
+          </div>
+          <div style="position:relative;height:240px">
+            <canvas id="chartMMMensal"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:6px">Desgaste Irregular Mensal (%)</div>
+          <div class="chart-legend">
+            <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≤ 5%</span>
+            <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 5% a 10%</span>
+            <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &gt; 10%</span>
+          </div>
+          <div style="position:relative;height:240px">
+            <canvas id="chartAmpMensal"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- RANKING -->
+      <div class="adh-table-wrap" style="margin-top:20px">
+        <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <span>Ranking — Menor Sulco</span>
+          <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchMM" oninput="filtrarMM()" style="width:220px">
+        </div>
+        <div style="overflow-x:auto">
+        <table class="adh-table">
           <thead><tr>
-            <th>Serial</th><th>Placa</th><th>Frota</th><th>Posição</th>
-            <th>Marca</th><th>Vida</th>
+            <th>#</th><th>Serial</th><th>Placa</th><th>Frota</th><th>Posição</th>
+            <th>Marca</th><th>Vida</th><th>Marca Banda</th><th>Banda</th>
             <th>mm1</th><th>mm2</th><th>mm3</th><th>mm4</th>
-            <th>Menor MM</th><th>Amplitude</th><th>Status MM</th>
+            <th>Menor MM</th><th>Amplitude</th><th>Status</th>
           </tr></thead>
-          <tbody id="tbodyAmplitude"></tbody>
+          <tbody id="tbodyMM"></tbody>
         </table>
-      </div>
-
-      <p class="section-title">Todos os Pneus — Status Milimetragem</p>
-      <div class="table-controls">
-        <select id="filterStatusMM" onchange="filtrarTodosMM()">
-          <option value="">Todos os status</option>
-          <option value="Bloquear">🔴 Bloquear</option>
-          <option value="Recapar">🟠 Recapar</option>
-          <option value="Regular">🟡 Regular</option>
-          <option value="Bom Estado">🟢 Bom Estado</option>
-        </select>
-        <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchMM" oninput="filtrarTodosMM()">
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Serial</th><th>Placa</th><th>Frota</th><th>Posição</th>
-            <th>Marca</th><th>Modelo</th><th>Vida</th><th>DOT</th>
-            <th>Menor MM</th><th>Status</th>
-          </tr></thead>
-          <tbody id="tbodyTodosMM"></tbody>
-        </table>
+        </div>
       </div>
     </div>
 
@@ -1439,7 +1484,7 @@ function toggleTheme() {
   const isLight = document.body.classList.toggle('light-mode');
   localStorage.setItem('femsa_theme', isLight ? 'light' : 'dark');
   // Re-renderiza gráficos com as cores do tema
-  if (DATA.vehicles.length) { renderMensalChart(); renderSaudeMensalChart(); }
+  if (DATA.vehicles.length) { renderMensalChart(); renderSaudeMensalChart(); renderMMMensalCharts(); }
   const icon = document.getElementById('themeIcon');
   // Troca ícone sol ↔ lua
   if (isLight) {
@@ -2243,106 +2288,171 @@ function renderMensalChart() {
 // ============================================================
 function renderMilimetragem() {
   const tires = getFilteredTires().filter(t => t.status === 'INSTALLED');
+  if (!document.getElementById('mmHeroVal')) return;
+
+  const comMM = tires.filter(t => t.menorMM > 0);
+  const mmMedia = comMM.length ? comMM.reduce((s, t) => s + t.menorMM, 0) / comMM.length : 0;
 
   const bloquear = tires.filter(t => t.statusMM === 'Bloquear').length;
   const recapar  = tires.filter(t => t.statusMM === 'Recapar').length;
   const regular  = tires.filter(t => t.statusMM === 'Regular').length;
   const bom      = tires.filter(t => t.statusMM === 'Bom Estado').length;
   const irregulares = tires.filter(t => t.amplitude > 5).length;
-  const ampPct = tires.length > 0 ? ((irregulares / tires.length) * 100).toFixed(1) : 0;
+  const ampPct = tires.length ? (irregulares / tires.length * 100) : 0;
 
-  document.getElementById('kpiMM').innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-label">Bloquear</div>
-      <div class="kpi-value ${bloquear > 0 ? 'red' : 'green'}">${bloquear}</div>
-      <div class="kpi-sub">Sulco < 2mm</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Recapar</div>
-      <div class="kpi-value ${recapar > 0 ? 'orange' : 'green'}">${recapar}</div>
-      <div class="kpi-sub">Sulco ≤ 3mm</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Regular</div>
-      <div class="kpi-value yellow">${regular}</div>
-      <div class="kpi-sub">Sulco 3–6mm</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Bom Estado</div>
-      <div class="kpi-value green">${bom}</div>
-      <div class="kpi-sub">Sulco > 6mm</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Desgaste Irregular</div>
-      <div class="kpi-value ${irregulares > 0 ? 'orange' : 'green'}">${ampPct}%</div>
-      <div class="kpi-sub">${irregulares} pneus (amplitude > 5mm)</div>
-    </div>
-  `;
+  // Hero
+  const hero = document.getElementById('mmHeroVal');
+  hero.textContent = fmtBR(mmMedia) + ' mm';
+  hero.style.color = mmMedia > 6 ? 'var(--green)' : mmMedia > 3 ? 'var(--yellow)' : 'var(--red-soft)';
 
-  // Ranking amplitude
-  window._tiresAmplitude = [...tires].sort((a, b) => b.amplitude - a.amplitude);
-  filtrarAmplitude();
+  // Cards
+  const setCard = (id, val, cor) => {
+    const el = document.getElementById(id);
+    el.textContent = val;
+    if (cor) el.style.color = cor;
+  };
+  setCard('mmCardTotal', tires.length);
+  setCard('mmCardBloquear', bloquear, bloquear > 0 ? 'var(--red-soft)' : 'var(--green)');
+  setCard('mmCardRecapar', recapar, recapar > 0 ? 'var(--orange)' : 'var(--green)');
+  setCard('mmCardRegular', regular, 'var(--yellow)');
+  setCard('mmCardBom', bom, 'var(--green)');
+  setCard('mmCardIrregular', fmtBR(ampPct) + '%', ampPct > 10 ? 'var(--red-soft)' : ampPct > 5 ? 'var(--yellow)' : 'var(--green)');
+  document.getElementById('mmCardIrregularSub').textContent = `${irregulares} pneus (amplitude > 5mm)`;
 
-  // Todos MM
-  window._tiresMM = [...tires].sort((a, b) => a.menorMM - b.menorMM);
-  filtrarTodosMM();
+  // Gráficos mensais
+  renderMMMensalCharts();
+
+  // Ranking pelo menor MM (sem leitura vai para o fim)
+  window._tiresMM = [...tires].sort((a, b) => {
+    const am = a.menorMM > 0 ? a.menorMM : 999;
+    const bm = b.menorMM > 0 ? b.menorMM : 999;
+    return am - bm;
+  });
+  filtrarMM();
 }
 
-function filtrarAmplitude() {
-  const q = (document.getElementById('searchAmplitude')?.value || '').toLowerCase();
-  const lista = (window._tiresAmplitude || []).filter(t =>
+function filtrarMM() {
+  const q = (document.getElementById('searchMM')?.value || '').toLowerCase();
+  const lista = (window._tiresMM || []).filter(t =>
     !q || t.serial.toLowerCase().includes(q) || t.placa.toLowerCase().includes(q)
   );
 
-  document.getElementById('tbodyAmplitude').innerHTML = lista.length === 0
-    ? '<tr><td colspan="13" class="empty">Nenhum pneu encontrado</td></tr>'
-    : lista.map(t => `
+  const corStatus = {
+    'Bloquear': 'var(--red-soft)', 'Recapar': 'var(--orange)',
+    'Regular': 'var(--yellow)', 'Bom Estado': 'var(--green)'
+  };
+
+  document.getElementById('tbodyMM').innerHTML = lista.length === 0
+    ? '<tr><td colspan="16" class="empty">Nenhum pneu encontrado</td></tr>'
+    : lista.map((t, i) => `
         <tr>
+          <td style="color:var(--text-muted)">${i + 1}</td>
           <td><strong>${t.serial}</strong></td>
-          <td>${t.placa}</td>
-          <td>${t.frota}</td>
+          <td>${t.placa || '—'}</td>
+          <td>${t.frota || '—'}</td>
           <td>${t.nomePosicao || t.posicao || '—'}</td>
           <td>${t.marca}</td>
-          <td>${t.cicloVida}</td>
+          <td>V${t.cicloVida}</td>
+          <td>${t.cicloVida > 1 ? (t.bandaMarca || '—') : '—'}</td>
+          <td>${t.cicloVida > 1 ? (t.banda || '—') : '—'}</td>
           <td>${fmt(t.mm1)}</td>
           <td>${fmt(t.mm2)}</td>
           <td>${fmt(t.mm3)}</td>
           <td>${fmt(t.mm4)}</td>
           <td><strong>${fmt(t.menorMM)}</strong></td>
-          <td style="text-align:right">
-            <strong style="color:${t.amplitude > 5 ? 'var(--red)' : t.amplitude > 3 ? 'var(--yellow)' : 'var(--green)'}">
-              ${fmt(t.amplitude)}
-            </strong>
-          </td>
-          <td>${badgeStatusMM(t.statusMM)}</td>
+          <td style="color:${t.amplitude > 5 ? 'var(--red-soft)' : t.amplitude > 3 ? 'var(--yellow)' : 'var(--green)'};font-weight:700">${fmt(t.amplitude)}</td>
+          <td><span class="farol-dot"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${corStatus[t.statusMM] || 'var(--text-muted)'};margin-right:6px"></span>${t.statusMM}</span></td>
         </tr>
       `).join('');
 }
 
-function filtrarTodosMM() {
-  const q      = (document.getElementById('searchMM')?.value || '').toLowerCase();
-  const status = document.getElementById('filterStatusMM')?.value || '';
-  const lista  = (window._tiresMM || []).filter(t =>
-    (!status || t.statusMM === status) &&
-    (!q || t.serial.toLowerCase().includes(q) || t.placa.toLowerCase().includes(q))
-  );
+// Gráficos mensais de MM média e desgaste irregular (a partir das inspeções)
+function renderMMMensalCharts() {
+  const anoAtivo = FILTERS.ano.length === 1 ? parseInt(FILTERS.ano[0]) : new Date().getFullYear();
+  const hoje     = new Date();
+  const meses = Array.from({ length: 12 }, (_, i) => ({
+    ano: anoAtivo, mes: i,
+    label: new Date(anoAtivo, i, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
+  }));
+  const isFuturo = m => new Date(m.ano, m.mes, 1) > new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
-  document.getElementById('tbodyTodosMM').innerHTML = lista.length === 0
-    ? '<tr><td colspan="10" class="empty">Nenhum pneu encontrado</td></tr>'
-    : lista.map(t => `
-        <tr>
-          <td><strong>${t.serial}</strong></td>
-          <td>${t.placa}</td>
-          <td>${t.frota}</td>
-          <td>${t.nomePosicao || t.posicao || '—'}</td>
-          <td>${t.marca}</td>
-          <td>${t.modelo}</td>
-          <td>${t.cicloVida}</td>
-          <td>${t.dot || '—'}</td>
-          <td><strong>${fmt(t.menorMM)}</strong></td>
-          <td>${badgeStatusMM(t.statusMM)}</td>
-        </tr>
-      `).join('');
+  const idsFiltrados = new Set(getFilteredVehicles().map(v => v.id));
+  const med = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+
+  const porMes = meses.map(m => {
+    if (isFuturo(m)) return null;
+    const medidas = DATA.inspections.filter(i => {
+      if (!idsFiltrados.has(i.veiculoId)) return false;
+      const d = new Date(i.dataInspecao);
+      return d.getFullYear() === m.ano && d.getMonth() === m.mes;
+    });
+    if (!medidas.length) return null;
+    const mms = medidas.filter(x => x.menorMM > 0).map(x => x.menorMM);
+    const irreg = medidas.filter(x => x.amplitude > 5).length;
+    return { mm: med(mms), amp: irreg / medidas.length * 100 };
+  });
+
+  const isLight = document.body.classList.contains('light-mode');
+  const rgb = {
+    g: isLight ? '11,165,11' : '59,179,59',
+    y: '243,156,18',
+    r: isLight ? '255,0,0' : '255,102,102'
+  };
+  const vigFiltros = FILTERS.vigencia;
+  const hlMes = m => {
+    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
+    return vigFiltros.length === 0 || vigFiltros.includes(mv);
+  };
+
+  const montar = (canvasId, valores, clusterFn, fmtFn, label) => {
+    const cores  = meses.map((m, i) => valores[i] === null ? 'rgba(255,255,255,0.03)' : `rgba(${rgb[clusterFn(valores[i])]},${hlMes(m) ? 0.65 : 0.15})`);
+    const bordas = meses.map((m, i) => valores[i] === null ? 'transparent' : `rgba(${rgb[clusterFn(valores[i])]},${hlMes(m) ? 1 : 0.25})`);
+
+    destroyChart(canvasId);
+    charts[canvasId] = new Chart(document.getElementById(canvasId), {
+      data: {
+        labels: meses.map(m => m.label),
+        datasets: [{
+          type: 'bar', label, data: valores,
+          backgroundColor: cores, borderColor: bordas,
+          borderWidth: 1.5, borderRadius: 3,
+          datalabels: {
+            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+            anchor: 'end', align: 'end', offset: 2,
+            color: isLight ? '#111' : '#fff',
+            font: { family: 'Montserrat', size: 12, weight: '700' },
+            formatter: v => v === null ? '' : fmtFn(v)
+          }
+        }]
+      },
+      plugins: [ChartDataLabels],
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 18 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#141B26', titleColor: '#E30613', bodyColor: '#F1F5F9',
+            borderColor: '#1E2D40', borderWidth: 1,
+            titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
+            callbacks: { label: ctx => ctx.parsed.y === null ? '—' : label + ': ' + fmtFn(ctx.parsed.y) }
+          }
+        },
+        scales: {
+          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
+          y: { display: false, grace: '10%' }
+        }
+      }
+    });
+  };
+
+  montar('chartMMMensal', porMes.map(x => x === null ? null : x.mm),
+    v => v > 6 ? 'g' : v > 3 ? 'y' : 'r',
+    v => v.toFixed(1).replace('.', ',') + ' mm', 'MM Média');
+
+  montar('chartAmpMensal', porMes.map(x => x === null ? null : x.amp),
+    v => v <= 5 ? 'g' : v <= 10 ? 'y' : 'r',
+    v => v.toFixed(1).replace('.', ',') + '%', 'Desgaste Irregular');
 }
 
 // ============================================================
