@@ -1229,6 +1229,7 @@
           <div class="pesos-row"><span>Amplitude</span><span class="pr-desc">Linear: 0mm = 100 pts · ≥5mm = 0 pts</span><b>15%</b></div>
           <div class="pesos-row"><span>Vida (DOT)</span><span class="pr-desc">Linear: novo = 100 pts · ≥5 anos = 0 pts</span><b>10%</b></div>
           <div class="pesos-row"><span>Recapes</span><span class="pr-desc">Vida 1 = 100 pts · última vida = 0 pts</span><b>5%</b></div>
+          <div class="pesos-row"><span style="color:var(--red-soft)">Deflator</span><span class="pr-desc">Recapado (V2+) no eixo direcional: score do pneu cortado pela metade</span><b style="color:var(--red-soft)">×0,5</b></div>
           <div class="pesos-note">Pneus sem dado em um indicador têm o peso redistribuído entre os demais.</div>
         </div>
       </div>
@@ -1902,6 +1903,15 @@ function scoreComposto(scores) {
   return pesoTotal > 0 ? soma / pesoTotal : null;
 }
 
+// Score final do pneu, com deflator: recapado (V2+) no eixo direcional
+// é falha grave de montagem — corta o score do pneu pela metade.
+const DEFLATOR_RECAPADO_DIRECIONAL = 0.5;
+function scorePneu(t) {
+  let s = scoreComposto(tireScores(t));
+  if (s !== null && t.direcional && t.cicloVida > 1) s *= DEFLATOR_RECAPADO_DIRECIONAL;
+  return s;
+}
+
 function scoreCluster(s) {
   return s >= 80 ? 'var(--green)' : s >= 60 ? 'var(--yellow)' : 'var(--red-soft)';
 }
@@ -1931,7 +1941,7 @@ function renderSaude() {
   const pctOK      = comPressao.length ? (comPressao.filter(t => !t.pressaoNOK).length / comPressao.length * 100) : null;
 
   // Score geral = média dos scores por pneu
-  const scoresGeral = tires.map(t => scoreComposto(tireScores(t))).filter(v => v !== null);
+  const scoresGeral = tires.map(t => scorePneu(t)).filter(v => v !== null);
   const scoreGeral  = media(scoresGeral);
 
   const elScore = document.getElementById('saudeScore');
@@ -1975,7 +1985,7 @@ function renderSaude() {
   });
 
   const ranking = Object.entries(grupos).map(([chave, pneus]) => {
-    const sc      = media(pneus.map(t => scoreComposto(tireScores(t))).filter(v => v !== null));
+    const sc      = media(pneus.map(t => scorePneu(t)).filter(v => v !== null));
     const mmM     = media(pneus.filter(t => t.menorMM > 0).map(t => t.menorMM));
     const idadesP = pneus.map(t => parseDOT(t.dot)).filter(v => v !== null);
     const recM    = media(pneus.map(t => Math.max(0, (t.cicloVida || 1) - 1)));
