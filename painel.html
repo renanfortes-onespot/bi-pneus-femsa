@@ -1013,6 +1013,17 @@
   }
   .sug-item:last-child { border-bottom: none; }
   .sug-icon { display: none; }
+
+  .sug-list {
+    margin: 8px 0 0 18px; padding: 0;
+  }
+  .sug-list li {
+    margin-bottom: 6px; line-height: 1.6;
+    color: var(--text-muted);
+  }
+  .sug-list li b { color: var(--text); }
+  body.light-mode .sug-list li { color: #555; }
+  body.light-mode .sug-list li b { color: #111; }
   .sug-item b { font-weight: 700; }
   .sug-ganho { color: var(--green); font-weight: 700; }
 
@@ -2813,15 +2824,18 @@ function gerarSugestoes(pior, pneusPior, par) {
     ).join(' e ');
 
     sugestoes.push(`
-      <div class="sug-item"><span class="sug-icon">📋</span><span>
-        <b>Plano completo para a ${placa}:</b>
-        <b>1)</b> Recapar o ${eixoGasto.label} inteiro (${eixoGasto.pneus.map(t => `${t.serial} ${fmt(t.menorMM)}`).join(', ')} mm);
-        <b>2)</b> Montar os recapados (~${MM_RECAPE} mm, diâmetros casados) no ${eixoDestino.label} — recapado trabalha melhor na tração;
-        <b>3)</b> Mover os pneus atuais da tração para o ${eixoGasto.label}, formando duais de
-        <b>mesma marca</b>: ${descDuais} — o par geminado é a unidade crítica (mesmo cubo e carga
-        compartilhada): mesma carcaça e mismatch mínimo dentro de cada dual, com o maior sulco como externo.
-        Resultado: MM média do veículo sobe de <b>${fmt(pior.mm)} mm</b> para <span class="sug-ganho">~${fmt(mmNova)} mm</span>.
-        O mapa proposto está no painel ao lado, "Como Fica Após o Plano".
+      <div class="sug-item"><span>
+        <b>Plano completo para a ${placa}</b>
+        <ul class="sug-list">
+          <li>Recapar o <b>${eixoGasto.label}</b> inteiro (${eixoGasto.pneus.map(t => `${t.serial} ${fmt(t.menorMM)}`).join(', ')} mm).</li>
+          <li>Montar os recapados (~${MM_RECAPE} mm, diâmetros casados) no <b>${eixoDestino.label}</b> — recapado trabalha melhor na tração.</li>
+          <li>Mover os pneus atuais da tração para o <b>${eixoGasto.label}</b>, formando duais de <b>mesma marca</b>:
+              ${descDuais} — o par geminado é a unidade crítica (mesmo cubo e carga compartilhada):
+              mesma carcaça e mismatch mínimo dentro de cada dual, com o maior sulco como externo.</li>
+          <li>Resultado: MM média do veículo sobe de <b>${fmt(pior.mm)} mm</b> para
+              <span class="sug-ganho">~${fmt(mmNova)} mm</span>. O mapa proposto está no painel
+              "Como Fica Após o Plano".</li>
+        </ul>
       </span></div>`);
 
     plano = { conjunto: novoConjunto, mmNova };
