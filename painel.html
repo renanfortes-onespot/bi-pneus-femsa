@@ -2751,46 +2751,53 @@ function gerarSugestoes(pior, pneusPior, par) {
       banda: 'Recape novo'
     }));
 
-    // Pneus atuais da tração vão para o eixo gasto:
-    // marca de maior sulco médio = EXTERNOS, a outra = INTERNOS (mismatch mínimo por geminado)
-    const posExt = eixoGasto.posicoes.filter(p => String(p).slice(-1) === '1');
-    const posInt = eixoGasto.posicoes.filter(p => String(p).slice(-1) === '2');
+    // Pneus atuais da tração vão para o eixo gasto.
+    // Ciência: a unidade crítica é o PAR GEMINADO (mesmo cubo, carga compartilhada — regra RMA
+    // por conjunto dual). Cada dual deve ter MESMA MARCA e o menor mismatch possível; o maior
+    // sulco do par fica como externo. Diferença lado-a-lado do eixo é o critério menos crítico.
+    const lados = [
+      { ext: eixoGasto.posicoes[0], int: eixoGasto.posicoes[1] },
+      { ext: eixoGasto.posicoes[2], int: eixoGasto.posicoes[3] }
+    ].filter(l => l.ext !== undefined && l.int !== undefined);
     const movidos = [...eixoDestino.pneus];
 
     const marcas = [...new Set(movidos.map(t => t.marca))];
-    let exts, ints;
-    if (marcas.length === 2) {
-      const grupos = marcas.map(m => {
-        const g = movidos.filter(t => t.marca === m).sort((a, b) => b.menorMM - a.menorMM);
-        return { marca: m, pneus: g, med: g.reduce((s, t) => s + t.menorMM, 0) / g.length };
-      }).sort((a, b) => b.med - a.med);
-      exts = grupos[0].pneus; ints = grupos[1].pneus;
+    let paresDuais; // [[pneuExt, pneuInt], ...]
+    if (marcas.length === 2 && movidos.length === 4 &&
+        marcas.every(m => movidos.filter(t => t.marca === m).length === 2)) {
+      // 2 marcas × 2 pneus: cada marca forma um dual (mesma carcaça no par, mismatch mínimo)
+      paresDuais = marcas.map(m => movidos.filter(t => t.marca === m).sort((a, b) => b.menorMM - a.menorMM));
     } else {
+      // fallback: ordena por sulco e pareia vizinhos (1º+2º, 3º+4º) — minimiza mismatch por dual
       const ord = [...movidos].sort((a, b) => b.menorMM - a.menorMM);
-      exts = ord.slice(0, posExt.length);
-      ints = ord.slice(posExt.length);
+      paresDuais = [];
+      for (let k = 0; k + 1 < ord.length; k += 2) paresDuais.push([ord[k], ord[k + 1]]);
     }
 
-    const remontados = [
-      ...exts.map((t, i) => ({ ...t, posicao: posExt[i], nomePosicao: (mapa[posExt[i]] || {}).nomePosicao || posExt[i] })),
-      ...ints.map((t, i) => ({ ...t, posicao: posInt[i], nomePosicao: (mapa[posInt[i]] || {}).nomePosicao || posInt[i] }))
-    ].filter(t => t.posicao !== undefined);
+    const remontados = [];
+    paresDuais.slice(0, lados.length).forEach((par, i) => {
+      const [pe, pi] = par; // maior sulco = externo
+      remontados.push({ ...pe, posicao: lados[i].ext, nomePosicao: (mapa[lados[i].ext] || {}).nomePosicao || lados[i].ext });
+      remontados.push({ ...pi, posicao: lados[i].int, nomePosicao: (mapa[lados[i].int] || {}).nomePosicao || lados[i].int });
+    });
 
     const direcionais = eixos[0].pneus;
     const novoConjunto = [...direcionais, ...recapados, ...remontados];
     const mmNova = novoConjunto.filter(t => t.menorMM > 0).reduce((s, t) => s + t.menorMM, 0) /
                    (novoConjunto.filter(t => t.menorMM > 0).length || 1);
 
-    const extMarcas = [...new Set(exts.map(t => t.marca))].join('/');
-    const intMarcas = [...new Set(ints.map(t => t.marca))].join('/');
+    const descDuais = paresDuais.slice(0, lados.length).map(par =>
+      `<b>${[...new Set(par.map(t => t.marca))].join('/')}</b> (${par.map(t => fmt(t.menorMM)).join(' × ')} mm)`
+    ).join(' e ');
 
     sugestoes.push(`
       <div class="sug-item"><span class="sug-icon">📋</span><span>
         <b>Plano completo para a ${placa}:</b>
         <b>1)</b> Recapar o ${eixoGasto.label} inteiro (${eixoGasto.pneus.map(t => `${t.serial} ${fmt(t.menorMM)}`).join(', ')} mm);
         <b>2)</b> Montar os recapados (~${MM_RECAPE} mm, diâmetros casados) no ${eixoDestino.label} — recapado trabalha melhor na tração;
-        <b>3)</b> Mover os pneus atuais da tração para o ${eixoGasto.label}: <b>${extMarcas} como externos</b> (maior sulco)
-        e <b>${intMarcas} como internos</b> — cada eixo fica com geminados pareados e sem mistura crítica de diâmetro.
+        <b>3)</b> Mover os pneus atuais da tração para o ${eixoGasto.label}, formando duais de
+        <b>mesma marca</b>: ${descDuais} — o par geminado é a unidade crítica (mesmo cubo e carga
+        compartilhada): mesma carcaça e mismatch mínimo dentro de cada dual, com o maior sulco como externo.
         Resultado: MM média do veículo sobe de <b>${fmt(pior.mm)} mm</b> para <span class="sug-ganho">~${fmt(mmNova)} mm</span>.
       </span></div>
       <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border)">
