@@ -2475,15 +2475,141 @@ function renderEixos() {
     ? renderVehVertical(par.v, par.pneus, par.mm)
     : '<div class="empty">Nenhuma placa compatível do mesmo tipo</div>';
 
-  // ---- SUGESTÕES ----
-  const sugestoes = [];
+  elTxt.innerHTML = gerarSugestoes(pior, pneusPior, par);
+}
 
-  // 1. Rodízio entre placas: pneus piores da pior placa × melhores do par (mesma marca)
+// ============================================================
+// MOTOR DE SUGESTÕES — engenharia de pneus
+// Regras: amplitude POR EIXO (não total); geminados < 3mm entre si;
+// mesma marca/banda por eixo; direcional com os melhores sulcos e
+// preferência por pneu novo; recapagem em conjunto quando ≥4 na faixa.
+// ============================================================
+function gerarSugestoes(pior, pneusPior, par) {
+  const sugestoes = [];
+  const placa = pior.v.placa;
+  const pos = t => t.nomePosicao || t.posicao;
+  const mapa = {};
+  pneusPior.forEach(t => { mapa[t.posicao] = t; });
+
+  const eixos = getEixosConfig(pior.v.tipo, pior.v.pneusEsperados)
+    .map(e => ({ ...e, pneus: e.posicoes.map(p => mapa[p]).filter(t => t && t.menorMM > 0) }));
+
+  const dirEixo  = eixos[0];
+  const tracaoEixos = eixos.slice(1);
+  const tracaoPneus = tracaoEixos.flatMap(e => e.pneus);
+
+  // ---- 0. BLOQUEIO (prioridade máxima) ----
+  pneusPior.filter(t => t.statusMM === 'Bloquear').forEach(t => {
+    sugestoes.push(`
+      <div class="sug-item"><span class="sug-icon">⛔</span><span>
+        <b>Bloquear:</b> o pneu <b>${t.serial}</b> (${fmt(t.menorMM)} mm, ${pos(t)})
+        da <b>${placa}</b> está abaixo de 2 mm — retirar de circulação imediatamente.
+      </span></div>`);
+  });
+
+  // ---- 1. RECAPAGEM DE CONJUNTO ----
+  const naFaixaRecape = pneusPior.filter(t => t.menorMM > 0 && t.menorMM <= 3);
+  if (naFaixaRecape.length >= 4) {
+    sugestoes.push(`
+      <div class="sug-item"><span class="sug-icon">🏭</span><span>
+        <b>Recapagem de conjunto na ${placa}:</b> <b>${naFaixaRecape.length} pneus</b> já estão na faixa de
+        recapagem (≤ 3 mm). Recapar o conjunto de uma vez padroniza diâmetro e banda — ao retornar,
+        montar os <b>recapados na tração</b> e mover os melhores pneus atuais para o <b>direcional</b>.
+        Geminados de mesmo diâmetro reduzem arraste e desgaste irregular.
+      </span></div>`);
+  }
+
+  // ---- 2. DIRECIONAL: melhores sulcos, preferência por pneu novo ----
+  if (dirEixo.pneus.length) {
+    const dirPior = [...dirEixo.pneus].sort((a, b) => a.menorMM - b.menorMM)[0];
+    const candidato = [...tracaoPneus]
+      .filter(t => t.menorMM - dirPior.menorMM > 3)
+      .sort((a, b) => (a.cicloVida - b.cicloVida) || (b.menorMM - a.menorMM))[0];
+    if (candidato) {
+      const aviso = candidato.cicloVida > 1
+        ? ' (atenção: recapado — priorizar pneu novo no direcional assim que disponível)'
+        : '';
+      sugestoes.push(`
+        <div class="sug-item"><span class="sug-icon">🎯</span><span>
+          <b>Direcional da ${placa}:</b> o pneu <b>${dirPior.serial}</b> (${fmt(dirPior.menorMM)} mm)
+          está no eixo direcional com sulco baixo. Trocar com o <b>${candidato.serial}</b>
+          (${fmt(candidato.menorMM)} mm, ${pos(candidato)}, V${candidato.cicloVida})${aviso} —
+          o direcional concentra a dirigibilidade e a frenagem: deve ter sempre os melhores sulcos.
+        </span></div>`);
+    }
+  }
+
+  // ---- 3. GEMINADOS: par interno/externo com diferença > 3mm ----
+  tracaoEixos.forEach(e => {
+    const pares = [[e.posicoes[0], e.posicoes[1]], [e.posicoes[2], e.posicoes[3]]].filter(p => p[0] && p[1]);
+    pares.forEach(([pa, pb]) => {
+      const a = mapa[pa], b = mapa[pb];
+      if (a && b && a.menorMM > 0 && b.menorMM > 0 && Math.abs(a.menorMM - b.menorMM) > 3) {
+        sugestoes.push(`
+          <div class="sug-item"><span class="sug-icon">⚠️</span><span>
+            <b>Geminados desparelhados no ${e.label} da ${placa}:</b> <b>${a.serial}</b> (${fmt(a.menorMM)} mm)
+            e <b>${b.serial}</b> (${fmt(b.menorMM)} mm) rodam juntos com
+            <b>${fmt(Math.abs(a.menorMM - b.menorMM))} mm</b> de diferença — o pneu maior arrasta o menor,
+            acelerando o desgaste de ambos. Parear geminados com no máximo 3 mm de diferença.
+          </span></div>`);
+      }
+    });
+  });
+
+  // ---- 4. AMPLITUDE E MISTURA DE MARCA POR EIXO + PROPOSTA ----
+  const eixosProblema = tracaoEixos.filter(e => {
+    if (e.pneus.length < 2) return false;
+    const mms = e.pneus.map(t => t.menorMM);
+    const amp = Math.max(...mms) - Math.min(...mms);
+    const marcas = new Set(e.pneus.map(t => t.marca).filter(Boolean));
+    return amp > 3 || marcas.size > 1;
+  });
+
+  if (eixosProblema.length && tracaoPneus.length >= 4) {
+    // Proposta: agrupar por marca e, dentro do eixo, parear sulcos próximos
+    const porMarca = {};
+    tracaoPneus.forEach(t => { (porMarca[t.marca] = porMarca[t.marca] || []).push(t); });
+    Object.values(porMarca).forEach(g => g.sort((a, b) => b.menorMM - a.menorMM));
+    // Marcas com mais pneus primeiro; concatena mantendo blocos de marca
+    const ordenados = Object.entries(porMarca)
+      .sort((a, b) => b[1].length - a[1].length)
+      .flatMap(([, g]) => g);
+
+    const slotsPorEixo = tracaoEixos.map(e => e.posicoes.length);
+    let i = 0;
+    const proposta = tracaoEixos.map((e, k) => {
+      const grupo = ordenados.slice(i, i + slotsPorEixo[k]);
+      i += slotsPorEixo[k];
+      const marcas = [...new Set(grupo.map(t => t.marca))].join(' + ');
+      const lista = grupo.map(t => `<b>${t.serial}</b> (${fmt(t.menorMM)})`).join(', ');
+      return `<b>${e.label}</b>: ${lista} — ${marcas}`;
+    }).join('<br>');
+
+    const motivos = eixosProblema.map(e => {
+      const mms = e.pneus.map(t => t.menorMM);
+      const amp = Math.max(...mms) - Math.min(...mms);
+      const marcas = new Set(e.pneus.map(t => t.marca).filter(Boolean));
+      const m = [];
+      if (amp > 3) m.push(`amplitude de ${fmt(amp)} mm`);
+      if (marcas.size > 1) m.push(`${marcas.size} marcas misturadas`);
+      return `${e.label} (${m.join(' e ')})`;
+    }).join('; ');
+
+    sugestoes.push(`
+      <div class="sug-item"><span class="sug-icon">🔄</span><span>
+        <b>Redistribuição da tração na ${placa}:</b> ${motivos}.
+        Mesmo eixo deve rodar com a mesma marca/banda e sulcos próximos (amplitude por eixo importa mais
+        que a total). Sugestão de remontagem:<br>${proposta}<br>
+        <span style="color:var(--text-muted);font-size:11px">Dentro de cada eixo, montar os geminados pareando os sulcos mais próximos entre si.</span>
+      </span></div>`);
+  }
+
+  // ---- 5. RODÍZIO ENTRE PLACAS (mesma marca, ganho > 2mm) ----
   if (par) {
     const pioresPneus = [...pneusPior].filter(t => t.menorMM > 0).sort((a, b) => a.menorMM - b.menorMM);
     const melhoresPar = [...par.pneus].filter(t => t.menorMM > 0).sort((a, b) => b.menorMM - a.menorMM);
     const usados = new Set();
-    pioresPneus.slice(0, 3).forEach(pw => {
+    pioresPneus.slice(0, 2).forEach(pw => {
       const match = melhoresPar.find(pb =>
         !usados.has(pb.serial) && pb.marca === pw.marca && (pb.menorMM - pw.menorMM) > 2
       );
@@ -2492,49 +2618,17 @@ function renderEixos() {
         sugestoes.push(`
           <div class="sug-item"><span class="sug-icon">↔</span><span>
             <b>Rodízio entre placas:</b> trocar o pneu <b>${pw.serial}</b>
-            (${fmt(pw.menorMM)} mm, ${pw.marca}, ${pw.nomePosicao || pw.posicao}) da <b>${pior.v.placa}</b>
-            pelo <b>${match.serial}</b> (${fmt(match.menorMM)} mm, ${match.marca}, ${match.nomePosicao || match.posicao}) da <b>${par.v.placa}</b>
+            (${fmt(pw.menorMM)} mm, ${pw.marca}, ${pos(pw)}) da <b>${placa}</b>
+            pelo <b>${match.serial}</b> (${fmt(match.menorMM)} mm, ${match.marca}, ${pos(match)}) da <b>${par.v.placa}</b>
             — <span class="sug-ganho">ganho de ${fmt(match.menorMM - pw.menorMM)} mm</span> na posição crítica.
           </span></div>`);
       }
     });
   }
 
-  // 2. Rodízio interno na pior placa
-  const ordInt = [...pneusPior].filter(t => t.menorMM > 0).sort((a, b) => a.menorMM - b.menorMM);
-  if (ordInt.length >= 2) {
-    const piorP = ordInt[0], melhorP = ordInt[ordInt.length - 1];
-    if (melhorP.menorMM - piorP.menorMM > 3 && piorP.direcional && !melhorP.direcional) {
-      sugestoes.push(`
-        <div class="sug-item"><span class="sug-icon">🔄</span><span>
-          <b>Rodízio interno na ${pior.v.placa}:</b> o pneu <b>${piorP.serial}</b>
-          (${fmt(piorP.menorMM)} mm) está no <b>eixo direcional</b> — trocar com o
-          <b>${melhorP.serial}</b> (${fmt(melhorP.menorMM)} mm, ${melhorP.nomePosicao || melhorP.posicao}):
-          o direcional deve ter os melhores sulcos por segurança.
-        </span></div>`);
-    } else if (melhorP.menorMM - piorP.menorMM > 3) {
-      sugestoes.push(`
-        <div class="sug-item"><span class="sug-icon">🔄</span><span>
-          <b>Rodízio interno na ${pior.v.placa}:</b> diferença de
-          <b>${fmt(melhorP.menorMM - piorP.menorMM)} mm</b> entre o pneu <b>${piorP.serial}</b>
-          (${fmt(piorP.menorMM)} mm, ${piorP.nomePosicao || piorP.posicao}) e o <b>${melhorP.serial}</b>
-          (${fmt(melhorP.menorMM)} mm, ${melhorP.nomePosicao || melhorP.posicao}) — equalizar o desgaste com rodízio.
-        </span></div>`);
-    }
-  }
-
-  // 3. Alertas de bloqueio
-  pneusPior.filter(t => t.statusMM === 'Bloquear').forEach(t => {
-    sugestoes.push(`
-      <div class="sug-item"><span class="sug-icon">⛔</span><span>
-        <b>Bloquear:</b> o pneu <b>${t.serial}</b> (${fmt(t.menorMM)} mm, ${t.nomePosicao || t.posicao})
-        da <b>${pior.v.placa}</b> está abaixo de 2 mm — retirar de circulação imediatamente.
-      </span></div>`);
-  });
-
-  elTxt.innerHTML = sugestoes.length
+  return sugestoes.length
     ? sugestoes.join('')
-    : '<div class="empty">✅ Nenhuma ação recomendada — milimetragens equilibradas</div>';
+    : '<div class="empty">✅ Nenhuma ação recomendada — eixos equilibrados em sulco, marca e geminados</div>';
 }
 
 function renderVehVertical(v, pneusArr, mmMed) {
@@ -2668,7 +2762,7 @@ function getEixosConfig(tipo, totalPneus) {
     return [
       { label: 'Eixo 1 — Direcional', posicoes: [111, 121] },
       { label: 'Eixo 2 — Tração',     posicoes: [211, 212, 221, 222] },
-      { label: 'Eixo 3 — Tração',     posicoes: [311, 312, 321, 322] }
+      { label: 'Eixo 3 — Truck',      posicoes: [311, 312, 321, 322] }
     ];
   }
 }
