@@ -1117,6 +1117,26 @@
           <div id="opts-unidade"></div>
         </div>
       </div>
+      <div class="ms-wrap" id="wrap-marca">
+        <button class="ms-btn" onclick="toggleMs('marca')">
+          MARCA <span class="ms-count" id="cnt-marca" style="display:none"></span><span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-panel" id="panel-marca">
+          <input class="ms-search" placeholder="Buscar..." oninput="filterMs(this,'panel-marca')">
+          <div class="ms-option select-all"><label><input type="checkbox" onchange="selectAll('panel-marca',this)"> Todos</label></div>
+          <div id="opts-marca"></div>
+        </div>
+      </div>
+      <div class="ms-wrap" id="wrap-modelo">
+        <button class="ms-btn" onclick="toggleMs('modelo')">
+          MODELO <span class="ms-count" id="cnt-modelo" style="display:none"></span><span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-panel" id="panel-modelo">
+          <input class="ms-search" placeholder="Buscar..." oninput="filterMs(this,'panel-modelo')">
+          <div class="ms-option select-all"><label><input type="checkbox" onchange="selectAll('panel-modelo',this)"> Todos</label></div>
+          <div id="opts-modelo"></div>
+        </div>
+      </div>
       <div class="ms-wrap" id="wrap-placa">
         <button class="ms-btn" onclick="toggleMs('placa')">
           PLACA <span class="ms-count" id="cnt-placa" style="display:none"></span><span class="ms-arrow">▾</span>
@@ -1523,7 +1543,7 @@ const SUPABASE_KEY = 'sb_publishable_6GvYIjIoAYQSzFaWTiSptQ_VP8ravoC';
 // ============================================================
 let DATA = { vehicles: [], tires: [], inspections: [] };
 let charts = {};
-let FILTERS = { ano: [], vigencia: [], unidade: [], placa: [] };
+let FILTERS = { ano: [], vigencia: [], unidade: [], placa: [], marca: [], modelo: [] };
 
 // ============================================================
 // TEMA
@@ -1638,12 +1658,16 @@ function populateFilters() {
   buildFilter('vigencia', meses);
   buildFilter('unidade',  unidades);
   buildFilter('placa',    placas);
+  buildFilter('marca',    [...new Set(vehs.map(v => v.marca).filter(Boolean))].sort());
+  buildFilter('modelo',   [...new Set(vehs.map(v => v.modelo).filter(Boolean))].sort());
 }
 
 function getFilteredVehicles() {
   let v = DATA.vehicles;
   if (FILTERS.unidade.length) v = v.filter(x => FILTERS.unidade.includes(x.tipo));
   if (FILTERS.placa.length)   v = v.filter(x => FILTERS.placa.includes(x.placa));
+  if (FILTERS.marca.length)   v = v.filter(x => FILTERS.marca.includes(x.marca));
+  if (FILTERS.modelo.length)  v = v.filter(x => FILTERS.modelo.includes(x.modelo));
   return v;
 }
 
@@ -1692,10 +1716,9 @@ function getFilteredTires() {
     });
   }
 
-  if (FILTERS.placa.length) t = t.filter(x => FILTERS.placa.includes(x.placa));
-  if (FILTERS.unidade.length) {
-    const placasUnidade = new Set(DATA.vehicles.filter(v => FILTERS.unidade.includes(v.tipo)).map(v => v.placa));
-    t = t.filter(x => placasUnidade.has(x.placa));
+  if (FILTERS.placa.length || FILTERS.unidade.length || FILTERS.marca.length || FILTERS.modelo.length) {
+    const placasOk = new Set(getFilteredVehicles().map(v => v.placa));
+    t = t.filter(x => placasOk.has(x.placa));
   }
   return t;
 }
