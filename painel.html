@@ -2503,7 +2503,24 @@ function gerarSugestoes(pior, pneusPior, par) {
     sugestoes.push(`
       <div class="sug-item"><span class="sug-icon">⛔</span><span>
         <b>Bloquear:</b> o pneu <b>${t.serial}</b> (${fmt(t.menorMM)} mm, ${pos(t)})
-        da <b>${placa}</b> está abaixo de 2 mm — retirar de circulação imediatamente.
+        da <b>${placa}</b> está abaixo de 2 mm — retirar de circulação imediatamente
+        (o limite legal de sulco é 1,6 mm — CONTRAN 913/2022).
+      </span></div>`);
+  });
+
+  // ---- 0b. CRÍTICO: RECAPADO NO DIRECIONAL (política: direcional sempre V1) ----
+  (eixos[0]?.pneus || []).filter(t => t.cicloVida > 1).forEach(t => {
+    const novoCandidato = tracaoPneus
+      .filter(c => c.cicloVida === 1)
+      .sort((a, b) => b.menorMM - a.menorMM)[0];
+    sugestoes.push(`
+      <div class="sug-item"><span class="sug-icon">🚨</span><span>
+        <b>CRÍTICO — recapado no direcional da ${placa}:</b> o pneu <b>${t.serial}</b>
+        (V${t.cicloVida}, ${fmt(t.menorMM)} mm, ${pos(t)}) é recapado e está no eixo direcional.
+        O direcional concentra a estabilidade e a frenagem do veículo — política da frota: <b>somente pneus
+        novos (V1)</b> nessa posição (a legislação já proíbe recapados no eixo dianteiro de ônibus; em frota
+        de carga é a principal boa prática de segurança).
+        ${novoCandidato ? `Substituir pelo <b>${novoCandidato.serial}</b> (V1, ${fmt(novoCandidato.menorMM)} mm, ${pos(novoCandidato)}) e mover o recapado para a tração.` : 'Programar montagem de pneu novo nessa posição.'}
       </span></div>`);
   });
 
@@ -2519,42 +2536,76 @@ function gerarSugestoes(pior, pneusPior, par) {
       </span></div>`);
   }
 
-  // ---- 2. DIRECIONAL: melhores sulcos, preferência por pneu novo ----
+  // ---- 2. DIRECIONAL: melhores sulcos e SOMENTE pneu novo (V1) ----
   if (dirEixo.pneus.length) {
     const dirPior = [...dirEixo.pneus].sort((a, b) => a.menorMM - b.menorMM)[0];
     const candidato = [...tracaoPneus]
-      .filter(t => t.menorMM - dirPior.menorMM > 3)
-      .sort((a, b) => (a.cicloVida - b.cicloVida) || (b.menorMM - a.menorMM))[0];
+      .filter(t => t.cicloVida === 1 && t.menorMM - dirPior.menorMM > 3)
+      .sort((a, b) => b.menorMM - a.menorMM)[0];
     if (candidato) {
-      const aviso = candidato.cicloVida > 1
-        ? ' (atenção: recapado — priorizar pneu novo no direcional assim que disponível)'
-        : '';
       sugestoes.push(`
         <div class="sug-item"><span class="sug-icon">🎯</span><span>
           <b>Direcional da ${placa}:</b> o pneu <b>${dirPior.serial}</b> (${fmt(dirPior.menorMM)} mm)
           está no eixo direcional com sulco baixo. Trocar com o <b>${candidato.serial}</b>
-          (${fmt(candidato.menorMM)} mm, ${pos(candidato)}, V${candidato.cicloVida})${aviso} —
-          o direcional concentra a dirigibilidade e a frenagem: deve ter sempre os melhores sulcos.
+          (V1, ${fmt(candidato.menorMM)} mm, ${pos(candidato)}) — o direcional concentra a
+          dirigibilidade e a frenagem: sempre os melhores sulcos e somente pneus novos nessa posição.
         </span></div>`);
     }
   }
 
-  // ---- 3. GEMINADOS: par interno/externo com diferença > 3mm ----
+  // ---- 3. GEMINADOS: pareamento e calibragem do interno ----
+  // Ciência: 3 mm de diferença de diâmetro entre geminados já compromete o desempenho
+  // quilométrico — o maior arrasta o menor (Continental). O interno desgasta mais e é o
+  // mais negligenciado na calibragem (~50% dos pneus rodam subcalibrados).
   tracaoEixos.forEach(e => {
     const pares = [[e.posicoes[0], e.posicoes[1]], [e.posicoes[2], e.posicoes[3]]].filter(p => p[0] && p[1]);
     pares.forEach(([pa, pb]) => {
       const a = mapa[pa], b = mapa[pb];
-      if (a && b && a.menorMM > 0 && b.menorMM > 0 && Math.abs(a.menorMM - b.menorMM) > 3) {
+      if (!a || !b) return;
+
+      if (a.menorMM > 0 && b.menorMM > 0 && Math.abs(a.menorMM - b.menorMM) > 3) {
         sugestoes.push(`
           <div class="sug-item"><span class="sug-icon">⚠️</span><span>
             <b>Geminados desparelhados no ${e.label} da ${placa}:</b> <b>${a.serial}</b> (${fmt(a.menorMM)} mm)
             e <b>${b.serial}</b> (${fmt(b.menorMM)} mm) rodam juntos com
-            <b>${fmt(Math.abs(a.menorMM - b.menorMM))} mm</b> de diferença — o pneu maior arrasta o menor,
-            acelerando o desgaste de ambos. Parear geminados com no máximo 3 mm de diferença.
+            <b>${fmt(Math.abs(a.menorMM - b.menorMM))} mm</b> de diferença de sulco — o pneu maior arrasta
+            o menor e sobrecarrega o eixo. Parear geminados com sulcos o mais próximos possível
+            (acima de 3 mm de diferença o prejuízo quilométrico é comprovado).
+          </span></div>`);
+      }
+
+      // Interno do geminado subcalibrado (terceiro dígito 2 = interno)
+      const interno = String(pa).slice(-1) === '2' ? a : (String(pb).slice(-1) === '2' ? b : null);
+      if (interno && interno.pressaoNOK && interno.pressaoIdeal > 0 && interno.pressaoAtual < interno.pressaoIdeal) {
+        sugestoes.push(`
+          <div class="sug-item"><span class="sug-icon">🔧</span><span>
+            <b>Geminado interno subcalibrado (${e.label} da ${placa}):</b> o pneu <b>${interno.serial}</b>
+            (${pos(interno)}) está com ${fmt(interno.pressaoAtual)} PSI contra ${fmt(interno.pressaoIdeal)} PSI ideais.
+            O interno é o mais esquecido na calibragem e o que mais sofre no geminado — subcalibrado,
+            ele transfere carga ao externo e desgasta os dois.
           </span></div>`);
       }
     });
   });
+
+  // ---- 3b. RODÍZIO EM X ENTRE TRAÇÃO E TRUCK ----
+  // Prática de frota: rodízio em X entre 2º e 3º eixo a cada ~10 mil km equaliza o
+  // desgaste (a tração desgasta mais rápido pelo torque).
+  if (tracaoEixos.length === 2) {
+    const med = arr => arr.length ? arr.reduce((s, t) => s + t.menorMM, 0) / arr.length : null;
+    const m2 = med(tracaoEixos[0].pneus), m3 = med(tracaoEixos[1].pneus);
+    if (m2 !== null && m3 !== null && Math.abs(m2 - m3) > 3) {
+      const [maisGasto, menosGasto] = m2 < m3 ? [tracaoEixos[0], tracaoEixos[1]] : [tracaoEixos[1], tracaoEixos[0]];
+      sugestoes.push(`
+        <div class="sug-item"><span class="sug-icon">✖️</span><span>
+          <b>Rodízio em X entre eixos da ${placa}:</b> o ${maisGasto.label} está com média
+          <b>${fmt(Math.min(m2, m3))} mm</b> contra <b>${fmt(Math.max(m2, m3))} mm</b> do ${menosGasto.label}.
+          Fazer o rodízio em <b>padrão X</b> (cruzando lados entre os dois eixos) — é o padrão recomendado
+          para conjuntos de tração dupla e deve entrar na rotina a cada ~10 mil km, junto com alinhamento
+          e balanceamento.
+        </span></div>`);
+    }
+  }
 
   // ---- 4. AMPLITUDE E MISTURA DE MARCA POR EIXO + PROPOSTA ----
   const eixosProblema = tracaoEixos.filter(e => {
