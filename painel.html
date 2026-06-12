@@ -2554,7 +2554,7 @@ function renderVehVertical(v, pneusArr, mmMed) {
         <div class="tv-serial">${t.serial}</div>
         <div class="tv-mm" style="color:${corMM(t.statusMM)}">${fmt(t.menorMM)} mm</div>
         <div class="tv-sub">${t.marca} · V${t.cicloVida}</div>
-        ${t.cicloVida > 1 ? `<div class="tv-sub">Banda: ${t.banda || '—'}</div>` : ''}
+        ${t.cicloVida > 1 ? `<div class="tv-sub">Banda: ${[t.bandaMarca, t.banda].filter(Boolean).join(' ') || '—'}</div>` : ''}
       </div>`;
   };
 
