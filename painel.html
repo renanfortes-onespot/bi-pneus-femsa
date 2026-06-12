@@ -40,7 +40,7 @@
 
   /* ===== LIGHT MODE — estilo FEMSA (branco + preto + vermelho) ===== */
   body.light-mode {
-    --bg:        #F2F2F2;
+    --bg:        #E9EAEC;
     --surface:   rgba(255,255,255,0.65);
     --surface2:  rgba(0,0,0,0.05);
     --border:    rgba(0,0,0,0.06);
@@ -52,7 +52,7 @@
   }
 
   body.light-mode {
-    background: #F2F2F2;
+    background: #E9EAEC;
   }
 
   /* Sidebar continua escura no modo claro */
@@ -69,9 +69,9 @@
   body.light-mode .card,
   body.light-mode .adh-card,
   body.light-mode .adh-table-wrap {
-    background: #FFFFFF;
-    border: 1px solid rgba(0,0,0,0.07);
-    box-shadow: 0 4px 18px rgba(0,0,0,0.16);
+    background: rgba(127,130,140,0.10);
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     color: #111;
   }
   body.light-mode .card-title,
@@ -837,9 +837,9 @@
     box-shadow: 0 2px 12px rgba(0,0,0,0.25);
   }
   body.light-mode .saude-card {
-    background: #FFFFFF;
-    border: 1px solid rgba(0,0,0,0.07);
-    box-shadow: 0 4px 18px rgba(0,0,0,0.16);
+    background: rgba(127,130,140,0.10);
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     color: #111;
   }
 
@@ -1042,6 +1042,42 @@
 
   @media (max-width: 900px) {
     .saude-chart-row { grid-template-columns: 1fr; }
+  }
+
+  /* ===== MOBILE: tabelas com expandir ===== */
+  .row-toggle {
+    display: none;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text-muted);
+    padding: 2px 8px; cursor: pointer;
+    font-size: 12px; line-height: 1;
+    font-family: var(--font); margin-left: 8px;
+  }
+  body.light-mode .row-toggle { background: rgba(0,0,0,0.05); color: #555; }
+
+  tr.detail-row { display: none; }
+  tr.detail-row td { padding: 10px 16px 14px; }
+
+  .kv {
+    display: flex; flex-wrap: wrap; gap: 6px 18px;
+    font-size: 12px; color: var(--text-muted); line-height: 1.7;
+  }
+  .kv b { color: var(--text); font-weight: 700; }
+  body.light-mode .kv b { color: #111; }
+
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .adh-value { font-size: 44px; }
+    .adh-table .dcol { display: none; }
+    .row-toggle { display: inline-block; }
+    tr.detail-row.open { display: table-row; }
+    .tire-v { width: 80px; font-size: 10px; padding: 6px; }
+    .tire-v .tv-mm { font-size: 12px; }
+    .tire-v .tv-serial { font-size: 11px; }
+    .tire-v .tv-pos, .tire-v .tv-sub { font-size: 9px; }
+    .axle-bar { width: 18px; }
+    .saude-cards { grid-template-columns: repeat(2, 1fr) !important; }
   }
 </style>
 </head>
@@ -1248,13 +1284,13 @@
           <thead><tr>
             <th>#</th>
             <th id="thDrill">Placa</th>
-            <th>Pneus</th>
-            <th>MM Média</th>
-            <th>Vida Média</th>
-            <th>Recapes</th>
-            <th>Amplitude</th>
-            <th>Calibragem</th>
-            <th>Deflator</th>
+            <th class="dcol">Pneus</th>
+            <th class="dcol">MM Média</th>
+            <th class="dcol">Vida Média</th>
+            <th class="dcol">Recapes</th>
+            <th class="dcol">Amplitude</th>
+            <th class="dcol">Calibragem</th>
+            <th class="dcol">Deflator</th>
             <th class="col-dias">Pontuação ↑</th>
           </tr></thead>
           <tbody id="tbodySaudeRanking"></tbody>
@@ -1401,10 +1437,10 @@
         <div style="overflow-x:auto">
         <table class="adh-table">
           <thead><tr>
-            <th>#</th><th>Serial</th><th>Placa</th><th>Frota</th><th>Posição</th>
-            <th>Marca</th><th>Vida</th><th>Marca Banda</th><th>Banda</th>
-            <th>mm1</th><th>mm2</th><th>mm3</th><th>mm4</th>
-            <th>Amplitude</th><th>Menor MM</th><th>Status</th>
+            <th>#</th><th>Serial</th><th class="dcol">Placa</th><th class="dcol">Frota</th><th class="dcol">Posição</th>
+            <th class="dcol">Marca</th><th class="dcol">Vida</th><th class="dcol">Marca Banda</th><th class="dcol">Banda</th>
+            <th class="dcol">mm1</th><th class="dcol">mm2</th><th class="dcol">mm3</th><th class="dcol">mm4</th>
+            <th class="dcol">Amplitude</th><th>Menor MM</th><th>Status</th>
           </tr></thead>
           <tbody id="tbodyMM"></tbody>
         </table>
@@ -1485,9 +1521,9 @@
         <div style="overflow-x:auto">
         <table class="adh-table">
           <thead><tr>
-            <th>#</th><th>Serial</th><th>Placa</th><th>Frota</th><th>Posição</th>
-            <th>Marca</th><th>Vida</th>
-            <th>Pressão Ideal</th><th>Pressão Atual</th>
+            <th>#</th><th>Serial</th><th class="dcol">Placa</th><th class="dcol">Frota</th><th class="dcol">Posição</th>
+            <th class="dcol">Marca</th><th class="dcol">Vida</th>
+            <th class="dcol">Pressão Ideal</th><th class="dcol">Pressão Atual</th>
             <th>Desvio</th><th>Status</th>
           </tr></thead>
           <tbody id="tbodyPressao"></tbody>
@@ -1999,28 +2035,49 @@ function renderSaude() {
   }).filter(r => r.score !== null)
     .sort((a, b) => a.score - b.score); // pior primeiro
 
-  document.getElementById('tbodySaudeRanking').innerHTML = ranking.map((r, i) => `
+  document.getElementById('tbodySaudeRanking').innerHTML = ranking.map((r, i) => {
+    const defTxt = r.nDef > 0
+      ? `<span style="color:var(--red-soft);font-weight:700">${drill === 'pneu' ? '×0,5' : `×0,5 (${r.nDef} pneu${r.nDef > 1 ? 's' : ''})`}</span>`
+      : '<span style="color:var(--text-muted)">—</span>';
+    return `
     <tr>
       <td style="color:var(--text-muted)">${i + 1}</td>
       <td><strong>${r.chave}</strong>${r.sub ? ` <span style="font-size:10px;color:var(--text-muted)">${r.sub}</span>` : ''}</td>
-      <td>${r.qtd}</td>
-      <td>${r.mm !== null ? fmtBR(r.mm) + ' mm' : '—'}</td>
-      <td>${fmtIdade(r.idade)}</td>
-      <td>${fmtBR(r.recapes, 2)}</td>
-      <td>${fmtBR(r.amp)} mm</td>
-      <td>${r.calib !== null ? fmtBR(r.calib) + '%' : '—'}</td>
-      <td>${r.nDef > 0
-        ? `<span style="color:var(--red-soft);font-weight:700">${drill === 'pneu' ? '×0,5' : `×0,5 (${r.nDef} pneu${r.nDef > 1 ? 's' : ''})`}</span>`
-        : '<span style="color:var(--text-muted)">—</span>'}</td>
-      <td style="text-align:right">
+      <td class="dcol">${r.qtd}</td>
+      <td class="dcol">${r.mm !== null ? fmtBR(r.mm) + ' mm' : '—'}</td>
+      <td class="dcol">${fmtIdade(r.idade)}</td>
+      <td class="dcol">${fmtBR(r.recapes, 2)}</td>
+      <td class="dcol">${fmtBR(r.amp)} mm</td>
+      <td class="dcol">${r.calib !== null ? fmtBR(r.calib) + '%' : '—'}</td>
+      <td class="dcol">${defTxt}</td>
+      <td style="text-align:right;white-space:nowrap">
         <span class="td-dias" style="color:${scoreCluster(r.score)}">${fmtBR(r.score, 1)}</span>
+        <button class="row-toggle" onclick="toggleDetail(this)">+</button>
       </td>
     </tr>
-  `).join('');
+    <tr class="detail-row"><td colspan="10"><div class="kv">
+      <span>Pneus: <b>${r.qtd}</b></span>
+      <span>MM Média: <b>${r.mm !== null ? fmtBR(r.mm) + ' mm' : '—'}</b></span>
+      <span>Vida Média: <b>${fmtIdade(r.idade)}</b></span>
+      <span>Recapes: <b>${fmtBR(r.recapes, 2)}</b></span>
+      <span>Amplitude: <b>${fmtBR(r.amp)} mm</b></span>
+      <span>Calibragem: <b>${r.calib !== null ? fmtBR(r.calib) + '%' : '—'}</b></span>
+      <span>Deflator: ${defTxt}</span>
+    </div></td></tr>`;
+  }).join('');
 }
 
 let SAUDE_METRIC = 'score';
 let SAUDE_DRILL  = 'placa';
+
+// Mobile: expande/recolhe a linha de detalhes de uma tabela
+function toggleDetail(btn) {
+  const det = btn.closest('tr').nextElementSibling;
+  if (det && det.classList.contains('detail-row')) {
+    det.classList.toggle('open');
+    btn.textContent = det.classList.contains('open') ? '−' : '+';
+  }
+}
 
 function setSaudeDrill(d, btn) {
   SAUDE_DRILL = d;
@@ -2477,21 +2534,31 @@ function filtrarMM() {
         <tr>
           <td style="color:var(--text-muted)">${i + 1}</td>
           <td><strong>${t.serial}</strong></td>
-          <td>${t.placa || '—'}</td>
-          <td>${t.frota || '—'}</td>
-          <td>${t.nomePosicao || t.posicao || '—'}</td>
-          <td>${t.marca}</td>
-          <td>V${t.cicloVida}</td>
-          <td>${t.cicloVida > 1 ? (t.bandaMarca || '—') : '—'}</td>
-          <td>${t.cicloVida > 1 ? (t.banda || '—') : '—'}</td>
-          <td>${fmt(t.mm1)}</td>
-          <td>${fmt(t.mm2)}</td>
-          <td>${fmt(t.mm3)}</td>
-          <td>${fmt(t.mm4)}</td>
-          <td style="color:${t.amplitude > 5 ? 'var(--red-soft)' : t.amplitude > 3 ? 'var(--yellow)' : 'var(--green)'};font-weight:700">${fmt(t.amplitude)}</td>
+          <td class="dcol">${t.placa || '—'}</td>
+          <td class="dcol">${t.frota || '—'}</td>
+          <td class="dcol">${t.nomePosicao || t.posicao || '—'}</td>
+          <td class="dcol">${t.marca}</td>
+          <td class="dcol">V${t.cicloVida}</td>
+          <td class="dcol">${t.cicloVida > 1 ? (t.bandaMarca || '—') : '—'}</td>
+          <td class="dcol">${t.cicloVida > 1 ? (t.banda || '—') : '—'}</td>
+          <td class="dcol">${fmt(t.mm1)}</td>
+          <td class="dcol">${fmt(t.mm2)}</td>
+          <td class="dcol">${fmt(t.mm3)}</td>
+          <td class="dcol">${fmt(t.mm4)}</td>
+          <td class="dcol" style="color:${t.amplitude > 5 ? 'var(--red-soft)' : t.amplitude > 3 ? 'var(--yellow)' : 'var(--green)'};font-weight:700">${fmt(t.amplitude)}</td>
           <td style="color:${corStatus[t.statusMM] || 'var(--text)'};font-weight:700">${fmt(t.menorMM)}</td>
-          <td><span class="farol-dot"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${corStatus[t.statusMM] || 'var(--text-muted)'};margin-right:6px"></span>${t.statusMM}</span></td>
+          <td style="white-space:nowrap"><span class="farol-dot"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${corStatus[t.statusMM] || 'var(--text-muted)'};margin-right:6px"></span>${t.statusMM}</span><button class="row-toggle" onclick="toggleDetail(this)">+</button></td>
         </tr>
+        <tr class="detail-row"><td colspan="16"><div class="kv">
+          <span>Placa: <b>${t.placa || '—'}</b></span>
+          <span>Frota: <b>${t.frota || '—'}</b></span>
+          <span>Posição: <b>${t.nomePosicao || t.posicao || '—'}</b></span>
+          <span>Marca: <b>${t.marca}</b></span>
+          <span>Vida: <b>V${t.cicloVida}</b></span>
+          ${t.cicloVida > 1 ? `<span>Banda: <b>${[t.bandaMarca, t.banda].filter(Boolean).join(' ') || '—'}</b></span>` : ''}
+          <span>mm: <b>${fmt(t.mm1)} · ${fmt(t.mm2)} · ${fmt(t.mm3)} · ${fmt(t.mm4)}</b></span>
+          <span>Amplitude: <b>${fmt(t.amplitude)}</b></span>
+        </div></td></tr>
       `).join('');
 }
 
@@ -2643,16 +2710,25 @@ function filtrarPressao() {
           <tr>
             <td style="color:var(--text-muted)">${i + 1}</td>
             <td><strong>${t.serial}</strong></td>
-            <td>${t.placa || '—'}</td>
-            <td>${t.frota || '—'}</td>
-            <td>${t.nomePosicao || t.posicao || '—'}</td>
-            <td>${t.marca}</td>
-            <td>V${t.cicloVida}</td>
-            <td>${fmt(t.pressaoIdeal)} PSI</td>
-            <td>${fmt(t.pressaoAtual)} PSI</td>
+            <td class="dcol">${t.placa || '—'}</td>
+            <td class="dcol">${t.frota || '—'}</td>
+            <td class="dcol">${t.nomePosicao || t.posicao || '—'}</td>
+            <td class="dcol">${t.marca}</td>
+            <td class="dcol">V${t.cicloVida}</td>
+            <td class="dcol">${fmt(t.pressaoIdeal)} PSI</td>
+            <td class="dcol">${fmt(t.pressaoAtual)} PSI</td>
             <td style="color:${cor};font-weight:700">${t.desvioPressao > 0 ? '+' : ''}${fmt(t.desvioPressao)}%</td>
-            <td><span class="farol-dot"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cor};margin-right:6px"></span>${status}</span></td>
+            <td style="white-space:nowrap"><span class="farol-dot"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cor};margin-right:6px"></span>${status}</span><button class="row-toggle" onclick="toggleDetail(this)">+</button></td>
           </tr>
+          <tr class="detail-row"><td colspan="11"><div class="kv">
+            <span>Placa: <b>${t.placa || '—'}</b></span>
+            <span>Frota: <b>${t.frota || '—'}</b></span>
+            <span>Posição: <b>${t.nomePosicao || t.posicao || '—'}</b></span>
+            <span>Marca: <b>${t.marca}</b></span>
+            <span>Vida: <b>V${t.cicloVida}</b></span>
+            <span>Ideal: <b>${fmt(t.pressaoIdeal)} PSI</b></span>
+            <span>Atual: <b>${fmt(t.pressaoAtual)} PSI</b></span>
+          </div></td></tr>
         `;
       }).join('');
 }
