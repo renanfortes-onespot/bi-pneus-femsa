@@ -40,31 +40,31 @@
 
   /* ===== LIGHT MODE — estilo FEMSA (branco + preto + vermelho) ===== */
   body.light-mode {
-    --bg:        #E9EAEC;
-    --surface:   rgba(255,255,255,0.65);
-    --surface2:  rgba(0,0,0,0.05);
-    --border:    rgba(0,0,0,0.06);
-    --text:      #111111;
-    --text-muted:#555555;
-    --text3:     #777777;
-    --red-soft:  #FF0000;
-    --green:     #0BA50B;
+    --bg:        #8E959C;
+    --surface:   rgba(35,40,50,0.22);
+    --surface2:  rgba(255,255,255,0.08);
+    --border:    rgba(255,255,255,0.14);
+    --text:      #FFFFFF;
+    --text-muted:rgba(255,255,255,0.78);
+    --text3:     rgba(255,255,255,0.6);
+    --red-soft:  #FF6666;
+    --green:     #3BB33B;
   }
 
   body.light-mode {
     background: linear-gradient(180deg,
-      #D90511 0%,
-      #E84A55 30%,
-      #F0959C 60%,
-      #F5CDD0 85%,
-      #F2E4E5 100%);
+      #5E646B 0%,
+      #7C838B 30%,
+      #A2A8AF 60%,
+      #C4C9CE 85%,
+      #D6DADD 100%);
     background-attachment: fixed;
   }
 
-  /* Textos soltos sobre o fundo vermelho (hero, títulos de seção) em branco */
+  /* Textos soltos sobre o fundo (hero, títulos) em branco */
   body.light-mode .adh-label { color: rgba(255,255,255,0.9); }
   body.light-mode .adh-delta { color: rgba(255,255,255,0.85); }
-  body.light-mode .adh-hero .adh-value { text-shadow: 0 1px 8px rgba(0,0,0,0.15); }
+  body.light-mode .adh-hero .adh-value { text-shadow: 0 1px 8px rgba(0,0,0,0.2); }
 
   /* Sidebar continua escura no modo claro */
   body.light-mode .sidebar {
@@ -80,22 +80,22 @@
   body.light-mode .card,
   body.light-mode .adh-card,
   body.light-mode .adh-table-wrap {
-    background: rgba(255,255,255,0.28);
-    border: 1px solid rgba(255,255,255,0.45);
-    box-shadow: 0 8px 28px rgba(120,10,18,0.12);
+    background: rgba(35,40,50,0.22);
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow: 0 8px 28px rgba(20,25,35,0.18);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    color: #111;
+    color: #fff;
   }
   body.light-mode .card-title,
   body.light-mode .adh-table-title,
-  body.light-mode .adh-card-value { color: #111; }
-  body.light-mode .adh-table tbody td { color: #111; }
-  body.light-mode .farol-dot { color: #111; }
-  body.light-mode .adh-table tbody tr { border-bottom-color: rgba(0,0,0,0.03); }
-  body.light-mode .adh-table tbody tr:hover { background: rgba(0,0,0,0.03); }
-  body.light-mode .adh-table thead tr { background: rgba(0,0,0,0.04); }
-  body.light-mode .adh-table thead th { color: #555; }
+  body.light-mode .adh-card-value { color: #fff; }
+  body.light-mode .adh-table tbody td { color: #F2F4F6; }
+  body.light-mode .farol-dot { color: #fff; }
+  body.light-mode .adh-table tbody tr { border-bottom-color: rgba(255,255,255,0.05); }
+  body.light-mode .adh-table tbody tr:hover { background: rgba(255,255,255,0.05); }
+  body.light-mode .adh-table thead tr { background: rgba(255,255,255,0.07); }
+  body.light-mode .adh-table thead th { color: rgba(255,255,255,0.75); }
 
   body {
     background:
@@ -850,12 +850,12 @@
     box-shadow: 0 2px 12px rgba(0,0,0,0.25);
   }
   body.light-mode .saude-card {
-    background: rgba(255,255,255,0.28);
-    border: 1px solid rgba(255,255,255,0.45);
-    box-shadow: 0 8px 28px rgba(120,10,18,0.12);
+    background: rgba(35,40,50,0.22);
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow: 0 8px 28px rgba(20,25,35,0.18);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    color: #111;
+    color: #fff;
   }
 
   .saude-card .sc-label {
@@ -868,7 +868,7 @@
     font-size: 24px; font-weight: 800;
     color: var(--text); line-height: 1.1; margin-top: 2px;
   }
-  body.light-mode .saude-card .sc-value { color: #111; }
+  body.light-mode .saude-card .sc-value { color: #fff; }
 
   .saude-card .sc-sub {
     font-size: 10px; color: var(--text-muted); margin-top: 5px;
@@ -921,10 +921,10 @@
     font-size: 10px; color: var(--text-muted);
     opacity: 0.85; line-height: 1.4;
   }
-  body.light-mode .pesos-row { border-bottom-color: rgba(0,0,0,0.04); color: #555; }
+  body.light-mode .pesos-row { border-bottom-color: rgba(255,255,255,0.06); color: rgba(255,255,255,0.78); }
   .pesos-row:last-of-type { border-bottom: none; }
   .pesos-row b { color: var(--text); font-weight: 800; font-size: 13px; text-align: right; }
-  body.light-mode .pesos-row b { color: #111; }
+  body.light-mode .pesos-row b { color: #fff; }
 
   .pesos-note {
     font-size: 10px; color: var(--text-muted);
@@ -951,7 +951,7 @@
     border-color: var(--red);
     color: var(--red);
   }
-  body.light-mode .chip { background: rgba(0,0,0,0.04); color: #555; }
+  body.light-mode .chip { background: rgba(255,255,255,0.10); color: #eee; }
   body.light-mode .chip.active { background: rgba(227,6,19,0.10); color: var(--red); }
 
   /* ===== VISÃO DE EIXOS — VERTICAL ===== */
@@ -1037,8 +1037,8 @@
     color: var(--text-muted);
   }
   .sug-list li b { color: var(--text); }
-  body.light-mode .sug-list li { color: #555; }
-  body.light-mode .sug-list li b { color: #111; }
+  body.light-mode .sug-list li { color: rgba(255,255,255,0.78); }
+  body.light-mode .sug-list li b { color: #fff; }
   .sug-item b { font-weight: 700; }
   .sug-ganho { color: var(--green); font-weight: 700; }
 
@@ -1052,7 +1052,7 @@
     font-family: var(--font); outline: none;
   }
   .drill-select option { background: #111; color: #eee; }
-  body.light-mode .drill-select { background: rgba(0,0,0,0.04); color: #111; }
+  body.light-mode .drill-select { background: rgba(255,255,255,0.10); color: #fff; }
   body.light-mode .drill-select option { background: #fff; color: #111; }
 
   @media (max-width: 900px) {
@@ -1069,7 +1069,7 @@
     font-size: 12px; line-height: 1;
     font-family: var(--font); margin-left: 8px;
   }
-  body.light-mode .row-toggle { background: rgba(0,0,0,0.05); color: #555; }
+  body.light-mode .row-toggle { background: rgba(255,255,255,0.10); color: #ddd; }
 
   tr.detail-row { display: none; }
   tr.detail-row td { padding: 10px 16px 14px; }
@@ -1079,7 +1079,7 @@
     font-size: 12px; color: var(--text-muted); line-height: 1.7;
   }
   .kv b { color: var(--text); font-weight: 700; }
-  body.light-mode .kv b { color: #111; }
+  body.light-mode .kv b { color: #fff; }
 
   @media (max-width: 768px) {
     .content { padding: 16px; }
@@ -2223,9 +2223,9 @@ function renderSaudeMensalChart() {
 
   const isLight = document.body.classList.contains('light-mode');
   const rgb = {
-    g: isLight ? '11,165,11' : '59,179,59',
+    g: '59,179,59',
     y: '243,156,18',
-    r: isLight ? '255,0,0' : '255,102,102'
+    r: '255,102,102'
   };
   const cor = (v, alpha) => `rgba(${rgb[cfg.cluster(v)]},${alpha})`;
 
@@ -2252,7 +2252,7 @@ function renderSaudeMensalChart() {
         datalabels: {
           display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
           anchor: 'end', align: 'end', offset: 2,
-          color: isLight ? '#111' : '#fff',
+          color: '#fff',
           font: { family: 'Montserrat', size: 12, weight: '700' },
           formatter: v => v === null ? '' : cfg.fmt(v)
         }
@@ -2276,7 +2276,7 @@ function renderSaudeMensalChart() {
       },
       scales: {
         x: {
-          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } },
+          ticks: { color: isLight ? '#E8EAED' : '#94A3B8', font: { family: 'Montserrat', size: 13 } },
           grid: { display: false },
           border: { display: false }
         },
@@ -2406,8 +2406,8 @@ function renderMensalChart() {
 
   // Cor por cluster: ≥98 verde | 85–98 amarelo | <85 vermelho (mais saturado no modo claro)
   const isLight = document.body.classList.contains('light-mode');
-  const rgbGreen = isLight ? '11,165,11'  : '59,179,59';
-  const rgbRed   = isLight ? '255,0,0'    : '255,102,102';
+  const rgbGreen = '59,179,59';
+  const rgbRed   = '255,102,102';
   const clusterColor = (p, alpha) =>
     p >= 98 ? `rgba(${rgbGreen},${alpha})` :
     p >= 85 ? `rgba(243,156,18,${alpha})` :
@@ -2445,7 +2445,7 @@ function renderMensalChart() {
           datalabels: {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
-            color: isLight ? '#111' : '#fff',
+            color: '#fff',
             font: { family: 'Montserrat', size: 12, weight: '700' },
             formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
           }
@@ -2471,7 +2471,7 @@ function renderMensalChart() {
       },
       scales: {
         x: {
-          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } },
+          ticks: { color: isLight ? '#E8EAED' : '#94A3B8', font: { family: 'Montserrat', size: 13 } },
           grid: { display: false },
           border: { display: false }
         },
@@ -2605,9 +2605,9 @@ function renderMMMensalCharts() {
 
   const isLight = document.body.classList.contains('light-mode');
   const rgb = {
-    g: isLight ? '11,165,11' : '59,179,59',
+    g: '59,179,59',
     y: '243,156,18',
-    r: isLight ? '255,0,0' : '255,102,102'
+    r: '255,102,102'
   };
   const vigFiltros = FILTERS.vigencia;
   const hlMes = m => {
@@ -2630,7 +2630,7 @@ function renderMMMensalCharts() {
           datalabels: {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
-            color: isLight ? '#111' : '#fff',
+            color: '#fff',
             font: { family: 'Montserrat', size: 12, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
@@ -2650,7 +2650,7 @@ function renderMMMensalCharts() {
           }
         },
         scales: {
-          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
+          x: { ticks: { color: isLight ? '#E8EAED' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
           y: { display: false, grace: '10%' }
         }
       }
@@ -2781,9 +2781,9 @@ function renderPressaoMensalCharts() {
 
   const isLight = document.body.classList.contains('light-mode');
   const rgb = {
-    g: isLight ? '11,165,11' : '59,179,59',
+    g: '59,179,59',
     y: '243,156,18',
-    r: isLight ? '255,0,0' : '255,102,102'
+    r: '255,102,102'
   };
   const vigFiltros = FILTERS.vigencia;
   const hlMes = m => {
@@ -2806,7 +2806,7 @@ function renderPressaoMensalCharts() {
           datalabels: {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
-            color: isLight ? '#111' : '#fff',
+            color: '#fff',
             font: { family: 'Montserrat', size: 12, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
@@ -2826,7 +2826,7 @@ function renderPressaoMensalCharts() {
           }
         },
         scales: {
-          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
+          x: { ticks: { color: isLight ? '#E8EAED' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
           y: { display: false, grace: '10%' }
         }
       }
@@ -2842,7 +2842,7 @@ function renderPressaoMensalCharts() {
   const altaVals  = porMes.map(x => x === null ? null : x.alta);
   const baixaVals = porMes.map(x => x === null ? null : x.baixa);
   const hlArr     = meses.map(m => hlMes(m));
-  const rgbAlta   = isLight ? '255,0,0' : '255,102,102';
+  const rgbAlta   = '255,102,102';
   const rgbBaixa  = '56,189,248';
   const corPt  = (rgbStr, i) => `rgba(${rgbStr},${hlArr[i] ? 1 : 0.18})`;
   const corSeg = rgbStr => ctx =>
@@ -2901,7 +2901,7 @@ function renderPressaoMensalCharts() {
         }
       },
       scales: {
-        x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
+        x: { ticks: { color: isLight ? '#E8EAED' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
         y: { display: false, grace: '15%', beginAtZero: true }
       }
     }
