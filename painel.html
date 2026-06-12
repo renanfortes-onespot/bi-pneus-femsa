@@ -1397,11 +1397,6 @@
         <div class="adh-hero-left">
           <div class="adh-label">Calibragem</div>
           <div class="adh-value" id="prHeroVal">—</div>
-          <div class="adh-deltas">
-            <div class="adh-delta">Pressão OK<b id="prDeltaOK" style="color:var(--green)">—</b></div>
-            <div class="adh-delta">Baixa Pressão<b id="prDeltaBaixa" style="color:var(--yellow)">—</b></div>
-            <div class="adh-delta">Alta Pressão<b id="prDeltaAlta" style="color:var(--red-soft)">—</b></div>
-          </div>
         </div>
       </div>
 
@@ -2527,10 +2522,6 @@ function renderPressao() {
   const hero = document.getElementById('prHeroVal');
   hero.textContent = fmtBR(pctOK) + '%';
   hero.style.color = pctOK >= 98 ? 'var(--green)' : pctOK >= 85 ? 'var(--yellow)' : 'var(--red-soft)';
-
-  document.getElementById('prDeltaOK').textContent    = ok.length;
-  document.getElementById('prDeltaBaixa').textContent = baixa;
-  document.getElementById('prDeltaAlta').textContent  = alta;
 
   // Cards
   const setCard = (id, val, cor) => {
