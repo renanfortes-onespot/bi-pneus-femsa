@@ -1407,10 +1407,7 @@
           <div class="adh-label">MM Média</div>
           <div class="adh-value" id="mmHeroVal">—</div>
           <div class="chart-legend" style="margin-top:10px">
-            <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> Bom Estado &gt; 6mm</span>
-            <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> Regular 3–6mm</span>
-            <span class="lg-item"><span class="lg-dot" style="background:var(--orange)"></span> Recapar ≤ 3mm</span>
-            <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> Bloquear &lt; 2mm</span>
+            <span class="lg-item" id="mmHeroCluster" style="font-size:13px;font-weight:700"><span class="lg-dot" id="mmHeroClusterDot"></span> —</span>
           </div>
         </div>
       </div>
@@ -2537,6 +2534,16 @@ function renderMilimetragem() {
   const hero = document.getElementById('mmHeroVal');
   hero.textContent = fmtBR(mmMedia, 2);
   hero.style.color = 'var(--text)';
+
+  // Cluster em que a média se encontra
+  const cl = mmMedia > 6 ? { txt: 'Bom Estado', cor: 'var(--green)' }
+           : mmMedia > 3 ? { txt: 'Regular', cor: 'var(--yellow)' }
+           : mmMedia >= 2 ? { txt: 'Recapar', cor: 'var(--orange)' }
+           : { txt: 'Bloquear', cor: 'var(--red-soft)' };
+  const clEl = document.getElementById('mmHeroCluster');
+  clEl.childNodes[clEl.childNodes.length - 1].textContent = ' ' + cl.txt;
+  clEl.style.color = cl.cor;
+  document.getElementById('mmHeroClusterDot').style.background = cl.cor;
 
   // Cards
   const setCard = (id, val, cor) => {
