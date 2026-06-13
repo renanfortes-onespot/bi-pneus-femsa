@@ -4132,6 +4132,14 @@ function renderVehVertical(v, pneusArr, mmMed) {
   const eixosConfig = getEixosConfig(v.tipo, v.pneusEsperados);
   const corMed = mmMed > 6 ? 'var(--green)' : mmMed > 3 ? 'var(--yellow)' : 'var(--red-soft)';
 
+  // Amplitude POR EIXO = spread do menor sulco entre os pneus do eixo (o que importa no rodízio)
+  const ampEixo = eixo => {
+    const mms = eixo.posicoes.map(p => pneus[p]).filter(t => t && t.menorMM > 0).map(t => t.menorMM);
+    return mms.length >= 2 ? Math.max(...mms) - Math.min(...mms) : null;
+  };
+  const corAmp = a => a === null ? 'var(--text-muted)' : a <= 2 ? 'var(--green)' : a <= 3.2 ? 'var(--yellow)' : 'var(--red-soft)';
+  const ampVeic = Math.max(...eixosConfig.map(e => ampEixo(e) ?? 0)); // pior eixo
+
   const tireBox = pos => {
     const t = pneus[pos];
     if (!t) return `<div class="tire-v"><div class="tv-pos">${pos}</div><div class="tv-sub" style="margin-top:6px">Vazio</div></div>`;
@@ -4155,14 +4163,19 @@ function renderVehVertical(v, pneusArr, mmMed) {
           <span>Tipo: <strong>${v.tipo}</strong></span>
           <span>${v.marca} ${v.modelo}</span>
         </div>
-        <div class="veh-vert-score" style="color:${corMed}">MM média: ${fmt(mmMed)} mm</div>
+        <div class="veh-vert-score">
+          <span style="color:${corMed}">MM média: ${fmt(mmMed)} mm</span>
+          <span style="color:var(--text-muted);margin:0 6px">·</span>
+          <span style="color:${corAmp(ampVeic)}">Amplitude do pior eixo: ${fmt(ampVeic)} mm</span>
+        </div>
       </div>
       ${eixosConfig.map(eixo => {
         const dir = eixo.posicoes.filter(p => p.toString()[1] === '1');
         const esq = eixo.posicoes.filter(p => p.toString()[1] === '2');
+        const a = ampEixo(eixo);
         return `
           <div>
-            <div class="axle-v-label">${eixo.label}</div>
+            <div class="axle-v-label">${eixo.label}${a !== null ? ` <span style="color:${corAmp(a)};font-weight:700">· Amplitude ${fmt(a)} mm</span>` : ''}</div>
             <div class="axle-v">
               <div class="axle-side-v">${esq.map(tireBox).join('')}</div>
               <div class="axle-bar"></div>
