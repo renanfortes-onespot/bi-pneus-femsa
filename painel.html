@@ -430,7 +430,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 14px 16px;
+    padding: 18px 16px;
     display: flex; flex-direction: column; gap: 3px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -490,7 +490,7 @@
     font-size: 13px;
   }
 
-  .adh-table thead tr { background: rgba(255,255,255,0.03); }
+  .adh-table thead tr { background: rgba(20,28,40,0.65); }
 
   .adh-table thead th {
     padding: 8px 18px; text-align: left;
@@ -830,7 +830,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 14px 16px;
+    padding: 18px 16px;
     display: flex; flex-direction: column; gap: 3px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -1311,7 +1311,7 @@
             <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 60 a 80</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 60</span>
           </div>
-          <div style="position:relative;height:240px">
+          <div style="position:relative;height:212px">
             <canvas id="chartSaudeMensal"></canvas>
           </div>
         </div>
@@ -1381,7 +1381,7 @@
           <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 85% a 98%</span>
           <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 85%</span>
         </div>
-        <div style="position:relative;height:320px">
+        <div style="position:relative;height:288px">
           <canvas id="chartMensal"></canvas>
         </div>
       </div>
@@ -1473,7 +1473,7 @@
             <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 3 a 6mm</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> ≤ 3mm</span>
           </div>
-          <div style="position:relative;height:240px">
+          <div style="position:relative;height:212px">
             <canvas id="chartMMMensal"></canvas>
           </div>
         </div>
@@ -1484,7 +1484,7 @@
             <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 5% a 10%</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &gt; 10%</span>
           </div>
-          <div style="position:relative;height:240px">
+          <div style="position:relative;height:212px">
             <canvas id="chartAmpMensal"></canvas>
           </div>
         </div>
@@ -1558,7 +1558,7 @@
             <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 85% a 98%</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 85%</span>
           </div>
-          <div style="position:relative;height:240px">
+          <div style="position:relative;height:212px">
             <canvas id="chartPressaoMensal"></canvas>
           </div>
         </div>
@@ -1568,7 +1568,7 @@
             <span class="lg-item"><span style="width:14px;height:2px;background:var(--red-soft);display:inline-block;border-radius:1px"></span> # Alta Pressão</span>
             <span class="lg-item"><span style="width:14px;height:2px;background:#38BDF8;display:inline-block;border-radius:1px"></span> # Baixa Pressão</span>
           </div>
-          <div style="position:relative;height:240px">
+          <div style="position:relative;height:212px">
             <canvas id="chartDesvioMensal"></canvas>
           </div>
         </div>
@@ -2155,6 +2155,45 @@ function setSaudeMetric(met, btn) {
   renderSaudeMensalChart();
 }
 
+// ============================================================
+// HELPERS DE GRÁFICO MENSAL (grade + eixo Y + destaque)
+// ============================================================
+// Retorna função hl(i)->bool: meses selecionados na vigência ou,
+// se nada selecionado, apenas o último mês com dado.
+function highlightFn(meses, valores) {
+  const vig = FILTERS.vigencia;
+  if (vig.length) {
+    return i => {
+      const m = meses[i];
+      const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
+      return vig.includes(mv);
+    };
+  }
+  let last = -1;
+  valores.forEach((v, i) => { if (v !== null && v !== undefined) last = i; });
+  return i => i === last;
+}
+
+// Escalas padrão: grade leve em ambos os eixos, Y visível com mesma fonte
+function monthlyScales(isLight, yFmt) {
+  const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+  const tick = isLight ? '#555' : '#94A3B8';
+  const fs   = window.innerWidth < 480 ? 9 : 12;
+  return {
+    x: {
+      ticks: { color: tick, font: { family: 'Montserrat', size: fs } },
+      grid: { color: grid, drawTicks: false },
+      border: { display: false }
+    },
+    y: {
+      display: true, grace: '14%',
+      ticks: { color: tick, font: { family: 'Montserrat', size: fs }, maxTicksLimit: 6, callback: yFmt || (v => v) },
+      grid: { color: grid, drawTicks: false },
+      border: { display: false }
+    }
+  };
+}
+
 // Config por métrica: cluster de cor, formatação e legenda
 const SAUDE_METRICAS = {
   score: {
@@ -2276,13 +2315,9 @@ function renderSaudeMensalChart() {
   };
   const cor = (v, alpha) => `rgba(${rgb[cfg.cluster(v)]},${alpha})`;
 
-  const vigFiltros = FILTERS.vigencia;
-  const hlMes = (m) => {
-    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
-    return vigFiltros.length === 0 || vigFiltros.includes(mv);
-  };
-  const barColors  = meses.map((m, i) => valores[i] === null ? 'rgba(255,255,255,0.03)' : cor(valores[i], hlMes(m) ? 0.65 : 0.15));
-  const barBorders = meses.map((m, i) => valores[i] === null ? 'transparent' : cor(valores[i], hlMes(m) ? 1 : 0.25));
+  const hl = highlightFn(meses, valores);
+  const barColors  = meses.map((m, i) => valores[i] === null ? 'rgba(255,255,255,0.03)' : cor(valores[i], hl(i) ? 0.7 : 0.15));
+  const barBorders = meses.map((m, i) => valores[i] === null ? 'transparent' : cor(valores[i], hl(i) ? 1 : 0.22));
 
   destroyChart('chartSaudeMensal');
   charts.chartSaudeMensal = new Chart(document.getElementById('chartSaudeMensal'), {
@@ -2297,10 +2332,10 @@ function renderSaudeMensalChart() {
         borderWidth: 1.5,
         borderRadius: 3,
         datalabels: {
-          display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+          display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hl(ctx.dataIndex),
           anchor: 'end', align: 'end', offset: 2,
           color: isLight ? '#111' : '#fff',
-          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
+          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
           formatter: v => v === null ? '' : cfg.fmt(v)
         }
       }]
@@ -2321,14 +2356,7 @@ function renderSaudeMensalChart() {
           }
         }
       },
-      scales: {
-        x: {
-          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } },
-          grid: { display: false },
-          border: { display: false }
-        },
-        y: { display: false, grace: '10%' }
-      }
+      scales: monthlyScales(isLight, v => SAUDE_METRIC === 'mm' || SAUDE_METRIC === 'amp' ? v + 'mm' : SAUDE_METRIC === 'vida' ? v : v + (SAUDE_METRIC === 'score' ? '' : '%'))
     }
   });
 }
@@ -2431,7 +2459,6 @@ function renderMensalChart() {
     label: new Date(anoAtivo, i, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
   }));
 
-  const vigFiltros = FILTERS.vigencia; // ['MM/AAAA', ...]
   const isFuturo = m => new Date(m.ano, m.mes, 1) > new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
   // Respeita filtros de unidade/placa (vigência só destaca, ano define o eixo)
@@ -2460,21 +2487,9 @@ function renderMensalChart() {
     p >= 85 ? `rgba(243,156,18,${alpha})` :
               `rgba(${rgbRed},${alpha})`;
 
-  const barColors = meses.map((m, i) => {
-    const p = pcts[i];
-    if (p === null) return 'rgba(255,255,255,0.03)';
-    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
-    const highlighted = vigFiltros.length === 0 || vigFiltros.includes(mv);
-    return clusterColor(p, highlighted ? 0.65 : 0.15);
-  });
-
-  const barBorders = meses.map((m, i) => {
-    const p = pcts[i];
-    if (p === null) return 'transparent';
-    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
-    const highlighted = vigFiltros.length === 0 || vigFiltros.includes(mv);
-    return clusterColor(p, highlighted ? 1 : 0.25);
-  });
+  const hl = highlightFn(meses, pcts);
+  const barColors  = meses.map((m, i) => pcts[i] === null ? 'rgba(255,255,255,0.03)' : clusterColor(pcts[i], hl(i) ? 0.7 : 0.15));
+  const barBorders = meses.map((m, i) => pcts[i] === null ? 'transparent' : clusterColor(pcts[i], hl(i) ? 1 : 0.22));
 
   destroyChart('chartMensal');
   charts.chartMensal = new Chart(document.getElementById('chartMensal'), {
@@ -2490,11 +2505,11 @@ function renderMensalChart() {
           borderWidth: 1.5,
           borderRadius: 3,
           datalabels: {
-            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hl(ctx.dataIndex),
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
-            formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%')
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
+            formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
           }
         }
       ]
@@ -2512,21 +2527,11 @@ function renderMensalChart() {
           titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
           callbacks: {
             label: ctx => ctx.parsed.y === null ? '—' :
-              ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%')
+              ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1).replace('.', ',') + '%'
           }
         }
       },
-      scales: {
-        x: {
-          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } },
-          grid: { display: false },
-          border: { display: false }
-        },
-        y: {
-          display: false,
-          grace: '10%'
-        }
-      }
+      scales: monthlyScales(isLight, v => v + '%')
     }
   });
 }
@@ -2670,15 +2675,10 @@ function renderMMMensalCharts() {
     y: '243,156,18',
     r: '255,102,102'
   };
-  const vigFiltros = FILTERS.vigencia;
-  const hlMes = m => {
-    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
-    return vigFiltros.length === 0 || vigFiltros.includes(mv);
-  };
-
-  const montar = (canvasId, valores, clusterFn, fmtFn, label) => {
-    const cores  = meses.map((m, i) => valores[i] === null ? 'rgba(255,255,255,0.03)' : `rgba(${rgb[clusterFn(valores[i])]},${hlMes(m) ? 0.65 : 0.15})`);
-    const bordas = meses.map((m, i) => valores[i] === null ? 'transparent' : `rgba(${rgb[clusterFn(valores[i])]},${hlMes(m) ? 1 : 0.25})`);
+  const montar = (canvasId, valores, clusterFn, fmtFn, label, yFmt) => {
+    const hl = highlightFn(meses, valores);
+    const cores  = meses.map((m, i) => valores[i] === null ? 'rgba(255,255,255,0.03)' : `rgba(${rgb[clusterFn(valores[i])]},${hl(i) ? 0.7 : 0.15})`);
+    const bordas = meses.map((m, i) => valores[i] === null ? 'transparent' : `rgba(${rgb[clusterFn(valores[i])]},${hl(i) ? 1 : 0.22})`);
 
     destroyChart(canvasId);
     charts[canvasId] = new Chart(document.getElementById(canvasId), {
@@ -2689,10 +2689,10 @@ function renderMMMensalCharts() {
           backgroundColor: cores, borderColor: bordas,
           borderWidth: 1.5, borderRadius: 3,
           datalabels: {
-            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hl(ctx.dataIndex),
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
         }]
@@ -2710,21 +2710,18 @@ function renderMMMensalCharts() {
             callbacks: { label: ctx => ctx.parsed.y === null ? '—' : label + ': ' + fmtFn(ctx.parsed.y) }
           }
         },
-        scales: {
-          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } }, grid: { display: false }, border: { display: false } },
-          y: { display: false, grace: '10%' }
-        }
+        scales: monthlyScales(isLight, yFmt)
       }
     });
   };
 
   montar('chartMMMensal', porMes.map(x => x === null ? null : x.mm),
     v => v > 6 ? 'g' : v > 3 ? 'y' : 'r',
-    v => v.toFixed(2).replace('.', ','), 'MM Média');
+    v => v.toFixed(2).replace('.', ','), 'MM Média', v => v + 'mm');
 
   montar('chartAmpMensal', porMes.map(x => x === null ? null : x.amp),
     v => v <= 5 ? 'g' : v <= 10 ? 'y' : 'r',
-    v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%'), 'Desgaste Irregular');
+    v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%'), 'Desgaste Irregular', v => v + '%');
 }
 
 // ============================================================
@@ -2846,15 +2843,10 @@ function renderPressaoMensalCharts() {
     y: '243,156,18',
     r: '255,102,102'
   };
-  const vigFiltros = FILTERS.vigencia;
-  const hlMes = m => {
-    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
-    return vigFiltros.length === 0 || vigFiltros.includes(mv);
-  };
-
-  const montar = (canvasId, valores, clusterFn, fmtFn, label) => {
-    const cores  = meses.map((m, i) => valores[i] === null ? 'rgba(255,255,255,0.03)' : `rgba(${rgb[clusterFn(valores[i])]},${hlMes(m) ? 0.65 : 0.15})`);
-    const bordas = meses.map((m, i) => valores[i] === null ? 'transparent' : `rgba(${rgb[clusterFn(valores[i])]},${hlMes(m) ? 1 : 0.25})`);
+  const montar = (canvasId, valores, clusterFn, fmtFn, label, yFmt) => {
+    const hl = highlightFn(meses, valores);
+    const cores  = meses.map((m, i) => valores[i] === null ? 'rgba(255,255,255,0.03)' : `rgba(${rgb[clusterFn(valores[i])]},${hl(i) ? 0.7 : 0.15})`);
+    const bordas = meses.map((m, i) => valores[i] === null ? 'transparent' : `rgba(${rgb[clusterFn(valores[i])]},${hl(i) ? 1 : 0.22})`);
 
     destroyChart(canvasId);
     charts[canvasId] = new Chart(document.getElementById(canvasId), {
@@ -2865,10 +2857,10 @@ function renderPressaoMensalCharts() {
           backgroundColor: cores, borderColor: bordas,
           borderWidth: 1.5, borderRadius: 3,
           datalabels: {
-            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hl(ctx.dataIndex),
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
         }]
@@ -2886,23 +2878,25 @@ function renderPressaoMensalCharts() {
             callbacks: { label: ctx => ctx.parsed.y === null ? '—' : label + ': ' + fmtFn(ctx.parsed.y) }
           }
         },
-        scales: {
-          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } }, grid: { display: false }, border: { display: false } },
-          y: { display: false, grace: '10%' }
-        }
+        scales: monthlyScales(isLight, yFmt)
       }
     });
   };
 
   montar('chartPressaoMensal', porMes.map(x => x === null ? null : x.ok),
     v => v >= 98 ? 'g' : v >= 85 ? 'y' : 'r',
-    v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%'), 'Calibragem OK');
+    v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%'), 'Calibragem OK', v => v + '%');
 
   // Alta e Baixa Pressão Mensal (#): duas linhas com marcadores
-  // (mês filtrado em destaque, demais esmaecidos — como nas barras)
+  // (mês filtrado em destaque, demais esmaecidos)
   const altaVals  = porMes.map(x => x === null ? null : x.alta);
   const baixaVals = porMes.map(x => x === null ? null : x.baixa);
-  const hlArr     = meses.map(m => hlMes(m));
+  const lineHl = i => {
+    const m = meses[i];
+    const mv = `${String(m.mes + 1).padStart(2,'0')}/${m.ano}`;
+    return FILTERS.vigencia.length === 0 || FILTERS.vigencia.includes(mv);
+  };
+  const hlArr = meses.map((m, i) => lineHl(i));
   const rgbAlta   = '255,102,102';
   const rgbBaixa  = '56,189,248';
   const corPt  = (rgbStr, i) => `rgba(${rgbStr},${hlArr[i] ? 1 : 0.18})`;
@@ -2922,10 +2916,10 @@ function renderPressaoMensalCharts() {
           pointBorderColor: meses.map((m, i) => corPt(rgbAlta, i)),
           pointRadius: 4, tension: 0.35, spanGaps: false,
           datalabels: {
-            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hlArr[ctx.dataIndex],
             anchor: 'end', align: 'top', offset: 4,
             color: ctx => corPt(rgbAlta, ctx.dataIndex),
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
             formatter: v => v === null ? '' : v
           }
         },
@@ -2937,10 +2931,10 @@ function renderPressaoMensalCharts() {
           pointBorderColor: meses.map((m, i) => corPt(rgbBaixa, i)),
           pointRadius: 4, tension: 0.35, spanGaps: false,
           datalabels: {
-            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
+            display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hlArr[ctx.dataIndex],
             anchor: 'end', align: 'bottom', offset: 4,
             color: ctx => corPt(rgbBaixa, ctx.dataIndex),
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
             formatter: v => v === null ? '' : v
           }
         }
@@ -2961,10 +2955,7 @@ function renderPressaoMensalCharts() {
           }
         }
       },
-      scales: {
-        x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } }, grid: { display: false }, border: { display: false } },
-        y: { display: false, grace: '15%', beginAtZero: true }
-      }
+      scales: monthlyScales(isLight, v => v)
     }
   });
 }
