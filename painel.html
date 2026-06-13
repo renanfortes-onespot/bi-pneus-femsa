@@ -1757,6 +1757,65 @@
       </div>
     </div>
 
+    <!-- ========== PREVISÃO ORÇAMENTÁRIA ========== -->
+    <div class="page" id="page-orcamento">
+
+      <!-- HERO -->
+      <div class="adh-hero">
+        <div class="adh-hero-left">
+          <div class="adh-label">Investimento Previsto — Próximos 12 meses</div>
+          <div class="adh-value" id="orcHeroVal">—</div>
+          <div class="adh-deltas">
+            <div class="adh-delta">Recapes<b id="orcDeltaRec" style="color:var(--green)">—</b></div>
+            <div class="adh-delta">Pneus Novos<b id="orcDeltaNov" style="color:var(--yellow)">—</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 CARDS -->
+      <div class="saude-cards">
+        <div class="saude-card">
+          <div class="sc-label">Recapes (12m)</div>
+          <div class="sc-value" id="orcCardRec">—</div>
+          <div class="sc-sub" id="orcCardRecSub">carcaça aproveitável</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Pneus Novos (12m)</div>
+          <div class="sc-value" id="orcCardNov">—</div>
+          <div class="sc-sub" id="orcCardNovSub">direcional / fim de carcaça</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Custo Pneu Novo</div>
+          <div class="sc-value" id="orcCardPrecoNov">—</div>
+          <div class="sc-sub">média V1 (direcional)</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Custo Recape</div>
+          <div class="sc-value" id="orcCardPrecoRec">—</div>
+          <div class="sc-sub" id="orcCardPrecoRecSub">melhor recape</div>
+        </div>
+      </div>
+
+      <!-- TABELA ORÇAMENTÁRIA -->
+      <div class="adh-table-wrap">
+        <div class="adh-table-title">Orçamento Mês a Mês — Recape e Compra</div>
+        <div style="overflow-x:auto">
+        <table class="adh-table">
+          <thead><tr>
+            <th>Mês</th>
+            <th>Recapes</th><th class="dcol">R$ Recapes</th>
+            <th>Novos</th><th class="dcol">R$ Novos</th>
+            <th class="dcol">Inflação</th>
+            <th>Total do Mês</th><th class="col-dias">Acumulado</th>
+          </tr></thead>
+          <tbody id="tbodyOrc"></tbody>
+          <tfoot id="tfootOrc"></tfoot>
+        </table>
+        </div>
+        <div id="orcNota" style="font-size:10px;color:var(--text-muted);margin-top:10px;line-height:1.6"></div>
+      </div>
+    </div>
+
     <!-- ========== VISÃO DE EIXOS ========== -->
     <div class="page" id="page-eixos">
       <div class="chart-legend" style="margin-bottom:16px">
@@ -1815,7 +1874,7 @@ function toggleTheme() {
   const isLight = document.body.classList.toggle('light-mode');
   localStorage.setItem('femsa_theme', isLight ? 'light' : 'dark');
   // Re-renderiza gráficos com as cores do tema
-  if (DATA.vehicles.length) { renderMensalChart(); renderSaudeMensalChart(); renderMMMensalCharts(); renderPressaoMensalCharts(); renderCPK(); renderPrevisao(); }
+  if (DATA.vehicles.length) { renderMensalChart(); renderSaudeMensalChart(); renderMMMensalCharts(); renderPressaoMensalCharts(); renderCPK(); renderPrevisao(); renderOrcamento(); }
   const icon = document.getElementById('themeIcon');
   // Troca ícone sol ↔ lua
   if (isLight) {
@@ -2023,6 +2082,7 @@ function navigate(page) {
     pressao: 'Pressão dos Pneus',
     cpk: 'CPK — Custo por Km',
     previsao: 'Previsão de Troca',
+    orcamento: 'Previsão Orçamentária',
     eixos: 'Visão de Eixos'
   };
   document.getElementById('pageTitle').textContent = titles[page] || 'Saúde dos Pneus';
@@ -2127,8 +2187,113 @@ function renderAll() {
   renderPressao();
   renderCPK();
   renderPrevisao();
+  renderOrcamento();
   renderEixosFilters();
   renderEixos();
+}
+
+// ============================================================
+// PREVISÃO ORÇAMENTÁRIA — recape vs. compra mês a mês (com inflação)
+// ============================================================
+const INFLACAO_ANUAL = 0.045; // 4,5% a.a. (estimativa) — aplicada ao virar o ano
+
+function renderOrcamento() {
+  if (!document.getElementById('orcHeroVal')) return;
+  const tires = getFilteredTires().filter(t => t.status === 'INSTALLED');
+  const media = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+
+  // Preço médio de pneu novo (V1) — priorizando os de direcional
+  const novosDir = tires.filter(t => t.cicloVida <= 1 && t.custo > 0 && t.direcional);
+  const novosAll = tires.filter(t => t.cicloVida <= 1 && t.custo > 0);
+  const precoNovo = media((novosDir.length ? novosDir : novosAll).map(t => t.custo)) || 1500;
+
+  // "Melhor recape": menor custo médio entre modelos de banda (>=5 pneus); fallback = média geral
+  const recapAll = tires.filter(t => t.cicloVida > 1 && t.custo > 0);
+  let precoRecape = media(recapAll.map(t => t.custo)) || 1000;
+  let melhorRecapeNome = 'média da frota';
+  const grpRecap = {};
+  recapAll.forEach(t => { const k = [t.bandaMarca, t.banda].filter(Boolean).join(' ') || '—'; (grpRecap[k] = grpRecap[k] || []).push(t.custo); });
+  Object.entries(grpRecap).filter(([, a]) => a.length >= 5).forEach(([k, a]) => {
+    const m = media(a); if (m < precoRecape) { precoRecape = m; melhorRecapeNome = k; }
+  });
+
+  // Eventos de troca/recape nos próximos 12 meses (da Previsão de Troca)
+  const hoje = new Date();
+  const meses = Array.from({ length: 12 }, (_, k) => {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() + k, 1);
+    return { ano: d.getFullYear(), mes: d.getMonth(), label: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '') + '/' + String(d.getFullYear()).slice(2) };
+  });
+  const limite = new Date(meses[11].ano, meses[11].mes + 1, 1);
+
+  const buckets = meses.map(() => ({ novos: 0, recapes: 0 }));
+  calcPrevisao().filter(l => !l.semBase).forEach(l => {
+    const dt = l.mmAtual <= PULL_POINT ? hoje : l.dataPrev;
+    if (!(dt < limite)) return; // fora do horizonte de 12 meses
+    let idx = meses.findIndex(m => dt.getFullYear() === m.ano && dt.getMonth() === m.mes);
+    if (idx < 0) idx = 0; // datas passadas caem no mês atual
+    // Regra: direcional ou carcaça no fim das vidas → pneu novo; senão → recape
+    const precisaNovo = l.t.direcional || (l.t.cicloVida >= (l.t.maxCiclos || 5));
+    if (precisaNovo) buckets[idx].novos++; else buckets[idx].recapes++;
+  });
+
+  const fator = ano => Math.pow(1 + INFLACAO_ANUAL, ano - hoje.getFullYear());
+
+  let acum = 0, totN = 0, totR = 0, totRSn = 0, totRSr = 0;
+  const rows = meses.map((m, k) => {
+    const f = fator(m.ano);
+    const rsRec = buckets[k].recapes * precoRecape * f;
+    const rsNov = buckets[k].novos * precoNovo * f;
+    const totalMes = rsRec + rsNov;
+    acum += totalMes; totN += buckets[k].novos; totR += buckets[k].recapes; totRSn += rsNov; totRSr += rsRec;
+    return { ...m, ...buckets[k], rsRec, rsNov, totalMes, acum, f };
+  });
+  const totalGeral = totRSn + totRSr;
+
+  // Hero
+  document.getElementById('orcHeroVal').textContent = fmtBRL(totalGeral);
+  document.getElementById('orcHeroVal').style.color = 'var(--text)';
+  document.getElementById('orcDeltaRec').textContent = totR;
+  document.getElementById('orcDeltaNov').textContent = totN;
+
+  // Cards
+  const setC = (id, v, cor) => { const e = document.getElementById(id); e.textContent = v; if (cor) e.style.color = cor; };
+  setC('orcCardRec', totR, 'var(--green)');
+  document.getElementById('orcCardRecSub').textContent = `${fmtBRL(totRSr)} no período`;
+  setC('orcCardNov', totN, 'var(--yellow)');
+  document.getElementById('orcCardNovSub').textContent = `${fmtBRL(totRSn)} no período`;
+  setC('orcCardPrecoNov', fmtBRL(precoNovo), 'var(--text)');
+  setC('orcCardPrecoRec', fmtBRL(precoRecape), 'var(--text)');
+  document.getElementById('orcCardPrecoRecSub').textContent = `melhor: ${melhorRecapeNome}`;
+
+  // Tabela
+  document.getElementById('tbodyOrc').innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.label}</strong></td>
+      <td>${r.recapes || '—'}</td>
+      <td class="dcol">${r.rsRec ? fmtBRL(r.rsRec) : '—'}</td>
+      <td>${r.novos || '—'}</td>
+      <td class="dcol">${r.rsNov ? fmtBRL(r.rsNov) : '—'}</td>
+      <td class="dcol" style="color:${r.f > 1 ? 'var(--yellow)' : 'var(--text-muted)'}">${r.f > 1 ? '+' + fmtBR((r.f - 1) * 100, 1) + '%' : '—'}</td>
+      <td style="font-weight:700">${r.totalMes ? fmtBRL(r.totalMes) : '—'}</td>
+      <td style="text-align:right;font-weight:700">${fmtBRL(r.acum)}</td>
+    </tr>`).join('');
+
+  document.getElementById('tfootOrc').innerHTML = `
+    <tr style="border-top:2px solid var(--border)">
+      <td><strong>TOTAL</strong></td>
+      <td><strong>${totR}</strong></td>
+      <td class="dcol"><strong>${fmtBRL(totRSr)}</strong></td>
+      <td><strong>${totN}</strong></td>
+      <td class="dcol"><strong>${fmtBRL(totRSn)}</strong></td>
+      <td class="dcol"></td>
+      <td><strong>${fmtBRL(totalGeral)}</strong></td>
+      <td style="text-align:right"><strong style="color:var(--red)">${fmtBRL(totalGeral)}</strong></td>
+    </tr>`;
+
+  document.getElementById('orcNota').innerHTML =
+    `Regra: pneu que chega ao ponto vira <b>recape</b> se a carcaça tem vida (até V${tires[0] ? (tires[0].maxCiclos || 5) : 5}), ou <b>compra de novo</b> se está no direcional (política V1) ou já esgotou as vidas. ` +
+    `Preços médios reais da frota · <b>inflação de ${fmtBR(INFLACAO_ANUAL * 100, 1)}% a.a.</b> aplicada aos meses do ano seguinte. ` +
+    `Considera apenas pneus com base de desgaste projetável.`;
 }
 
 // ============================================================
