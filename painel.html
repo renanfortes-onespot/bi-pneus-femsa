@@ -1612,7 +1612,7 @@
       </div>
 
       <!-- 6 CARDS -->
-      <div class="saude-cards">
+      <div class="saude-cards" style="grid-template-columns:repeat(6,1fr)">
         <div class="saude-card">
           <div class="sc-label">Pneus com CPK</div>
           <div class="sc-value" id="cpkCardPneus">—</div>
@@ -1645,41 +1645,13 @@
         </div>
       </div>
 
-      <!-- GRÁFICO CPK POR VIDA + COMO É CALCULADO -->
-      <div class="saude-chart-row">
-        <div class="card">
-          <div class="card-title" style="margin-bottom:6px">CPK por Vida do Pneu (R$/km)</div>
-          <div class="chart-legend">
-            <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≤ 0,20</span>
-            <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 0,20 a 0,35</span>
-            <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &gt; 0,35</span>
-          </div>
-          <div style="position:relative;flex:1;min-height:212px">
-            <canvas id="chartCpkVida"></canvas>
-          </div>
-          <div id="cpkVidaNota" style="font-size:10px;color:var(--text-muted);margin-top:8px"></div>
-        </div>
-        <div class="card pesos-card">
-          <div class="pesos-title">Como o CPK é Calculado</div>
-          <div class="pesos-row"><span>Fórmula</span><span class="pr-desc">Custo total do pneu ÷ km rodados na vida atual</span><b></b></div>
-          <div class="pesos-row"><span>Custo</span><span class="pr-desc">Pneu novo: valor de compra · Recapado: valor da recapagem</span><b></b></div>
-          <div class="pesos-row"><span>Vida</span><span class="pr-desc">V1 = novo · V2+ = recapado (cada recape reinicia o ciclo)</span><b></b></div>
-          <div class="pesos-row"><span>Origem</span><span class="pr-desc">CPK acumulado vem direto da API Prolog (lifecycle do pneu)</span><b></b></div>
-          <div class="pesos-note" style="color:var(--yellow);opacity:0.95">
-            ⚠ CPK não conta toda a história. Um recapado tem CPK baixo, mas o número não enxerga a
-            <b>carcaça</b>: idade (DOT), nº de vidas já usadas e estado atual. Carcaça velha ou já em V3/V4
-            tem CPK ótimo e risco alto. Por isso o ranking traz <b>Vida, Carcaça (DOT) e MM</b> ao lado do CPK —
-            decida pelo conjunto, nunca só pelo custo por km.
-          </div>
-        </div>
-      </div>
-
       <!-- RANKING -->
-      <div class="adh-table-wrap" style="margin-top:20px">
+      <div class="adh-table-wrap" style="margin-top:24px">
         <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
           <span>Ranking — CPK (Melhor para Pior)</span>
           <div class="chart-chips">
-            <button class="chip active" data-cpkdrill="marca" onclick="setCpkDrill('marca',this)">Marca</button>
+            <button class="chip active" data-cpkdrill="vida" onclick="setCpkDrill('vida',this)">Vida</button>
+            <button class="chip" data-cpkdrill="marca" onclick="setCpkDrill('marca',this)">Marca</button>
             <button class="chip" data-cpkdrill="modelo" onclick="setCpkDrill('modelo',this)">Modelo Pneu</button>
             <button class="chip" data-cpkdrill="bandaMarca" onclick="setCpkDrill('bandaMarca',this)">Marca Banda</button>
             <button class="chip" data-cpkdrill="banda" onclick="setCpkDrill('banda',this)">Modelo Banda</button>
@@ -2072,7 +2044,7 @@ function renderAll() {
 // ============================================================
 // CPK — Custo por Km
 // ============================================================
-let CPK_DRILL = 'marca';
+let CPK_DRILL = 'vida';
 function setCpkDrill(d, btn) {
   CPK_DRILL = d;
   document.querySelectorAll('[data-cpkdrill]').forEach(c => c.classList.remove('active'));
@@ -2153,15 +2125,14 @@ function renderCPK() {
     ['cpkCardMelhor','cpkCardPior'].forEach(id => document.getElementById(id).textContent = '—');
   }
 
-  // Gráfico CPK por vida
-  renderCpkVidaChart(tires);
-
-  // Ranking pelo drill
+  // Ranking pelo drill (vida / marca / modelo / banda)
   const drill = CPK_DRILL;
   document.getElementById('thCpkDrill').textContent =
-    drill === 'modelo' ? 'Modelo do Pneu' : drill === 'bandaMarca' ? 'Marca da Banda' : drill === 'banda' ? 'Modelo da Banda' : 'Marca';
+    drill === 'vida' ? 'Vida' : drill === 'modelo' ? 'Modelo do Pneu' :
+    drill === 'bandaMarca' ? 'Marca da Banda' : drill === 'banda' ? 'Modelo da Banda' : 'Marca';
 
   const chaveDe = t =>
+    drill === 'vida' ? (t.cicloVida <= 1 ? 'V1 (Novo)' : 'V' + t.cicloVida + (t.cicloVida === 2 ? ' (1ª recapa)' : ' (' + (t.cicloVida - 1) + 'ª recapa)')) :
     drill === 'modelo' ? (t.modelo || '—') :
     drill === 'bandaMarca' ? (t.cicloVida > 1 ? (t.bandaMarca || '—') : 'Pneu Novo (V1)') :
     drill === 'banda' ? (t.cicloVida > 1 ? (t.banda || '—') : 'Pneu Novo (V1)') :
@@ -2224,64 +2195,6 @@ function renderCPK() {
       `).join('');
 }
 
-// Gráfico CPK por vida do pneu (V1, V2, V3...) — argumento da recapagem
-function renderCpkVidaChart(tires) {
-  const media = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-  const porVida = {};
-  tires.forEach(t => { const v = t.cicloVida || 1; (porVida[v] = porVida[v] || []).push(t); });
-  const vidas = Object.keys(porVida).map(Number).sort((a, b) => a - b);
-
-  const labels = vidas.map(v => v === 1 ? 'V1 (Novo)' : 'V' + v + (v === 2 ? ' (1ª recapa)' : ' (' + (v - 1) + 'ª recapa)'));
-  const valores = vidas.map(v => media(porVida[v].map(t => t.cpk)));
-  const counts  = vidas.map(v => porVida[v].length);
-
-  const isLight = document.body.classList.contains('light-mode');
-  const rgbFor = val => val <= 0.20 ? '59,179,59' : val <= 0.35 ? '243,156,18' : '255,102,102';
-  const cores  = valores.map(v => `rgba(${rgbFor(v)},0.7)`);
-  const bordas = valores.map(v => `rgba(${rgbFor(v)},1)`);
-
-  // Nota: economia da recapagem em texto
-  const v1 = porVida[1] ? media(porVida[1].map(t => t.cpk)) : 0;
-  const recapVidas = vidas.filter(v => v > 1);
-  const cpkRec = recapVidas.length ? media(recapVidas.flatMap(v => porVida[v]).map(t => t.cpk)) : 0;
-  const nota = (v1 > 0 && cpkRec > 0)
-    ? `Pneu novo (V1): ${fmtCPK(v1)} · Recapado (V2+): ${fmtCPK(cpkRec)} — o recapado custa ${fmtBR((1 - cpkRec / v1) * 100, 0)}% menos por km.`
-    : 'Sem base suficiente para comparar novo vs. recapado na seleção atual.';
-  document.getElementById('cpkVidaNota').textContent = nota;
-
-  destroyChart('chartCpkVida');
-  charts.chartCpkVida = new Chart(document.getElementById('chartCpkVida'), {
-    data: {
-      labels,
-      datasets: [{
-        type: 'bar', label: 'CPK', data: valores,
-        backgroundColor: cores, borderColor: bordas,
-        borderWidth: 1.5, borderRadius: 3,
-        datalabels: {
-          anchor: 'end', align: 'end', offset: 2,
-          color: isLight ? '#111' : '#fff',
-          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 13, weight: '700' },
-          formatter: (v, ctx) => fmtCPK(v) + '  ·  ' + counts[ctx.dataIndex] + ' pneus'
-        }
-      }]
-    },
-    plugins: [ChartDataLabels],
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 18 } },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#141B26', titleColor: '#E30613', bodyColor: '#F1F5F9',
-          borderColor: '#1E2D40', borderWidth: 1,
-          titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
-          callbacks: { label: ctx => 'CPK: ' + fmtCPK(ctx.parsed.y) }
-        }
-      },
-      scales: monthlyScales(isLight, v => 'R$ ' + v.toFixed(2).replace('.', ','))
-    }
-  });
-}
 
 // ============================================================
 // SAÚDE DOS PNEUS
