@@ -1007,6 +1007,15 @@
     display: inline-block; margin-right: 9px;
   }
 
+  /* Tabela orçamentária transposta: células compactas p/ caber 12 meses */
+  .orc-table thead th, .orc-table tbody td { padding: 8px 10px; font-size: 12px; }
+  .orc-table tbody td:first-child, .orc-table thead th:first-child {
+    position: sticky; left: 0; background: var(--bg);
+    white-space: nowrap; font-size: 12px;
+  }
+  body.light-mode .orc-table tbody td:first-child,
+  body.light-mode .orc-table thead th:first-child { background: var(--bg); }
+
   .sug-item {
     display: flex; gap: 10px; align-items: flex-start;
     padding: 12px 0; font-size: 13px; line-height: 1.6;
@@ -1800,17 +1809,7 @@
       <div class="adh-table-wrap">
         <div class="adh-table-title">Orçamento Mês a Mês — Recape e Compra</div>
         <div style="overflow-x:auto">
-        <table class="adh-table">
-          <thead><tr>
-            <th>Mês</th>
-            <th>Recapes</th><th class="dcol">R$ Recapes</th>
-            <th>Novos</th><th class="dcol">R$ Novos</th>
-            <th class="dcol">Inflação</th>
-            <th>Total do Mês</th><th class="col-dias">Acumulado</th>
-          </tr></thead>
-          <tbody id="tbodyOrc"></tbody>
-          <tfoot id="tfootOrc"></tfoot>
-        </table>
+        <table class="adh-table orc-table" id="orcTable"></table>
         </div>
         <div id="orcNota" style="font-size:10px;color:var(--text-muted);margin-top:10px;line-height:1.6"></div>
       </div>
@@ -2249,49 +2248,69 @@ function renderOrcamento() {
   });
   const totalGeral = totRSn + totRSr;
 
-  // Hero
-  document.getElementById('orcHeroVal').textContent = fmtBRL(totalGeral);
+  // Número cheio (ex: 3.850), sem R$
+  const num = v => Math.round(v).toLocaleString('pt-BR');
+
+  // Hero + cards em número cheio
+  document.getElementById('orcHeroVal').textContent = num(totalGeral);
   document.getElementById('orcHeroVal').style.color = 'var(--text)';
   document.getElementById('orcDeltaRec').textContent = totR;
   document.getElementById('orcDeltaNov').textContent = totN;
 
-  // Cards
   const setC = (id, v, cor) => { const e = document.getElementById(id); e.textContent = v; if (cor) e.style.color = cor; };
   setC('orcCardRec', totR, 'var(--green)');
-  document.getElementById('orcCardRecSub').textContent = `${fmtBRL(totRSr)} no período`;
+  document.getElementById('orcCardRecSub').textContent = `${num(totRSr)} no período`;
   setC('orcCardNov', totN, 'var(--yellow)');
-  document.getElementById('orcCardNovSub').textContent = `${fmtBRL(totRSn)} no período`;
-  setC('orcCardPrecoNov', fmtBRL(precoNovo), 'var(--text)');
-  setC('orcCardPrecoRec', fmtBRL(precoRecape), 'var(--text)');
+  document.getElementById('orcCardNovSub').textContent = `${num(totRSn)} no período`;
+  setC('orcCardPrecoNov', num(precoNovo), 'var(--text)');
+  setC('orcCardPrecoRec', num(precoRecape), 'var(--text)');
   document.getElementById('orcCardPrecoRecSub').textContent = `melhor: ${melhorRecapeNome}`;
 
-  // Valores da tabela em número cheio (ex: 3.850), sem R$
-  const num = v => Math.round(v).toLocaleString('pt-BR');
-
-  // Tabela
-  document.getElementById('tbodyOrc').innerHTML = rows.map(r => `
-    <tr>
-      <td><strong>${r.label}</strong></td>
-      <td>${r.recapes || '—'}</td>
-      <td class="dcol">${r.rsRec ? num(r.rsRec) : '—'}</td>
-      <td>${r.novos || '—'}</td>
-      <td class="dcol">${r.rsNov ? num(r.rsNov) : '—'}</td>
-      <td class="dcol" style="color:${r.f > 1 ? 'var(--yellow)' : 'var(--text-muted)'}">${r.f > 1 ? '+' + fmtBR((r.f - 1) * 100, 1) + '%' : '—'}</td>
-      <td style="font-weight:700">${r.totalMes ? num(r.totalMes) : '—'}</td>
-      <td style="text-align:right;font-weight:700">${num(r.acum)}</td>
-    </tr>`).join('');
-
-  document.getElementById('tfootOrc').innerHTML = `
-    <tr style="border-top:2px solid var(--border)">
-      <td><strong>TOTAL</strong></td>
-      <td><strong>${totR}</strong></td>
-      <td class="dcol"><strong>${num(totRSr)}</strong></td>
-      <td><strong>${totN}</strong></td>
-      <td class="dcol"><strong>${num(totRSn)}</strong></td>
-      <td class="dcol"></td>
-      <td><strong>${num(totalGeral)}</strong></td>
-      <td style="text-align:right"><strong style="color:var(--red)">${num(totalGeral)}</strong></td>
-    </tr>`;
+  // Tabela transposta — meses nas colunas, indicadores nas linhas
+  const fmtPct = f => f > 1 ? '+' + fmtBR((f - 1) * 100, 1) + '%' : '—';
+  const cels = (fn, extra) => rows.map(r => `<td ${extra || ''}>${fn(r)}</td>`).join('');
+  document.getElementById('orcTable').innerHTML = `
+    <thead><tr>
+      <th>Indicador / Mês</th>${rows.map(r => `<th style="text-align:right">${r.label}</th>`).join('')}
+      <th style="text-align:right" class="col-dias">Total</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Recapes (qtd)</strong></td>
+        ${cels(r => r.recapes || '—', 'style="text-align:right"')}
+        <td style="text-align:right;font-weight:700">${totR}</td>
+      </tr>
+      <tr>
+        <td>Custo Recape</td>
+        ${cels(r => r.rsRec ? num(r.rsRec) : '—', 'style="text-align:right"')}
+        <td style="text-align:right;font-weight:700;color:var(--green)">${num(totRSr)}</td>
+      </tr>
+      <tr>
+        <td><strong>Pneus Novos (qtd)</strong></td>
+        ${cels(r => r.novos || '—', 'style="text-align:right"')}
+        <td style="text-align:right;font-weight:700">${totN}</td>
+      </tr>
+      <tr>
+        <td>Custo Novo</td>
+        ${cels(r => r.rsNov ? num(r.rsNov) : '—', 'style="text-align:right"')}
+        <td style="text-align:right;font-weight:700;color:var(--yellow)">${num(totRSn)}</td>
+      </tr>
+      <tr>
+        <td>Inflação</td>
+        ${cels(r => fmtPct(r.f), 'style="text-align:right;color:var(--text-muted)"')}
+        <td></td>
+      </tr>
+      <tr style="border-top:1px solid var(--border)">
+        <td><strong>Total do Mês</strong></td>
+        ${cels(r => r.totalMes ? `<strong>${num(r.totalMes)}</strong>` : '—', 'style="text-align:right"')}
+        <td style="text-align:right"><strong>${num(totalGeral)}</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Acumulado</strong></td>
+        ${cels(r => `<span style="color:var(--red-soft)">${num(r.acum)}</span>`, 'style="text-align:right"')}
+        <td style="text-align:right"><strong style="color:var(--red)">${num(totalGeral)}</strong></td>
+      </tr>
+    </tbody>`;
 
   document.getElementById('orcNota').innerHTML =
     `Regra: pneu que chega ao ponto vira <b>recape</b> se a carcaça tem vida (até V${tires[0] ? (tires[0].maxCiclos || 5) : 5}), ou <b>compra de novo</b> se está no direcional (política V1) ou já esgotou as vidas. ` +
