@@ -2562,19 +2562,23 @@ function renderMilimetragem() {
   clEl.style.color = cl.cor;
   document.getElementById('mmHeroClusterDot').style.background = cl.cor;
 
-  // Cards
-  const setCard = (id, val, cor) => {
+  // Cards: número branco, descrição pintada com a cor do cluster
+  const setCard = (id, val, corSub) => {
     const el = document.getElementById(id);
     el.textContent = val;
-    if (cor) el.style.color = cor;
+    el.style.color = 'var(--text)';
+    const sub = el.parentElement.querySelector('.sc-sub');
+    if (corSub && sub) sub.style.color = corSub;
   };
   setCard('mmCardTotal', tires.length);
-  setCard('mmCardBloquear', bloquear, bloquear > 0 ? 'var(--red-soft)' : 'var(--green)');
-  setCard('mmCardRecapar', recapar, recapar > 0 ? 'var(--orange)' : 'var(--green)');
+  setCard('mmCardBloquear', bloquear, 'var(--red-soft)');
+  setCard('mmCardRecapar', recapar, 'var(--orange)');
   setCard('mmCardRegular', regular, 'var(--yellow)');
   setCard('mmCardBom', bom, 'var(--green)');
-  setCard('mmCardIrregular', fmtBR(ampPct) + '%', ampPct > 10 ? 'var(--red-soft)' : ampPct > 5 ? 'var(--yellow)' : 'var(--green)');
-  document.getElementById('mmCardIrregularSub').textContent = `${irregulares} pneus (amplitude > 5mm)`;
+  setCard('mmCardIrregular', fmtBR(ampPct) + '%');
+  const subIrr = document.getElementById('mmCardIrregularSub');
+  subIrr.textContent = `${irregulares} pneus (amplitude > 5mm) · Meta: ≤ 5%`;
+  subIrr.style.color = ampPct <= 5 ? 'var(--green)' : 'var(--red-soft)';
 
   // Gráficos mensais
   renderMMMensalCharts();
