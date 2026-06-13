@@ -1787,30 +1787,19 @@
 
     <!-- ========== PREVISÃO ORÇAMENTÁRIA ========== -->
     <div class="page" id="page-orcamento">
+
+      <!-- INVESTIMENTO TOTAL (fora do card) -->
+      <div style="margin:4px 4px 20px">
+        <div class="adh-label">Investimento Total — Próximos 12 meses</div>
+        <div class="adh-value" id="orcTotal" style="font-size:52px">—</div>
+      </div>
+
       <div class="adh-table-wrap">
-        <div class="adh-table-title">Previsão Orçamentária — Próximos 12 meses</div>
-
-        <!-- RESUMO -->
-        <div class="orc-summary">
-          <div class="orc-total">
-            <span>Investimento Total — 12 meses</span>
-            <b id="orcTotal">—</b>
-          </div>
-          <div class="orc-stats">
-            <div class="orc-stat"><span>Recapes</span><b id="orcQtdRec">—</b></div>
-            <div class="orc-stat"><span>Pneus Novos</span><b id="orcQtdNov">—</b></div>
-            <div class="orc-stat"><span>Custo Médio Recape</span><b id="orcMedRec">—</b></div>
-            <div class="orc-stat"><span>Custo Médio Novo</span><b id="orcMedNov">—</b></div>
-            <div class="orc-stat"><span>Custo Total Recape</span><b id="orcTotRec" style="color:var(--red-soft)">—</b></div>
-            <div class="orc-stat"><span>Custo Total Novo</span><b id="orcTotNov" style="color:var(--red-soft)">—</b></div>
-          </div>
-        </div>
-
-        <!-- TABELA -->
+        <div class="adh-table-title">Orçamento Mês a Mês — Recape e Compra</div>
         <div style="overflow-x:auto">
         <table class="adh-table orc-table" id="orcTable"></table>
         </div>
-        <div id="orcNota" style="font-size:10px;color:var(--text-muted);margin-top:10px;line-height:1.6"></div>
+        <div id="orcNota" style="font-size:10px;color:var(--text-muted);margin:10px 14px 14px 0;line-height:1.6"></div>
       </div>
 
       <!-- DOIS GRÁFICOS TEMPORAIS -->
@@ -2237,15 +2226,41 @@ function renderOrcamento() {
   });
   const limite = new Date(meses[11].ano, meses[11].mes + 1, 1);
 
+  // Ciência: geminados (e o par de direcionais) trabalham em diâmetro casado —
+  // não se recapa/troca 1 isolado. Quando o PRIMEIRO do par chega ao ponto, o par
+  // inteiro vai junto (mínimo 2 por evento), preservando o casamento de diâmetros.
   const buckets = meses.map(() => ({ novos: 0, recapes: 0 }));
-  calcPrevisao().filter(l => !l.semBase).forEach(l => {
-    const dt = l.mmAtual <= PULL_POINT ? hoje : l.dataPrev;
-    if (!(dt < limite)) return; // fora do horizonte de 12 meses
-    let idx = meses.findIndex(m => dt.getFullYear() === m.ano && dt.getMonth() === m.mes);
-    if (idx < 0) idx = 0; // datas passadas caem no mês atual
-    // Regra: direcional ou carcaça no fim das vidas → pneu novo; senão → recape
-    const precisaNovo = l.t.direcional || (l.t.cicloVida >= (l.t.maxCiclos || 5));
-    if (precisaNovo) buckets[idx].novos++; else buckets[idx].recapes++;
+  const pares = {};
+  calcPrevisao().forEach(l => {
+    const s = l.t.posicao != null ? String(l.t.posicao) : null;
+    let key;
+    if (s && s.length >= 3) {
+      const axle = s[0], side = s[1];
+      // direcional (eixo 1): os 2 pneus do eixo · geminado (eixo 2+): interno+externo do mesmo lado
+      key = axle === '1' ? `${l.t.veiculoId}-A1` : `${l.t.veiculoId}-${axle}-${side}`;
+    } else {
+      key = 'solo-' + l.t.id;
+    }
+    (pares[key] = pares[key] || []).push(l);
+  });
+
+  Object.values(pares).forEach(grupo => {
+    const comBase = grupo.filter(l => !l.semBase);
+    if (!comBase.length) return; // nenhum do par é projetável → pula
+    // data do evento = a mais cedo entre os membros (o primeiro a vencer puxa o par)
+    let dataEvento = null;
+    comBase.forEach(l => {
+      const dt = l.mmAtual <= PULL_POINT ? hoje : l.dataPrev;
+      if (!dataEvento || dt < dataEvento) dataEvento = dt;
+    });
+    if (!(dataEvento < limite)) return;
+    let idx = meses.findIndex(m => dataEvento.getFullYear() === m.ano && dataEvento.getMonth() === m.mes);
+    if (idx < 0) idx = 0;
+    // todo o par é processado nesse mês — decisão novo/recape individual por pneu
+    grupo.forEach(l => {
+      const precisaNovo = l.t.direcional || (l.t.cicloVida >= (l.t.maxCiclos || 5));
+      if (precisaNovo) buckets[idx].novos++; else buckets[idx].recapes++;
+    });
   });
 
   const fator = ano => Math.pow(1 + INFLACAO_ANUAL, ano - hoje.getFullYear());
@@ -2264,14 +2279,8 @@ function renderOrcamento() {
   // Número cheio (ex: 3.850), sem R$
   const num = v => Math.round(v).toLocaleString('pt-BR');
 
-  // Resumo
+  // Investimento total (fora do card)
   document.getElementById('orcTotal').textContent = num(totalGeral);
-  document.getElementById('orcQtdRec').textContent = totR;
-  document.getElementById('orcQtdNov').textContent = totN;
-  document.getElementById('orcMedRec').textContent = num(precoRecape);
-  document.getElementById('orcMedNov').textContent = num(precoNovo);
-  document.getElementById('orcTotRec').textContent = num(totRSr);
-  document.getElementById('orcTotNov').textContent = num(totRSn);
 
   // Tabela DRE limpa — meses nas linhas, totalizador embaixo (sem acumulado)
   const td = (v, bold) => `<td style="text-align:right${bold ? ';font-weight:700' : ''}">${v}</td>`;
@@ -2311,8 +2320,8 @@ function renderOrcamento() {
 
   document.getElementById('orcNota').innerHTML =
     `Regra: pneu que chega ao ponto vira <b>recape</b> se a carcaça tem vida (até V${tires[0] ? (tires[0].maxCiclos || 5) : 5}), ou <b>compra de novo</b> se está no direcional (política V1) ou já esgotou as vidas. ` +
-    `Preços médios reais da frota · <b>inflação de ${fmtBR(INFLACAO_ANUAL * 100, 1)}% a.a.</b> aplicada aos meses do ano seguinte. ` +
-    `Considera apenas pneus com base de desgaste projetável.`;
+    `<b>Geminados e o par de direcionais são trocados juntos</b> (nunca 1 isolado): quando o primeiro do par chega ao ponto, o par inteiro vai, preservando o casamento de diâmetros. ` +
+    `Preços médios reais da frota · <b>inflação de ${fmtBR(INFLACAO_ANUAL * 100, 1)}% a.a.</b> aplicada aos meses do ano seguinte.`;
 }
 
 // Dois gráficos temporais: custo de recape e de novos por mês (padrão dos demais)
