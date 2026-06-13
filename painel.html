@@ -2174,20 +2174,22 @@ function highlightFn(meses, valores) {
   return i => i === last;
 }
 
-// Escalas padrão: grade leve em ambos os eixos, Y visível com mesma fonte
+// Escalas padrão: grade leve em ambos os eixos, eixo X 11px / Y 9px (igual ao padrão DRE)
 function monthlyScales(isLight, yFmt) {
   const grid = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
   const tick = isLight ? '#555' : '#94A3B8';
-  const fs   = window.innerWidth < 480 ? 9 : 12;
+  const mob  = window.innerWidth < 480;
+  const fsX  = mob ? 9 : 11;
+  const fsY  = mob ? 8 : 9;
   return {
     x: {
-      ticks: { color: tick, font: { family: 'Montserrat', size: fs } },
+      ticks: { color: tick, font: { family: 'Montserrat', size: fsX } },
       grid: { color: grid, drawTicks: false },
       border: { display: false }
     },
     y: {
       display: true, grace: '14%',
-      ticks: { color: tick, font: { family: 'Montserrat', size: fs }, maxTicksLimit: 6, callback: yFmt || (v => v) },
+      ticks: { color: tick, font: { family: 'Montserrat', size: fsY }, maxTicksLimit: 6, callback: yFmt || (v => v) },
       grid: { color: grid, drawTicks: false },
       border: { display: false }
     }
@@ -2335,7 +2337,7 @@ function renderSaudeMensalChart() {
           display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hl(ctx.dataIndex),
           anchor: 'end', align: 'end', offset: 2,
           color: isLight ? '#111' : '#fff',
-          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
+          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13, weight: '700' },
           formatter: v => v === null ? '' : cfg.fmt(v)
         }
       }]
@@ -2508,7 +2510,7 @@ function renderMensalChart() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hl(ctx.dataIndex),
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13, weight: '700' },
             formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
           }
         }
@@ -2692,7 +2694,7 @@ function renderMMMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hl(ctx.dataIndex),
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
         }]
@@ -2860,7 +2862,7 @@ function renderPressaoMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hl(ctx.dataIndex),
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
         }]
@@ -2919,7 +2921,7 @@ function renderPressaoMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hlArr[ctx.dataIndex],
             anchor: 'end', align: 'top', offset: 4,
             color: ctx => corPt(rgbAlta, ctx.dataIndex),
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13, weight: '700' },
             formatter: v => v === null ? '' : v
           }
         },
@@ -2934,7 +2936,7 @@ function renderPressaoMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hlArr[ctx.dataIndex],
             anchor: 'end', align: 'bottom', offset: 4,
             color: ctx => corPt(rgbBaixa, ctx.dataIndex),
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13, weight: '700' },
             formatter: v => v === null ? '' : v
           }
         }
