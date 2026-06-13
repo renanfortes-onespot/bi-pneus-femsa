@@ -174,7 +174,7 @@
   .topbar-row1 {
     height: 48px;
     display: flex; align-items: center;
-    justify-content: space-between;
+    gap: 14px;
     padding: 0 24px;
   }
 
@@ -1079,12 +1079,14 @@
   @media (max-width: 768px) {
     .content { padding: 14px; }
 
-    /* Topbar compacta */
-    .topbar-row1 { height: auto; flex-wrap: wrap; row-gap: 4px; padding: 5px 10px; }
+    /* Topbar compacta: título fixo à esquerda, todos os botões à direita */
+    .topbar-row1 { height: auto; flex-wrap: nowrap; gap: 8px; padding: 6px 10px; }
     .topbar-row1 img { height: 21px !important; }
-    .topbar-title { font-size: 12px; }
+    .topbar-brand { gap: 8px !important; overflow: hidden; }
+    .topbar-title { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .topbar-sub { display: none; }
-    .topbar-right { margin-left: auto; gap: 5px; }
+    .back-btn { order: 3; }
+    .topbar-right { margin-left: auto; gap: 5px; flex-shrink: 0; }
     .status-badge { font-size: 8px; padding: 2px 5px; }
     .icon-btn, .theme-btn { padding: 3px 5px; }
     .icon-btn svg, .theme-btn svg { width: 12px; height: 12px; }
@@ -1150,14 +1152,14 @@
 <main class="main">
   <header class="topbar">
     <div class="topbar-row1">
-      <div style="display:flex;align-items:center;gap:14px">
-        <a href="./" class="icon-btn" title="Voltar ao Hub" style="text-decoration:none">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </a>
+      <a href="./" class="icon-btn back-btn" title="Voltar ao Hub" style="text-decoration:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+      <div class="topbar-brand" style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
         <img src="logo-femsa.png" alt="Coca-Cola FEMSA" style="height:34px">
-        <div>
+        <div style="min-width:0">
           <div class="topbar-title" id="pageTitle">Saúde dos Pneus</div>
           <div class="topbar-sub">BI Gestão de Pneus</div>
         </div>
