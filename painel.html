@@ -1665,7 +1665,12 @@
           <div class="pesos-row"><span>Custo</span><span class="pr-desc">Pneu novo: valor de compra · Recapado: valor da recapagem</span><b></b></div>
           <div class="pesos-row"><span>Vida</span><span class="pr-desc">V1 = novo · V2+ = recapado (cada recape reinicia o ciclo)</span><b></b></div>
           <div class="pesos-row"><span>Origem</span><span class="pr-desc">CPK acumulado vem direto da API Prolog (lifecycle do pneu)</span><b></b></div>
-          <div class="pesos-note">Recapado costuma ter CPK muito menor: custa pouco e roda bastante — daí a economia da recapagem.</div>
+          <div class="pesos-note" style="color:var(--yellow);opacity:0.95">
+            ⚠ CPK não conta toda a história. Um recapado tem CPK baixo, mas o número não enxerga a
+            <b>carcaça</b>: idade (DOT), nº de vidas já usadas e estado atual. Carcaça velha ou já em V3/V4
+            tem CPK ótimo e risco alto. Por isso o ranking traz <b>Vida, Carcaça (DOT) e MM</b> ao lado do CPK —
+            decida pelo conjunto, nunca só pelo custo por km.
+          </div>
         </div>
       </div>
 
@@ -1687,8 +1692,10 @@
             <th class="dcol">Pneus</th>
             <th class="dcol">% Frota</th>
             <th class="dcol">Km Médio</th>
+            <th class="dcol">Vida Média</th>
+            <th class="dcol">Carcaça (DOT)</th>
+            <th class="dcol">MM Média</th>
             <th class="dcol">Custo Médio</th>
-            <th class="dcol">Δ vs. Média</th>
             <th class="col-dias">CPK Médio ↑</th>
           </tr></thead>
           <tbody id="tbodyCpk"></tbody>
@@ -2163,24 +2170,31 @@ function renderCPK() {
   const grupos = {};
   tires.forEach(t => { (grupos[chaveDe(t)] = grupos[chaveDe(t)] || []).push(t); });
   const ranking = Object.entries(grupos)
-    .map(([chave, ts]) => ({
-      chave, n: ts.length,
-      pctFrota: tires.length ? ts.length / tires.length * 100 : 0,
-      kmMed: media(ts.map(t => t.kmRodados || 0)),
-      custoMed: media(ts.map(t => t.custo || 0)),
-      cpk: media(ts.map(t => t.cpk))
-    }))
+    .map(([chave, ts]) => {
+      const idades = ts.map(t => parseDOT(t.dot)).filter(v => v !== null);
+      const mms    = ts.filter(t => t.menorMM > 0).map(t => t.menorMM);
+      const fimVida = ts.filter(t => t.menorMM > 0 && t.menorMM <= 3).length; // na faixa de recape/bloqueio
+      return {
+        chave, n: ts.length,
+        pctFrota: tires.length ? ts.length / tires.length * 100 : 0,
+        kmMed: media(ts.map(t => t.kmRodados || 0)),
+        vidaMed: media(ts.map(t => t.cicloVida || 1)),
+        idadeMed: idades.length ? media(idades) : null,
+        mmMed: mms.length ? media(mms) : null,
+        pctFimVida: ts.length ? fimVida / ts.length * 100 : 0,
+        custoMed: media(ts.map(t => t.custo || 0)),
+        cpk: media(ts.map(t => t.cpk))
+      };
+    })
     .sort((a, b) => a.cpk - b.cpk);
 
-  const deltaTxt = r => {
-    if (!cpkMedio) return '—';
-    const d = (r.cpk - cpkMedio) / cpkMedio * 100;
-    const cor = d <= 0 ? 'var(--green)' : 'var(--red-soft)';
-    return `<span style="color:${cor};font-weight:700">${d > 0 ? '+' : ''}${fmtBR(d, 0)}%</span>`;
-  };
+  const corMM = v => v === null ? 'var(--text)' : v > 6 ? 'var(--green)' : v > 3 ? 'var(--yellow)' : 'var(--red-soft)';
+  const fmtIdadeC = v => v === null ? '—' : (v < 1 ? Math.round(v * 12) + 'm' : fmtBR(v, 1) + ' anos');
+  // Carcaça "alerta" se idade > 5 anos (limite usual para recapagem segura)
+  const corIdade = v => v === null ? 'var(--text-muted)' : v > 5 ? 'var(--red-soft)' : v > 4 ? 'var(--yellow)' : 'var(--text)';
 
   document.getElementById('tbodyCpk').innerHTML = ranking.length === 0
-    ? '<tr><td colspan="8" class="empty">Sem dados de CPK</td></tr>'
+    ? '<tr><td colspan="10" class="empty">Sem dados de CPK</td></tr>'
     : ranking.map((r, i) => `
         <tr>
           <td style="color:var(--text-muted)">${i + 1}</td>
@@ -2188,19 +2202,24 @@ function renderCPK() {
           <td class="dcol">${r.n}</td>
           <td class="dcol">${fmtBR(r.pctFrota, 1)}%</td>
           <td class="dcol">${fmtKm(r.kmMed)} km</td>
+          <td class="dcol">V${fmtBR(r.vidaMed, 1)}</td>
+          <td class="dcol" style="color:${corIdade(r.idadeMed)}">${fmtIdadeC(r.idadeMed)}</td>
+          <td class="dcol" style="color:${corMM(r.mmMed)};font-weight:700">${r.mmMed === null ? '—' : fmtBR(r.mmMed, 1) + ' mm'}</td>
           <td class="dcol">${fmtBRL(r.custoMed)}</td>
-          <td class="dcol">${deltaTxt(r)}</td>
           <td style="text-align:right;white-space:nowrap">
             <span class="td-dias" style="color:${cpkCluster(r.cpk)}">${fmtCPK(r.cpk)}</span>
             <button class="row-toggle" onclick="toggleDetail(this)">+</button>
           </td>
         </tr>
-        <tr class="detail-row"><td colspan="8"><div class="kv">
-          <span>Pneus: <b>${r.n}</b></span>
-          <span>% Frota: <b>${fmtBR(r.pctFrota, 1)}%</b></span>
+        <tr class="detail-row"><td colspan="10"><div class="kv">
+          <span>Pneus: <b>${r.n}</b> · ${fmtBR(r.pctFrota, 1)}% da frota</span>
           <span>Km Médio: <b>${fmtKm(r.kmMed)} km</b></span>
+          <span>Vida Média: <b>V${fmtBR(r.vidaMed, 1)}</b></span>
+          <span>Carcaça (DOT): <b>${fmtIdadeC(r.idadeMed)}</b></span>
+          <span>MM Média: <b>${r.mmMed === null ? '—' : fmtBR(r.mmMed, 1) + ' mm'}</b></span>
+          <span>Em fim de vida (≤3mm): <b>${fmtBR(r.pctFimVida, 0)}%</b></span>
           <span>Custo Médio: <b>${fmtBRL(r.custoMed)}</b></span>
-          <span>Δ vs. Média: ${deltaTxt(r)}</span>
+          <span>CPK: <b style="color:${cpkCluster(r.cpk)}">${fmtCPK(r.cpk)}</b></span>
         </div></td></tr>
       `).join('');
 }
