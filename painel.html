@@ -1801,8 +1801,8 @@
             <div class="orc-stat"><span>Pneus Novos</span><b id="orcQtdNov">—</b></div>
             <div class="orc-stat"><span>Custo Médio Recape</span><b id="orcMedRec">—</b></div>
             <div class="orc-stat"><span>Custo Médio Novo</span><b id="orcMedNov">—</b></div>
-            <div class="orc-stat"><span>Custo Total Recape</span><b id="orcTotRec" style="color:var(--green)">—</b></div>
-            <div class="orc-stat"><span>Custo Total Novo</span><b id="orcTotNov" style="color:var(--yellow)">—</b></div>
+            <div class="orc-stat"><span>Custo Total Recape</span><b id="orcTotRec" style="color:var(--red-soft)">—</b></div>
+            <div class="orc-stat"><span>Custo Total Novo</span><b id="orcTotNov" style="color:var(--red-soft)">—</b></div>
           </div>
         </div>
 
@@ -2297,9 +2297,9 @@ function renderOrcamento() {
       <tr style="border-top:2px solid var(--border)">
         <td><strong>TOTAL</strong></td>
         ${td(`<strong>${totR}</strong>`)}
-        ${td(`<strong style="color:var(--green)">${num(totRSr)}</strong>`)}
+        ${td(`<strong style="color:var(--red-soft)">${num(totRSr)}</strong>`)}
         ${td(`<strong>${totN}</strong>`)}
-        ${td(`<strong style="color:var(--yellow)">${num(totRSn)}</strong>`)}
+        ${td(`<strong style="color:var(--red-soft)">${num(totRSn)}</strong>`)}
         ${td(`<strong style="color:var(--red)">${num(totalGeral)}</strong>`)}
       </tr>
     </tbody>`;
