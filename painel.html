@@ -1357,10 +1357,9 @@
         <div class="card pesos-card">
           <div class="pesos-title">Distribuição dos Pesos</div>
           <div class="pesos-head"><span>Indicador</span><span class="ph-desc">Como pontua</span><span>Peso</span></div>
-          <div class="pesos-row"><span>Milimetragem</span><span class="pr-desc">Linear: 2mm = 0 pts · 10mm = 100 pts</span><b>30%</b></div>
-          <div class="pesos-row"><span>Calibragem</span><span class="pr-desc">Pressão dentro de ±15% da ideal = 100 · fora = 0</span><b>20%</b></div>
-          <div class="pesos-row"><span>Status do Pneu</span><span class="pr-desc">Bloquear 0 · Recapar 33 · Regular 66 · Bom 100</span><b>20%</b></div>
-          <div class="pesos-row"><span>Amplitude</span><span class="pr-desc">Linear: 0mm = 100 pts · ≥5mm = 0 pts</span><b>15%</b></div>
+          <div class="pesos-row"><span>Milimetragem</span><span class="pr-desc">Linear: 2mm = 0 pts · 10mm = 100 pts</span><b>40%</b></div>
+          <div class="pesos-row"><span>Calibragem</span><span class="pr-desc">Pressão dentro de ±15% da ideal = 100 · fora = 0</span><b>25%</b></div>
+          <div class="pesos-row"><span>Amplitude</span><span class="pr-desc">Linear: 0mm = 100 pts · ≥5mm = 0 pts</span><b>20%</b></div>
           <div class="pesos-row"><span>Vida (DOT)</span><span class="pr-desc">Linear: novo = 100 pts · ≥5 anos = 0 pts</span><b>10%</b></div>
           <div class="pesos-row"><span>Recapes</span><span class="pr-desc">Vida 1 = 100 pts · última vida = 0 pts</span><b>5%</b></div>
           <div class="pesos-row"><span style="color:var(--red-soft)">Deflator</span><span class="pr-desc">Recapado (V2+) no eixo direcional: score do pneu cortado pela metade</span><b style="color:var(--red-soft)">×0,5</b></div>
@@ -2714,7 +2713,7 @@ function renderCPK() {
 // ============================================================
 // SAÚDE DOS PNEUS
 // ============================================================
-const SCORE_PESOS = { mm: 0.30, calib: 0.20, status: 0.20, amp: 0.15, dot: 0.10, recape: 0.05 };
+const SCORE_PESOS = { mm: 0.40, calib: 0.25, amp: 0.20, dot: 0.10, recape: 0.05 };
 
 function dotFabDate(dot) {
   // DOT formato WWAA (semana/ano). Retorna data de fabricação ou null.
@@ -2743,7 +2742,6 @@ function tireScores(t) {
   const s = {};
   s.mm     = t.menorMM > 0 ? clamp01((t.menorMM - 2) / 8) * 100 : null;
   s.calib  = t.pressaoIdeal > 0 ? (t.pressaoNOK ? 0 : 100) : null;
-  s.status = { 'Bloquear': 0, 'Recapar': 33, 'Regular': 66, 'Bom Estado': 100 }[t.statusMM] ?? null;
   s.amp    = clamp01(1 - t.amplitude / 5) * 100;
   const idade = parseDOT(t.dot);
   s.dot    = idade !== null ? clamp01(1 - idade / 5) * 100 : null;
