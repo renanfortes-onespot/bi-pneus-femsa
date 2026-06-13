@@ -1007,14 +1007,33 @@
     display: inline-block; margin-right: 9px;
   }
 
-  /* Tabela orçamentária transposta: células compactas p/ caber 12 meses */
-  .orc-table thead th, .orc-table tbody td { padding: 8px 10px; font-size: 12px; }
-  .orc-table tbody td:first-child, .orc-table thead th:first-child {
-    position: sticky; left: 0; background: var(--bg);
-    white-space: nowrap; font-size: 12px;
+  /* Tabela orçamentária: células compactas e limpas (estilo DRE) */
+  .orc-table thead th, .orc-table tbody td, .orc-table tfoot td { padding: 9px 14px; font-size: 13px; }
+
+  /* Resumo acima da tabela */
+  .orc-summary {
+    padding: 4px 18px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
   }
-  body.light-mode .orc-table tbody td:first-child,
-  body.light-mode .orc-table thead th:first-child { background: var(--bg); }
+  .orc-total {
+    display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px;
+  }
+  .orc-total span {
+    font-size: 10px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  .orc-total b { font-size: 30px; font-weight: 800; color: var(--text); line-height: 1; }
+  .orc-stats {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;
+  }
+  .orc-stat { display: flex; flex-direction: column; gap: 2px; }
+  .orc-stat span { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .orc-stat b { font-size: 17px; font-weight: 800; color: var(--text); }
+  @media (max-width: 760px) {
+    .orc-stats { grid-template-columns: repeat(2, 1fr); }
+    .orc-total b { font-size: 26px; }
+  }
 
   .sug-item {
     display: flex; gap: 10px; align-items: flex-start;
@@ -1768,46 +1787,26 @@
 
     <!-- ========== PREVISÃO ORÇAMENTÁRIA ========== -->
     <div class="page" id="page-orcamento">
+      <div class="adh-table-wrap">
+        <div class="adh-table-title">Previsão Orçamentária — Próximos 12 meses</div>
 
-      <!-- HERO -->
-      <div class="adh-hero">
-        <div class="adh-hero-left">
-          <div class="adh-label">Investimento Previsto — Próximos 12 meses</div>
-          <div class="adh-value" id="orcHeroVal">—</div>
-          <div class="adh-deltas">
-            <div class="adh-delta">Recapes<b id="orcDeltaRec" style="color:var(--green)">—</b></div>
-            <div class="adh-delta">Pneus Novos<b id="orcDeltaNov" style="color:var(--yellow)">—</b></div>
+        <!-- RESUMO -->
+        <div class="orc-summary">
+          <div class="orc-total">
+            <span>Investimento Total — 12 meses</span>
+            <b id="orcTotal">—</b>
+          </div>
+          <div class="orc-stats">
+            <div class="orc-stat"><span>Recapes</span><b id="orcQtdRec">—</b></div>
+            <div class="orc-stat"><span>Pneus Novos</span><b id="orcQtdNov">—</b></div>
+            <div class="orc-stat"><span>Custo Médio Recape</span><b id="orcMedRec">—</b></div>
+            <div class="orc-stat"><span>Custo Médio Novo</span><b id="orcMedNov">—</b></div>
+            <div class="orc-stat"><span>Custo Total Recape</span><b id="orcTotRec" style="color:var(--green)">—</b></div>
+            <div class="orc-stat"><span>Custo Total Novo</span><b id="orcTotNov" style="color:var(--yellow)">—</b></div>
           </div>
         </div>
-      </div>
 
-      <!-- 4 CARDS -->
-      <div class="saude-cards">
-        <div class="saude-card">
-          <div class="sc-label">Recapes (12m)</div>
-          <div class="sc-value" id="orcCardRec">—</div>
-          <div class="sc-sub" id="orcCardRecSub">carcaça aproveitável</div>
-        </div>
-        <div class="saude-card">
-          <div class="sc-label">Pneus Novos (12m)</div>
-          <div class="sc-value" id="orcCardNov">—</div>
-          <div class="sc-sub" id="orcCardNovSub">direcional / fim de carcaça</div>
-        </div>
-        <div class="saude-card">
-          <div class="sc-label">Custo Pneu Novo</div>
-          <div class="sc-value" id="orcCardPrecoNov">—</div>
-          <div class="sc-sub">média V1 (direcional)</div>
-        </div>
-        <div class="saude-card">
-          <div class="sc-label">Custo Recape</div>
-          <div class="sc-value" id="orcCardPrecoRec">—</div>
-          <div class="sc-sub" id="orcCardPrecoRecSub">melhor recape</div>
-        </div>
-      </div>
-
-      <!-- TABELA ORÇAMENTÁRIA -->
-      <div class="adh-table-wrap">
-        <div class="adh-table-title">Orçamento Mês a Mês — Recape e Compra</div>
+        <!-- TABELA -->
         <div style="overflow-x:auto">
         <table class="adh-table orc-table" id="orcTable"></table>
         </div>
@@ -2197,7 +2196,7 @@ function renderAll() {
 const INFLACAO_ANUAL = 0.045; // 4,5% a.a. (estimativa) — aplicada ao virar o ano
 
 function renderOrcamento() {
-  if (!document.getElementById('orcHeroVal')) return;
+  if (!document.getElementById('orcTable')) return;
   const tires = getFilteredTires().filter(t => t.status === 'INSTALLED');
   const media = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 
@@ -2251,64 +2250,43 @@ function renderOrcamento() {
   // Número cheio (ex: 3.850), sem R$
   const num = v => Math.round(v).toLocaleString('pt-BR');
 
-  // Hero + cards em número cheio
-  document.getElementById('orcHeroVal').textContent = num(totalGeral);
-  document.getElementById('orcHeroVal').style.color = 'var(--text)';
-  document.getElementById('orcDeltaRec').textContent = totR;
-  document.getElementById('orcDeltaNov').textContent = totN;
+  // Resumo
+  document.getElementById('orcTotal').textContent = num(totalGeral);
+  document.getElementById('orcQtdRec').textContent = totR;
+  document.getElementById('orcQtdNov').textContent = totN;
+  document.getElementById('orcMedRec').textContent = num(precoRecape);
+  document.getElementById('orcMedNov').textContent = num(precoNovo);
+  document.getElementById('orcTotRec').textContent = num(totRSr);
+  document.getElementById('orcTotNov').textContent = num(totRSn);
 
-  const setC = (id, v, cor) => { const e = document.getElementById(id); e.textContent = v; if (cor) e.style.color = cor; };
-  setC('orcCardRec', totR, 'var(--green)');
-  document.getElementById('orcCardRecSub').textContent = `${num(totRSr)} no período`;
-  setC('orcCardNov', totN, 'var(--yellow)');
-  document.getElementById('orcCardNovSub').textContent = `${num(totRSn)} no período`;
-  setC('orcCardPrecoNov', num(precoNovo), 'var(--text)');
-  setC('orcCardPrecoRec', num(precoRecape), 'var(--text)');
-  document.getElementById('orcCardPrecoRecSub').textContent = `melhor: ${melhorRecapeNome}`;
-
-  // Tabela transposta — meses nas colunas, indicadores nas linhas
-  const fmtPct = f => f > 1 ? '+' + fmtBR((f - 1) * 100, 1) + '%' : '—';
-  const cels = (fn, extra) => rows.map(r => `<td ${extra || ''}>${fn(r)}</td>`).join('');
+  // Tabela DRE limpa — meses nas linhas, totalizador embaixo (sem acumulado)
+  const td = (v, bold) => `<td style="text-align:right${bold ? ';font-weight:700' : ''}">${v}</td>`;
   document.getElementById('orcTable').innerHTML = `
     <thead><tr>
-      <th>Indicador / Mês</th>${rows.map(r => `<th style="text-align:right">${r.label}</th>`).join('')}
-      <th style="text-align:right" class="col-dias">Total</th>
+      <th>Mês</th>
+      <th style="text-align:right">Recapes</th>
+      <th style="text-align:right">Custo Recape</th>
+      <th style="text-align:right">Pneus Novos</th>
+      <th style="text-align:right">Custo Novo</th>
+      <th style="text-align:right" class="col-dias">Total do Mês</th>
     </tr></thead>
     <tbody>
-      <tr>
-        <td><strong>Recapes (qtd)</strong></td>
-        ${cels(r => r.recapes || '—', 'style="text-align:right"')}
-        <td style="text-align:right;font-weight:700">${totR}</td>
-      </tr>
-      <tr>
-        <td>Custo Recape</td>
-        ${cels(r => r.rsRec ? num(r.rsRec) : '—', 'style="text-align:right"')}
-        <td style="text-align:right;font-weight:700;color:var(--green)">${num(totRSr)}</td>
-      </tr>
-      <tr>
-        <td><strong>Pneus Novos (qtd)</strong></td>
-        ${cels(r => r.novos || '—', 'style="text-align:right"')}
-        <td style="text-align:right;font-weight:700">${totN}</td>
-      </tr>
-      <tr>
-        <td>Custo Novo</td>
-        ${cels(r => r.rsNov ? num(r.rsNov) : '—', 'style="text-align:right"')}
-        <td style="text-align:right;font-weight:700;color:var(--yellow)">${num(totRSn)}</td>
-      </tr>
-      <tr>
-        <td>Inflação</td>
-        ${cels(r => fmtPct(r.f), 'style="text-align:right;color:var(--text-muted)"')}
-        <td></td>
-      </tr>
-      <tr style="border-top:1px solid var(--border)">
-        <td><strong>Total do Mês</strong></td>
-        ${cels(r => r.totalMes ? `<strong>${num(r.totalMes)}</strong>` : '—', 'style="text-align:right"')}
-        <td style="text-align:right"><strong>${num(totalGeral)}</strong></td>
-      </tr>
-      <tr>
-        <td><strong>Acumulado</strong></td>
-        ${cels(r => `<span style="color:var(--red-soft)">${num(r.acum)}</span>`, 'style="text-align:right"')}
-        <td style="text-align:right"><strong style="color:var(--red)">${num(totalGeral)}</strong></td>
+      ${rows.map(r => `
+        <tr>
+          <td><strong>${r.label}</strong></td>
+          ${td(r.recapes || '—')}
+          ${td(r.rsRec ? num(r.rsRec) : '—')}
+          ${td(r.novos || '—')}
+          ${td(r.rsNov ? num(r.rsNov) : '—')}
+          ${td(r.totalMes ? num(r.totalMes) : '—', true)}
+        </tr>`).join('')}
+      <tr style="border-top:2px solid var(--border)">
+        <td><strong>TOTAL</strong></td>
+        ${td(`<strong>${totR}</strong>`)}
+        ${td(`<strong style="color:var(--green)">${num(totRSr)}</strong>`)}
+        ${td(`<strong>${totN}</strong>`)}
+        ${td(`<strong style="color:var(--yellow)">${num(totRSn)}</strong>`)}
+        ${td(`<strong style="color:var(--red)">${num(totalGeral)}</strong>`)}
       </tr>
     </tbody>`;
 
