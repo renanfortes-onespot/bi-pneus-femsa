@@ -1816,13 +1816,13 @@
       <!-- DOIS GRÁFICOS TEMPORAIS -->
       <div class="grid-2" style="margin-top:24px">
         <div class="card">
-          <div class="card-title" style="margin-bottom:6px">Recapes por Mês</div>
-          <div class="chart-legend"><span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> pneus a recapar</span></div>
+          <div class="card-title" style="margin-bottom:6px">Custo de Recape por Mês</div>
+          <div class="chart-legend"><span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> investimento em recape</span></div>
           <div style="position:relative;height:212px"><canvas id="chartOrcRecapes"></canvas></div>
         </div>
         <div class="card">
-          <div class="card-title" style="margin-bottom:6px">Pneus Novos por Mês</div>
-          <div class="chart-legend"><span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> pneus novos a comprar</span></div>
+          <div class="card-title" style="margin-bottom:6px">Custo de Pneu Novo por Mês</div>
+          <div class="chart-legend"><span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> investimento em pneu novo</span></div>
           <div style="position:relative;height:212px"><canvas id="chartOrcNovos"></canvas></div>
         </div>
       </div>
@@ -2315,12 +2315,14 @@ function renderOrcamento() {
     `Considera apenas pneus com base de desgaste projetável.`;
 }
 
-// Dois gráficos temporais: recapes e novos por mês (padrão dos demais)
+// Dois gráficos temporais: custo de recape e de novos por mês (padrão dos demais)
 function renderOrcCharts(rows) {
   const isLight = document.body.classList.contains('light-mode');
   const labels = rows.map(r => r.label);
+  const num = v => Math.round(v).toLocaleString('pt-BR');
+  const rgb = isLight ? '255,0,0' : '255,102,102';
 
-  const montar = (canvasId, dados, rgb, label) => {
+  const montar = (canvasId, dados, label) => {
     const cor = a => `rgba(${rgb},${a})`;
     destroyChart(canvasId);
     charts[canvasId] = new Chart(document.getElementById(canvasId), {
@@ -2335,8 +2337,8 @@ function renderOrcCharts(rows) {
             display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13, weight: '700' },
-            formatter: v => v || ''
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 12, weight: '700' },
+            formatter: v => v > 0 ? num(v) : ''
           }
         }]
       },
@@ -2350,16 +2352,16 @@ function renderOrcCharts(rows) {
             backgroundColor: '#141B26', titleColor: '#E30613', bodyColor: '#F1F5F9',
             borderColor: '#1E2D40', borderWidth: 1,
             titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
-            callbacks: { label: ctx => ctx.parsed.y + ' pneus' }
+            callbacks: { label: ctx => label + ': ' + num(ctx.parsed.y) }
           }
         },
-        scales: monthlyScales(isLight, v => v)
+        scales: monthlyScales(isLight, v => num(v))
       }
     });
   };
 
-  montar('chartOrcRecapes', rows.map(r => r.recapes), '59,179,59', 'Recapes');
-  montar('chartOrcNovos', rows.map(r => r.novos), '243,156,18', 'Pneus Novos');
+  montar('chartOrcRecapes', rows.map(r => r.rsRec), 'Custo Recape');
+  montar('chartOrcNovos', rows.map(r => r.rsNov), 'Custo Novo');
 }
 
 // ============================================================
