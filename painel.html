@@ -2300,7 +2300,7 @@ function renderSaudeMensalChart() {
           display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
           anchor: 'end', align: 'end', offset: 2,
           color: isLight ? '#111' : '#fff',
-          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
+          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
           formatter: v => v === null ? '' : cfg.fmt(v)
         }
       }]
@@ -2323,7 +2323,7 @@ function renderSaudeMensalChart() {
       },
       scales: {
         x: {
-          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } },
+          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } },
           grid: { display: false },
           border: { display: false }
         },
@@ -2493,7 +2493,7 @@ function renderMensalChart() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
             formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%')
           }
         }
@@ -2518,7 +2518,7 @@ function renderMensalChart() {
       },
       scales: {
         x: {
-          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } },
+          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } },
           grid: { display: false },
           border: { display: false }
         },
@@ -2692,7 +2692,7 @@ function renderMMMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
         }]
@@ -2711,7 +2711,7 @@ function renderMMMensalCharts() {
           }
         },
         scales: {
-          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } }, grid: { display: false }, border: { display: false } },
+          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } }, grid: { display: false }, border: { display: false } },
           y: { display: false, grace: '10%' }
         }
       }
@@ -2868,7 +2868,7 @@ function renderPressaoMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
         }]
@@ -2887,7 +2887,7 @@ function renderPressaoMensalCharts() {
           }
         },
         scales: {
-          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } }, grid: { display: false }, border: { display: false } },
+          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } }, grid: { display: false }, border: { display: false } },
           y: { display: false, grace: '10%' }
         }
       }
@@ -2925,7 +2925,7 @@ function renderPressaoMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'top', offset: 4,
             color: ctx => corPt(rgbAlta, ctx.dataIndex),
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
             formatter: v => v === null ? '' : v
           }
         },
@@ -2940,7 +2940,7 @@ function renderPressaoMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'bottom', offset: 4,
             color: ctx => corPt(rgbBaixa, ctx.dataIndex),
-            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 7 : 12, weight: '700' },
             formatter: v => v === null ? '' : v
           }
         }
@@ -2962,7 +2962,7 @@ function renderPressaoMensalCharts() {
         }
       },
       scales: {
-        x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } }, grid: { display: false }, border: { display: false } },
+        x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13 } }, grid: { display: false }, border: { display: false } },
         y: { display: false, grace: '15%', beginAtZero: true }
       }
     }
