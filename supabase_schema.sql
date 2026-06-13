@@ -42,3 +42,10 @@ create policy "leitura publica historico"
   on historico_mensal for select using (true);
 
 -- (service_role ignora RLS, então o loader grava sem policy extra)
+
+-- ============================================================
+-- CPK no histórico mensal (rodar uma vez no SQL Editor)
+-- ============================================================
+alter table historico_mensal add column if not exists cpk numeric;
+alter table historico_mensal add column if not exists km_rodados numeric;
+alter table historico_mensal add column if not exists custo numeric;

@@ -1595,6 +1595,89 @@
       </div>
     </div>
 
+    <!-- ========== CPK ========== -->
+    <div class="page" id="page-cpk">
+
+      <!-- HERO CPK MÉDIO -->
+      <div class="adh-hero">
+        <div class="adh-hero-left">
+          <div class="adh-label">CPK Médio</div>
+          <div class="adh-value" id="cpkHeroVal">—</div>
+          <div class="chart-legend" style="margin-top:10px">
+            <span class="lg-item" id="cpkHeroCluster" style="font-size:13px;font-weight:700"><span class="lg-dot" id="cpkHeroClusterDot"></span> —</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 CARDS -->
+      <div class="saude-cards">
+        <div class="saude-card">
+          <div class="sc-label">Pneus com CPK</div>
+          <div class="sc-value" id="cpkCardPneus">—</div>
+          <div class="sc-sub">com custo/km apurado</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Custo Total</div>
+          <div class="sc-value" id="cpkCardCusto">—</div>
+          <div class="sc-sub">aquisição + recapes</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Km Rodados</div>
+          <div class="sc-value" id="cpkCardKm">—</div>
+          <div class="sc-sub">total acumulado</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Melhor Marca</div>
+          <div class="sc-value" id="cpkCardMelhor" style="font-size:18px">—</div>
+          <div class="sc-sub" id="cpkCardMelhorSub">menor CPK médio</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Pior Marca</div>
+          <div class="sc-value" id="cpkCardPior" style="font-size:18px">—</div>
+          <div class="sc-sub" id="cpkCardPiorSub">maior CPK médio</div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO CPK MENSAL -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-title" style="margin-bottom:6px">CPK Mensal (R$/km)</div>
+        <div class="chart-legend">
+          <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> ≤ 0,20</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 0,20 a 0,35</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &gt; 0,35</span>
+        </div>
+        <div style="position:relative;height:212px">
+          <canvas id="chartCpkMensal"></canvas>
+        </div>
+        <div id="cpkChartNota" style="font-size:10px;color:var(--text-muted);margin-top:8px"></div>
+      </div>
+
+      <!-- RANKING -->
+      <div class="adh-table-wrap">
+        <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <span>Ranking — CPK (Melhor para Pior)</span>
+          <div class="chart-chips">
+            <button class="chip active" data-cpkdrill="marca" onclick="setCpkDrill('marca',this)">Marca</button>
+            <button class="chip" data-cpkdrill="modelo" onclick="setCpkDrill('modelo',this)">Modelo Pneu</button>
+            <button class="chip" data-cpkdrill="bandaMarca" onclick="setCpkDrill('bandaMarca',this)">Marca Banda</button>
+            <button class="chip" data-cpkdrill="banda" onclick="setCpkDrill('banda',this)">Modelo Banda</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+        <table class="adh-table">
+          <thead><tr>
+            <th>#</th><th id="thCpkDrill">Marca</th>
+            <th class="dcol">Pneus</th>
+            <th class="dcol">Km Médio</th>
+            <th class="dcol">Custo Médio</th>
+            <th class="col-dias">CPK Médio ↑</th>
+          </tr></thead>
+          <tbody id="tbodyCpk"></tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ========== VISÃO DE EIXOS ========== -->
     <div class="page" id="page-eixos">
       <div class="chart-legend" style="margin-bottom:16px">
@@ -1653,7 +1736,7 @@ function toggleTheme() {
   const isLight = document.body.classList.toggle('light-mode');
   localStorage.setItem('femsa_theme', isLight ? 'light' : 'dark');
   // Re-renderiza gráficos com as cores do tema
-  if (DATA.vehicles.length) { renderMensalChart(); renderSaudeMensalChart(); renderMMMensalCharts(); renderPressaoMensalCharts(); }
+  if (DATA.vehicles.length) { renderMensalChart(); renderSaudeMensalChart(); renderMMMensalCharts(); renderPressaoMensalCharts(); renderCPK(); }
   const icon = document.getElementById('themeIcon');
   // Troca ícone sol ↔ lua
   if (isLight) {
@@ -1852,6 +1935,7 @@ function navigate(page) {
     painel: 'Aderência às Aferições',
     milimetragem: 'Milimetragem',
     pressao: 'Pressão dos Pneus',
+    cpk: 'CPK — Custo por Km',
     eixos: 'Visão de Eixos'
   };
   document.getElementById('pageTitle').textContent = titles[page] || 'Saúde dos Pneus';
@@ -1910,6 +1994,14 @@ async function loadData(forceRefresh = false) {
     DATA.tires       = DATA.tires       || [];
     DATA.inspections = DATA.inspections || [];
 
+    // Histórico mensal (CPK etc.) — opcional, alimenta o gráfico temporal de CPK
+    try {
+      const rh = await fetch(`${SUPABASE_URL}/rest/v1/historico_mensal?select=competencia,cpk,km_rodados,custo&cpk=gt.0`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+      });
+      DATA.historico = rh.ok ? await rh.json() : [];
+    } catch(_) { DATA.historico = []; }
+
     saveCache(DATA);
     const ult = rows.map(r => new Date(r.updated_at)).sort((a, b) => b - a)[0];
     document.getElementById('lastUpdate').textContent =
@@ -1946,8 +2038,197 @@ function renderAll() {
   renderPainel();
   renderMilimetragem();
   renderPressao();
+  renderCPK();
   renderEixosFilters();
   renderEixos();
+}
+
+// ============================================================
+// CPK — Custo por Km
+// ============================================================
+let CPK_DRILL = 'marca';
+function setCpkDrill(d, btn) {
+  CPK_DRILL = d;
+  document.querySelectorAll('[data-cpkdrill]').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderCPK();
+}
+
+// Cluster de CPK: menor é melhor
+function cpkCluster(v) { return v <= 0.20 ? 'var(--green)' : v <= 0.35 ? 'var(--yellow)' : 'var(--red-soft)'; }
+
+function fmtBRL(v) {
+  if (v >= 1e6) return 'R$ ' + fmtBR(v / 1e6, 2) + ' mi';
+  if (v >= 1e3) return 'R$ ' + fmtBR(v / 1e3, 1) + 'k';
+  return 'R$ ' + fmtBR(v, 0);
+}
+function fmtKm(v) {
+  if (v >= 1e6) return fmtBR(v / 1e6, 2) + ' mi';
+  if (v >= 1e3) return fmtBR(v / 1e3, 0) + 'k';
+  return fmtBR(v, 0);
+}
+function fmtCPK(v) { return 'R$ ' + v.toFixed(3).replace('.', ','); }
+
+function renderCPK() {
+  if (!document.getElementById('cpkHeroVal')) return;
+  const tires = getFilteredTires().filter(t => t.status === 'INSTALLED' && t.cpk > 0);
+
+  const media = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  const cpkMedio = media(tires.map(t => t.cpk));
+  const custoTotal = tires.reduce((s, t) => s + (t.custo || 0), 0);
+  const kmTotal = tires.reduce((s, t) => s + (t.kmRodados || 0), 0);
+
+  // Hero
+  const hero = document.getElementById('cpkHeroVal');
+  hero.textContent = tires.length ? fmtCPK(cpkMedio) : '—';
+  hero.style.color = 'var(--text)';
+  const corCl = cpkCluster(cpkMedio);
+  const clTxt = cpkMedio <= 0.20 ? 'Ótimo' : cpkMedio <= 0.35 ? 'Atenção' : 'Crítico';
+  const clEl = document.getElementById('cpkHeroCluster');
+  clEl.childNodes[clEl.childNodes.length - 1].textContent = ' ' + clTxt;
+  clEl.style.color = corCl;
+  document.getElementById('cpkHeroClusterDot').style.background = corCl;
+
+  // Agrupamento por marca p/ melhor/pior
+  const porMarca = {};
+  tires.forEach(t => { (porMarca[t.marca || '—'] = porMarca[t.marca || '—'] || []).push(t); });
+  const marcasRank = Object.entries(porMarca)
+    .map(([m, ts]) => ({ m, cpk: media(ts.map(t => t.cpk)), n: ts.length }))
+    .filter(x => x.n >= 2)
+    .sort((a, b) => a.cpk - b.cpk);
+
+  // Cards
+  document.getElementById('cpkCardPneus').textContent = tires.length;
+  document.getElementById('cpkCardCusto').textContent = fmtBRL(custoTotal);
+  document.getElementById('cpkCardKm').textContent = fmtKm(kmTotal);
+  if (marcasRank.length) {
+    const mel = marcasRank[0], pio = marcasRank[marcasRank.length - 1];
+    document.getElementById('cpkCardMelhor').textContent = mel.m;
+    document.getElementById('cpkCardMelhor').style.color = 'var(--green)';
+    document.getElementById('cpkCardMelhorSub').textContent = `${fmtCPK(mel.cpk)} · ${mel.n} pneus`;
+    document.getElementById('cpkCardPior').textContent = pio.m;
+    document.getElementById('cpkCardPior').style.color = 'var(--red-soft)';
+    document.getElementById('cpkCardPiorSub').textContent = `${fmtCPK(pio.cpk)} · ${pio.n} pneus`;
+  } else {
+    ['cpkCardMelhor','cpkCardPior'].forEach(id => document.getElementById(id).textContent = '—');
+  }
+
+  // Gráfico mensal
+  renderCpkMensalChart(cpkMedio);
+
+  // Ranking pelo drill
+  const drill = CPK_DRILL;
+  document.getElementById('thCpkDrill').textContent =
+    drill === 'modelo' ? 'Modelo do Pneu' : drill === 'bandaMarca' ? 'Marca da Banda' : drill === 'banda' ? 'Modelo da Banda' : 'Marca';
+
+  const chaveDe = t =>
+    drill === 'modelo' ? (t.modelo || '—') :
+    drill === 'bandaMarca' ? (t.cicloVida > 1 ? (t.bandaMarca || '—') : 'Pneu Novo (V1)') :
+    drill === 'banda' ? (t.cicloVida > 1 ? (t.banda || '—') : 'Pneu Novo (V1)') :
+    (t.marca || '—');
+
+  const grupos = {};
+  tires.forEach(t => { (grupos[chaveDe(t)] = grupos[chaveDe(t)] || []).push(t); });
+  const ranking = Object.entries(grupos)
+    .map(([chave, ts]) => ({
+      chave, n: ts.length,
+      kmMed: media(ts.map(t => t.kmRodados || 0)),
+      custoMed: media(ts.map(t => t.custo || 0)),
+      cpk: media(ts.map(t => t.cpk))
+    }))
+    .sort((a, b) => a.cpk - b.cpk);
+
+  document.getElementById('tbodyCpk').innerHTML = ranking.length === 0
+    ? '<tr><td colspan="6" class="empty">Sem dados de CPK</td></tr>'
+    : ranking.map((r, i) => `
+        <tr>
+          <td style="color:var(--text-muted)">${i + 1}</td>
+          <td><strong>${r.chave}</strong></td>
+          <td class="dcol">${r.n}</td>
+          <td class="dcol">${fmtKm(r.kmMed)} km</td>
+          <td class="dcol">${fmtBRL(r.custoMed)}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <span class="td-dias" style="color:${cpkCluster(r.cpk)}">${fmtCPK(r.cpk)}</span>
+            <button class="row-toggle" onclick="toggleDetail(this)">+</button>
+          </td>
+        </tr>
+        <tr class="detail-row"><td colspan="6"><div class="kv">
+          <span>Pneus: <b>${r.n}</b></span>
+          <span>Km Médio: <b>${fmtKm(r.kmMed)} km</b></span>
+          <span>Custo Médio: <b>${fmtBRL(r.custoMed)}</b></span>
+        </div></td></tr>
+      `).join('');
+}
+
+function renderCpkMensalChart(cpkAtual) {
+  const anoAtivo = FILTERS.ano.length === 1 ? parseInt(FILTERS.ano[0]) : new Date().getFullYear();
+  const hoje = new Date();
+  const meses = Array.from({ length: 12 }, (_, i) => ({
+    ano: anoAtivo, mes: i,
+    label: new Date(anoAtivo, i, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
+  }));
+  const mesAtual = hoje.getFullYear() === anoAtivo ? hoje.getMonth() : -1;
+
+  // Histórico mensal (historico_mensal) agregado por competência
+  const histPorMes = {};
+  (DATA.historico || []).forEach(h => {
+    const d = new Date(h.competencia);
+    if (d.getFullYear() !== anoAtivo) return;
+    (histPorMes[d.getMonth()] = histPorMes[d.getMonth()] || []).push(h.cpk);
+  });
+
+  const valores = meses.map((m, i) => {
+    if (new Date(m.ano, m.mes, 1) > new Date(hoje.getFullYear(), hoje.getMonth(), 1)) return null;
+    if (histPorMes[i] && histPorMes[i].length) {
+      return histPorMes[i].reduce((a, b) => a + b, 0) / histPorMes[i].length;
+    }
+    // sem histórico: usa o CPK atual apenas no mês corrente
+    return i === mesAtual ? cpkAtual : null;
+  });
+
+  const temHistorico = Object.keys(histPorMes).length > 0;
+  document.getElementById('cpkChartNota').textContent = temHistorico ? ''
+    : 'Série histórica em formação — o CPK é acumulado por foto mensal; meses anteriores aparecem conforme o histórico é gravado.';
+
+  const isLight = document.body.classList.contains('light-mode');
+  const hl = highlightFn(meses, valores);
+  const rgbFor = v => v <= 0.20 ? '59,179,59' : v <= 0.35 ? '243,156,18' : '255,102,102';
+  const cores  = meses.map((m, i) => valores[i] === null ? 'rgba(255,255,255,0.03)' : `rgba(${rgbFor(valores[i])},${hl(i) ? 0.7 : 0.15})`);
+  const bordas = meses.map((m, i) => valores[i] === null ? 'transparent' : `rgba(${rgbFor(valores[i])},${hl(i) ? 1 : 0.22})`);
+
+  destroyChart('chartCpkMensal');
+  charts.chartCpkMensal = new Chart(document.getElementById('chartCpkMensal'), {
+    data: {
+      labels: meses.map(m => m.label),
+      datasets: [{
+        type: 'bar', label: 'CPK', data: valores,
+        backgroundColor: cores, borderColor: bordas,
+        borderWidth: 1.5, borderRadius: 3,
+        datalabels: {
+          display: ctx => ctx.dataset.data[ctx.dataIndex] !== null && hl(ctx.dataIndex),
+          anchor: 'end', align: 'end', offset: 2,
+          color: isLight ? '#111' : '#fff',
+          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13, weight: '700' },
+          formatter: v => v === null ? '' : v.toFixed(3).replace('.', ',')
+        }
+      }]
+    },
+    plugins: [ChartDataLabels],
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#141B26', titleColor: '#E30613', bodyColor: '#F1F5F9',
+          borderColor: '#1E2D40', borderWidth: 1,
+          titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
+          callbacks: { label: ctx => ctx.parsed.y === null ? '—' : 'CPK: ' + fmtCPK(ctx.parsed.y) }
+        }
+      },
+      scales: monthlyScales(isLight, v => 'R$ ' + v.toFixed(2).replace('.', ','))
+    }
+  });
 }
 
 // ============================================================
