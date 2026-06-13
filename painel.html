@@ -1066,18 +1066,59 @@
   .kv b { color: var(--text); font-weight: 700; }
   body.light-mode .kv b { color: #111; }
 
+  /* Gráficos lado a lado quebram mais cedo para não cortar no tablet */
+  @media (max-width: 1100px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .saude-chart-row { grid-template-columns: 1fr; }
+  }
+
+  /* Grid children não estouram por causa dos canvas */
+  .grid-2 > .card, .grid-3 > .card, .saude-chart-row > .card { min-width: 0; }
+  .card, .adh-table-wrap { min-width: 0; }
+
   @media (max-width: 768px) {
-    .content { padding: 16px; }
-    .adh-value { font-size: 44px; }
+    .content { padding: 14px; }
+
+    /* Topbar compacta */
+    .topbar-row1 { height: auto; flex-wrap: wrap; row-gap: 6px; padding: 8px 12px; }
+    .topbar-row1 img { height: 24px !important; }
+    .topbar-title { font-size: 13px; }
+    .topbar-sub { display: none; }
+    .status-badge { font-size: 8px; padding: 2px 6px; }
+    .icon-btn, .theme-btn { padding: 4px 6px; }
+    .filter-bar { padding: 6px 12px 10px; gap: 6px; }
+    .ms-btn { min-width: 0; font-size: 9px; padding: 5px 9px; }
+
+    /* Tipografia reduzida */
+    .adh-value { font-size: 40px; }
+    .adh-label { font-size: 9px; }
+    .adh-delta { font-size: 11px; }
+    .adh-delta b { font-size: 14px; }
+    .saude-card .sc-value { font-size: 18px; }
+    .saude-card { padding: 11px 12px; }
+    .saude-card .sc-label { font-size: 9px; }
+    .saude-card .sc-sub { font-size: 9px; }
+    .card { padding: 14px 12px 10px; }
+    .card-title, .adh-table-title { font-size: 12px; }
+    .chip { font-size: 9px; padding: 4px 8px; }
+    .lg-item { font-size: 10px; }
+
+    /* Tabelas */
     .adh-table .dcol { display: none; }
     .row-toggle { display: inline-block; }
     tr.detail-row.open { display: table-row; }
+    .adh-table tbody td, .adh-table thead th { padding-left: 10px; padding-right: 10px; }
+
+    /* Eixos */
     .tire-v { width: 80px; font-size: 10px; padding: 6px; }
     .tire-v .tv-mm { font-size: 12px; }
     .tire-v .tv-serial { font-size: 11px; }
     .tire-v .tv-pos, .tire-v .tv-sub { font-size: 9px; }
     .axle-bar { width: 18px; }
-    .saude-cards { grid-template-columns: repeat(2, 1fr) !important; }
+
+    /* Cards em pares */
+    .saude-cards { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+    .adh-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   }
 </style>
 </head>
@@ -2103,19 +2144,19 @@ const SAUDE_METRICAS = {
   },
   mm: {
     label: 'MM Média',
-    fmt: v => v.toFixed(1).replace('.', ',') + ' mm',
+    fmt: v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : ' mm'),
     cluster: v => v > 6 ? 'g' : v > 3 ? 'y' : 'r',
     legenda: [['g','> 6mm'], ['y','3 a 6mm'], ['r','≤ 3mm']]
   },
   calib: {
     label: 'Calibragem (% OK)',
-    fmt: v => v.toFixed(1).replace('.', ',') + '%',
+    fmt: v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%'),
     cluster: v => v >= 98 ? 'g' : v >= 85 ? 'y' : 'r',
     legenda: [['g','≥ 98%'], ['y','85% a 98%'], ['r','< 85%']]
   },
   amp: {
     label: 'Amplitude Média',
-    fmt: v => v.toFixed(1).replace('.', ',') + ' mm',
+    fmt: v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : ' mm'),
     cluster: v => v <= 2 ? 'g' : v <= 5 ? 'y' : 'r',
     legenda: [['g','≤ 2mm'], ['y','2 a 5mm'], ['r','> 5mm']]
   },
@@ -2238,7 +2279,7 @@ function renderSaudeMensalChart() {
           display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
           anchor: 'end', align: 'end', offset: 2,
           color: isLight ? '#111' : '#fff',
-          font: { family: 'Montserrat', size: 12, weight: '700' },
+          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
           formatter: v => v === null ? '' : cfg.fmt(v)
         }
       }]
@@ -2261,7 +2302,7 @@ function renderSaudeMensalChart() {
       },
       scales: {
         x: {
-          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } },
+          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } },
           grid: { display: false },
           border: { display: false }
         },
@@ -2321,7 +2362,7 @@ function renderPainel() {
   const vencida = lista.filter(v => v.status === 'vencida').length;
 
   const pct    = (noPrazo + emAten) / total * 100;
-  const pctStr = pct.toFixed(1).replace('.', ',') + '%';
+  const pctStr = pct.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%');
   const corAd  = pct >= 98 ? 'var(--green)' : pct >= 85 ? 'var(--yellow)' : 'var(--red-soft)';
 
   const elVal = document.getElementById('adhValue');
@@ -2431,8 +2472,8 @@ function renderMensalChart() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: 12, weight: '700' },
-            formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + '%'
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
+            formatter: v => v === null ? '' : v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%')
           }
         }
       ]
@@ -2450,13 +2491,13 @@ function renderMensalChart() {
           titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
           callbacks: {
             label: ctx => ctx.parsed.y === null ? '—' :
-              ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1).replace('.', ',') + '%'
+              ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%')
           }
         }
       },
       scales: {
         x: {
-          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } },
+          ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } },
           grid: { display: false },
           border: { display: false }
         },
@@ -2616,7 +2657,7 @@ function renderMMMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
         }]
@@ -2635,7 +2676,7 @@ function renderMMMensalCharts() {
           }
         },
         scales: {
-          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
+          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } }, grid: { display: false }, border: { display: false } },
           y: { display: false, grace: '10%' }
         }
       }
@@ -2644,11 +2685,11 @@ function renderMMMensalCharts() {
 
   montar('chartMMMensal', porMes.map(x => x === null ? null : x.mm),
     v => v > 6 ? 'g' : v > 3 ? 'y' : 'r',
-    v => v.toFixed(1).replace('.', ',') + ' mm', 'MM Média');
+    v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : ' mm'), 'MM Média');
 
   montar('chartAmpMensal', porMes.map(x => x === null ? null : x.amp),
     v => v <= 5 ? 'g' : v <= 10 ? 'y' : 'r',
-    v => v.toFixed(1).replace('.', ',') + '%', 'Desgaste Irregular');
+    v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%'), 'Desgaste Irregular');
 }
 
 // ============================================================
@@ -2792,7 +2833,7 @@ function renderPressaoMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'end', offset: 2,
             color: isLight ? '#111' : '#fff',
-            font: { family: 'Montserrat', size: 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
             formatter: v => v === null ? '' : fmtFn(v)
           }
         }]
@@ -2811,7 +2852,7 @@ function renderPressaoMensalCharts() {
           }
         },
         scales: {
-          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
+          x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } }, grid: { display: false }, border: { display: false } },
           y: { display: false, grace: '10%' }
         }
       }
@@ -2820,7 +2861,7 @@ function renderPressaoMensalCharts() {
 
   montar('chartPressaoMensal', porMes.map(x => x === null ? null : x.ok),
     v => v >= 98 ? 'g' : v >= 85 ? 'y' : 'r',
-    v => v.toFixed(1).replace('.', ',') + '%', 'Calibragem OK');
+    v => v.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%'), 'Calibragem OK');
 
   // Alta e Baixa Pressão Mensal (#): duas linhas com marcadores
   // (mês filtrado em destaque, demais esmaecidos — como nas barras)
@@ -2849,7 +2890,7 @@ function renderPressaoMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'top', offset: 4,
             color: ctx => corPt(rgbAlta, ctx.dataIndex),
-            font: { family: 'Montserrat', size: 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
             formatter: v => v === null ? '' : v
           }
         },
@@ -2864,7 +2905,7 @@ function renderPressaoMensalCharts() {
             display: ctx => ctx.dataset.data[ctx.dataIndex] !== null,
             anchor: 'end', align: 'bottom', offset: 4,
             color: ctx => corPt(rgbBaixa, ctx.dataIndex),
-            font: { family: 'Montserrat', size: 12, weight: '700' },
+            font: { family: 'Montserrat', size: window.innerWidth < 480 ? 9 : 12, weight: '700' },
             formatter: v => v === null ? '' : v
           }
         }
@@ -2886,7 +2927,7 @@ function renderPressaoMensalCharts() {
         }
       },
       scales: {
-        x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: 13 } }, grid: { display: false }, border: { display: false } },
+        x: { ticks: { color: isLight ? '#555' : '#94A3B8', font: { family: 'Montserrat', size: window.innerWidth < 480 ? 10 : 13 } }, grid: { display: false }, border: { display: false } },
         y: { display: false, grace: '15%', beginAtZero: true }
       }
     }
