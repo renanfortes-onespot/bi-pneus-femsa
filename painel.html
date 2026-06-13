@@ -1009,6 +1009,11 @@
 
   /* Tabela orçamentária: células compactas e limpas (estilo DRE) */
   .orc-table thead th, .orc-table tbody td, .orc-table tfoot td { padding: 9px 14px; font-size: 13px; }
+  .orc-table tbody td:first-child, .orc-table thead th:first-child {
+    position: sticky; left: 0; background: #0E121A; white-space: nowrap;
+  }
+  body.light-mode .orc-table tbody td:first-child,
+  body.light-mode .orc-table thead th:first-child { background: var(--bg); }
 
   /* Resumo acima da tabela */
   .orc-summary {
@@ -2259,34 +2264,38 @@ function renderOrcamento() {
   document.getElementById('orcTotRec').textContent = num(totRSr);
   document.getElementById('orcTotNov').textContent = num(totRSn);
 
-  // Tabela DRE limpa — meses nas linhas, totalizador embaixo (sem acumulado)
-  const td = (v, bold) => `<td style="text-align:right${bold ? ';font-weight:700' : ''}">${v}</td>`;
+  // Tabela DRE — meses nas colunas, indicadores nas linhas, Total na última coluna
+  const cels = (fn, extra) => rows.map(r => `<td style="text-align:right${extra || ''}">${fn(r)}</td>`).join('');
   document.getElementById('orcTable').innerHTML = `
     <thead><tr>
-      <th>Mês</th>
-      <th style="text-align:right">Recapes</th>
-      <th style="text-align:right">Custo Recape</th>
-      <th style="text-align:right">Pneus Novos</th>
-      <th style="text-align:right">Custo Novo</th>
-      <th style="text-align:right" class="col-dias">Total do Mês</th>
+      <th>Indicador</th>${rows.map(r => `<th style="text-align:right">${r.label}</th>`).join('')}
+      <th style="text-align:right" class="col-dias">Total</th>
     </tr></thead>
     <tbody>
-      ${rows.map(r => `
-        <tr>
-          <td><strong>${r.label}</strong></td>
-          ${td(r.recapes || '—')}
-          ${td(r.rsRec ? num(r.rsRec) : '—')}
-          ${td(r.novos || '—')}
-          ${td(r.rsNov ? num(r.rsNov) : '—')}
-          ${td(r.totalMes ? num(r.totalMes) : '—', true)}
-        </tr>`).join('')}
+      <tr>
+        <td><strong>Recapes</strong></td>
+        ${cels(r => r.recapes || '—')}
+        <td style="text-align:right;font-weight:700">${totR}</td>
+      </tr>
+      <tr>
+        <td>Custo Recape</td>
+        ${cels(r => r.rsRec ? num(r.rsRec) : '—')}
+        <td style="text-align:right;font-weight:700;color:var(--green)">${num(totRSr)}</td>
+      </tr>
+      <tr>
+        <td><strong>Pneus Novos</strong></td>
+        ${cels(r => r.novos || '—')}
+        <td style="text-align:right;font-weight:700">${totN}</td>
+      </tr>
+      <tr>
+        <td>Custo Novo</td>
+        ${cels(r => r.rsNov ? num(r.rsNov) : '—')}
+        <td style="text-align:right;font-weight:700;color:var(--yellow)">${num(totRSn)}</td>
+      </tr>
       <tr style="border-top:2px solid var(--border)">
-        <td><strong>TOTAL</strong></td>
-        ${td(`<strong>${totR}</strong>`)}
-        ${td(`<strong style="color:var(--green)">${num(totRSr)}</strong>`)}
-        ${td(`<strong>${totN}</strong>`)}
-        ${td(`<strong style="color:var(--yellow)">${num(totRSn)}</strong>`)}
-        ${td(`<strong style="color:var(--red)">${num(totalGeral)}</strong>`)}
+        <td><strong>Total do Mês</strong></td>
+        ${cels(r => r.totalMes ? `<strong>${num(r.totalMes)}</strong>` : '—')}
+        <td style="text-align:right"><strong style="color:var(--red)">${num(totalGeral)}</strong></td>
       </tr>
     </tbody>`;
 
