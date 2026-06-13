@@ -1243,6 +1243,16 @@
           <div id="opts-placa"></div>
         </div>
       </div>
+      <div class="ms-wrap" id="wrap-vida">
+        <button class="ms-btn" onclick="toggleMs('vida')">
+          VIDA <span class="ms-count" id="cnt-vida" style="display:none"></span><span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-panel" id="panel-vida">
+          <input class="ms-search" placeholder="Buscar..." oninput="filterMs(this,'panel-vida')">
+          <div class="ms-option select-all"><label><input type="checkbox" onchange="selectAll('panel-vida',this)"> Todos</label></div>
+          <div id="opts-vida"></div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -1645,8 +1655,8 @@
         <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
           <span>Ranking — CPK (Melhor para Pior)</span>
           <div class="chart-chips">
-            <button class="chip active" data-cpkdrill="vida" onclick="setCpkDrill('vida',this)">Vida</button>
-            <button class="chip" data-cpkdrill="marca" onclick="setCpkDrill('marca',this)">Marca</button>
+            <button class="chip active" data-cpkdrill="marca" onclick="setCpkDrill('marca',this)">Marca</button>
+            <button class="chip" data-cpkdrill="vida" onclick="setCpkDrill('vida',this)">Vida</button>
             <button class="chip" data-cpkdrill="modelo" onclick="setCpkDrill('modelo',this)">Modelo Pneu</button>
             <button class="chip" data-cpkdrill="bandaMarca" onclick="setCpkDrill('bandaMarca',this)">Marca Banda</button>
             <button class="chip" data-cpkdrill="banda" onclick="setCpkDrill('banda',this)">Modelo Banda</button>
@@ -1657,6 +1667,7 @@
           <thead><tr>
             <th>#</th><th id="thCpkDrill">Marca</th>
             <th class="dcol">Pneus</th>
+            <th class="dcol">Participação</th>
             <th class="dcol">Custo Médio</th>
             <th class="dcol">Km Médio</th>
             <th class="col-dias">CPK Médio ↑</th>
@@ -1716,7 +1727,7 @@ const SUPABASE_KEY = 'sb_publishable_6GvYIjIoAYQSzFaWTiSptQ_VP8ravoC';
 // ============================================================
 let DATA = { vehicles: [], tires: [], inspections: [] };
 let charts = {};
-let FILTERS = { ano: [], vigencia: [], unidade: [], placa: [], marca: [], modelo: [] };
+let FILTERS = { ano: [], vigencia: [], unidade: [], placa: [], marca: [], modelo: [], vida: [] };
 
 // ============================================================
 // TEMA
@@ -1833,6 +1844,9 @@ function populateFilters() {
   buildFilter('placa',    placas);
   buildFilter('marca',    [...new Set(vehs.map(v => v.marca).filter(Boolean))].sort());
   buildFilter('modelo',   [...new Set(vehs.map(v => v.modelo).filter(Boolean))].sort());
+  const vidas = [...new Set(DATA.tires.map(t => t.cicloVida || 1))].sort((a,b)=>a-b)
+    .map(v => v === 1 ? 'V1 (Novo)' : 'V' + v + ' (recapado)');
+  buildFilter('vida', vidas);
 }
 
 function getFilteredVehicles() {
@@ -1892,6 +1906,10 @@ function getFilteredTires() {
   if (FILTERS.placa.length || FILTERS.unidade.length || FILTERS.marca.length || FILTERS.modelo.length) {
     const placasOk = new Set(getFilteredVehicles().map(v => v.placa));
     t = t.filter(x => placasOk.has(x.placa));
+  }
+  if (FILTERS.vida.length) {
+    const labelVida = cv => (cv || 1) === 1 ? 'V1 (Novo)' : 'V' + cv + ' (recapado)';
+    t = t.filter(x => FILTERS.vida.includes(labelVida(x.cicloVida)));
   }
   return t;
 }
@@ -2035,7 +2053,7 @@ function renderAll() {
 // ============================================================
 // CPK — Custo por Km
 // ============================================================
-let CPK_DRILL = 'vida';
+let CPK_DRILL = 'marca';
 function setCpkDrill(d, btn) {
   CPK_DRILL = d;
   document.querySelectorAll('[data-cpkdrill]').forEach(c => c.classList.remove('active'));
@@ -2136,12 +2154,13 @@ function renderCPK() {
   const corIdade = v => v === null ? 'var(--text-muted)' : v > 5 ? 'var(--red-soft)' : v > 4 ? 'var(--yellow)' : 'var(--text)';
 
   document.getElementById('tbodyCpk').innerHTML = ranking.length === 0
-    ? '<tr><td colspan="6" class="empty">Sem dados de CPK</td></tr>'
+    ? '<tr><td colspan="7" class="empty">Sem dados de CPK</td></tr>'
     : ranking.map((r, i) => `
         <tr>
           <td style="color:var(--text-muted)">${i + 1}</td>
           <td><strong>${r.chave}</strong></td>
           <td class="dcol">${r.n}</td>
+          <td class="dcol">${fmtBR(r.pctFrota, 1)}%</td>
           <td class="dcol">${fmtBRL(r.custoMed)}</td>
           <td class="dcol">${fmtKm(r.kmMed)} km</td>
           <td style="text-align:right;white-space:nowrap">
@@ -2149,7 +2168,7 @@ function renderCPK() {
             <button class="row-toggle" onclick="toggleDetail(this)">+</button>
           </td>
         </tr>
-        <tr class="detail-row"><td colspan="6"><div class="kv">
+        <tr class="detail-row"><td colspan="7"><div class="kv">
           <span>Pneus: <b>${r.n}</b> · ${fmtBR(r.pctFrota, 1)}% da frota</span>
           <span>Custo Médio: <b>${fmtBRL(r.custoMed)}</b></span>
           <span>Km Médio: <b>${fmtKm(r.kmMed)} km</b></span>
