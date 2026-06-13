@@ -874,6 +874,7 @@
     gap: 14px; margin-bottom: 24px;
     align-items: stretch;
   }
+  .saude-chart-row > .card { display: flex; flex-direction: column; }
 
   .pesos-title {
     font-size: 13px; font-weight: 800;
@@ -1311,7 +1312,7 @@
             <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 60 a 80</span>
             <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> &lt; 60</span>
           </div>
-          <div style="position:relative;height:212px">
+          <div style="position:relative;flex:1;min-height:212px">
             <canvas id="chartSaudeMensal"></canvas>
           </div>
         </div>
