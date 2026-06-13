@@ -2170,11 +2170,13 @@ function renderCpkMensalChart(cpkAtual) {
   const mesAtual = hoje.getFullYear() === anoAtivo ? hoje.getMonth() : -1;
 
   // Histórico mensal (historico_mensal) agregado por competência
+  // (parse manual p/ evitar shift de fuso: "2026-06-01" -> ano/mês diretos)
   const histPorMes = {};
   (DATA.historico || []).forEach(h => {
-    const d = new Date(h.competencia);
-    if (d.getFullYear() !== anoAtivo) return;
-    (histPorMes[d.getMonth()] = histPorMes[d.getMonth()] || []).push(h.cpk);
+    const [yy, mm] = String(h.competencia).split('-').map(Number);
+    if (yy !== anoAtivo) return;
+    const idx = mm - 1;
+    (histPorMes[idx] = histPorMes[idx] || []).push(h.cpk);
   });
 
   const valores = meses.map((m, i) => {
