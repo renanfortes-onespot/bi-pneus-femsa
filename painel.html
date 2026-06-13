@@ -1080,14 +1080,16 @@
     .content { padding: 14px; }
 
     /* Topbar compacta */
-    .topbar-row1 { height: auto; flex-wrap: wrap; row-gap: 6px; padding: 8px 12px; }
-    .topbar-row1 img { height: 24px !important; }
-    .topbar-title { font-size: 13px; }
+    .topbar-row1 { height: auto; flex-wrap: wrap; row-gap: 4px; padding: 5px 10px; }
+    .topbar-row1 img { height: 21px !important; }
+    .topbar-title { font-size: 12px; }
     .topbar-sub { display: none; }
-    .status-badge { font-size: 8px; padding: 2px 6px; }
-    .icon-btn, .theme-btn { padding: 4px 6px; }
-    .filter-bar { padding: 6px 12px 10px; gap: 6px; }
-    .ms-btn { min-width: 0; font-size: 9px; padding: 5px 9px; }
+    .topbar-right { margin-left: auto; gap: 5px; }
+    .status-badge { font-size: 8px; padding: 2px 5px; }
+    .icon-btn, .theme-btn { padding: 3px 5px; }
+    .icon-btn svg, .theme-btn svg { width: 12px; height: 12px; }
+    .filter-bar { padding: 4px 10px 7px; gap: 5px; }
+    .ms-btn { min-width: 0; font-size: 9px; padding: 4px 8px; }
 
     /* Tipografia reduzida */
     .adh-value { font-size: 40px; }
@@ -1109,30 +1111,27 @@
     tr.detail-row.open { display: table-row; }
     .adh-table tbody td, .adh-table thead th { padding-left: 10px; padding-right: 10px; }
 
-    /* Eixos */
-    .tire-v { width: 80px; font-size: 10px; padding: 6px; }
-    .tire-v .tv-mm { font-size: 12px; }
-    .tire-v .tv-serial { font-size: 11px; }
-    .tire-v .tv-pos, .tire-v .tv-sub { font-size: 9px; }
-    .axle-bar { width: 18px; }
-
-    /* Eixos: caber na largura do celular */
-    .axle-v { gap: 6px; }
-    .axle-side-v { gap: 3px; }
+    /* Eixos: caixas fluidas — largura e fontes se adaptam à tela */
+    .axle-v { gap: 5px; width: 100%; }
+    .axle-side-v { gap: 3px; flex: 1; min-width: 0; }
+    .axle-side-v:first-child { justify-content: flex-end; }
+    .tire-v {
+      width: auto; flex: 1; min-width: 0; max-width: 108px;
+      padding: clamp(4px, 1.4vw, 8px);
+    }
+    .tire-v .tv-pos    { font-size: clamp(7px, 2vw, 11px); }
+    .tire-v .tv-serial { font-size: clamp(9px, 2.6vw, 13px); }
+    .tire-v .tv-mm     { font-size: clamp(10px, 3vw, 15px); }
+    .tire-v .tv-sub    { font-size: clamp(7px, 2vw, 11px); word-break: break-word; }
+    .axle-bar { width: clamp(8px, 3vw, 18px); }
 
     /* Cards em pares */
     .saude-cards { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
     .adh-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   }
 
-  /* Celulares estreitos: diagrama de eixos cabe no card */
+  /* Celulares estreitos: cabeçalho do veículo menor */
   @media (max-width: 480px) {
-    .tire-v { width: 64px; padding: 5px; }
-    .tire-v .tv-pos { font-size: 8px; }
-    .tire-v .tv-serial { font-size: 10px; }
-    .tire-v .tv-mm { font-size: 11px; }
-    .tire-v .tv-sub { font-size: 8px; }
-    .axle-bar { width: 10px; }
     .veh-vert-placa { font-size: 18px; }
     .veh-vert-info { font-size: 11px; gap: 8px; }
     .veh-vert-score { font-size: 12px; }
