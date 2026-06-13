@@ -1611,8 +1611,8 @@
         </div>
       </div>
 
-      <!-- 6 CARDS -->
-      <div class="saude-cards" style="grid-template-columns:repeat(6,1fr)">
+      <!-- 5 CARDS -->
+      <div class="saude-cards">
         <div class="saude-card">
           <div class="sc-label">Pneus com CPK</div>
           <div class="sc-value" id="cpkCardPneus">—</div>
@@ -1627,11 +1627,6 @@
           <div class="sc-label">Km Rodados</div>
           <div class="sc-value" id="cpkCardKm">—</div>
           <div class="sc-sub">total acumulado</div>
-        </div>
-        <div class="saude-card">
-          <div class="sc-label">Economia da Recapagem</div>
-          <div class="sc-value" id="cpkCardEconomia">—</div>
-          <div class="sc-sub" id="cpkCardEconomiaSub">recapado vs. novo</div>
         </div>
         <div class="saude-card">
           <div class="sc-label">Melhor Marca</div>
@@ -1662,12 +1657,8 @@
           <thead><tr>
             <th>#</th><th id="thCpkDrill">Marca</th>
             <th class="dcol">Pneus</th>
-            <th class="dcol">% Frota</th>
-            <th class="dcol">Km Médio</th>
-            <th class="dcol">Vida Média</th>
-            <th class="dcol">Carcaça (DOT)</th>
-            <th class="dcol">MM Média</th>
             <th class="dcol">Custo Médio</th>
+            <th class="dcol">Km Médio</th>
             <th class="col-dias">CPK Médio ↑</th>
           </tr></thead>
           <tbody id="tbodyCpk"></tbody>
@@ -2081,16 +2072,6 @@ function renderCPK() {
   hero.textContent = tires.length ? fmtCPK(cpkMedio) : '—';
   hero.style.color = 'var(--text)';
 
-  // Economia da recapagem: CPK médio dos novos (V1) vs. recapados (V2+)
-  const novos = tires.filter(t => t.cicloVida <= 1);
-  const recap = tires.filter(t => t.cicloVida > 1);
-  const cpkNovo = media(novos.map(t => t.cpk));
-  const cpkRec  = media(recap.map(t => t.cpk));
-  const economiaPct = (cpkNovo > 0 && recap.length) ? (1 - cpkRec / cpkNovo) * 100 : null;
-  // Economia R$: km rodados pelos recapados × diferença de CPK vs. novo
-  const economiaRS = (cpkNovo > 0 && recap.length)
-    ? recap.reduce((s, t) => s + Math.max(0, (cpkNovo - t.cpk)) * (t.kmRodados || 0), 0) : 0;
-
   // Marcas p/ melhor/pior
   const porMarca = {};
   tires.forEach(t => { (porMarca[t.marca || '—'] = porMarca[t.marca || '—'] || []).push(t); });
@@ -2103,16 +2084,6 @@ function renderCPK() {
   document.getElementById('cpkCardPneus').textContent = tires.length;
   document.getElementById('cpkCardCusto').textContent = fmtBRL(custoTotal);
   document.getElementById('cpkCardKm').textContent = fmtKm(kmTotal) + ' km';
-  const elEco = document.getElementById('cpkCardEconomia');
-  if (economiaPct !== null && economiaPct > 0) {
-    elEco.textContent = '−' + fmtBR(economiaPct, 0) + '%';
-    elEco.style.color = 'var(--green)';
-    document.getElementById('cpkCardEconomiaSub').textContent = `${fmtBRL(economiaRS)} economizados · ${recap.length} recapados`;
-  } else {
-    elEco.textContent = '—';
-    elEco.style.color = 'var(--text)';
-    document.getElementById('cpkCardEconomiaSub').textContent = recap.length ? 'recapado não reduz CPK na amostra' : 'sem recapados na seleção';
-  }
   if (marcasRank.length) {
     const mel = marcasRank[0], pio = marcasRank[marcasRank.length - 1];
     document.getElementById('cpkCardMelhor').textContent = mel.m;
@@ -2165,32 +2136,28 @@ function renderCPK() {
   const corIdade = v => v === null ? 'var(--text-muted)' : v > 5 ? 'var(--red-soft)' : v > 4 ? 'var(--yellow)' : 'var(--text)';
 
   document.getElementById('tbodyCpk').innerHTML = ranking.length === 0
-    ? '<tr><td colspan="10" class="empty">Sem dados de CPK</td></tr>'
+    ? '<tr><td colspan="6" class="empty">Sem dados de CPK</td></tr>'
     : ranking.map((r, i) => `
         <tr>
           <td style="color:var(--text-muted)">${i + 1}</td>
           <td><strong>${r.chave}</strong></td>
           <td class="dcol">${r.n}</td>
-          <td class="dcol">${fmtBR(r.pctFrota, 1)}%</td>
-          <td class="dcol">${fmtKm(r.kmMed)} km</td>
-          <td class="dcol">V${fmtBR(r.vidaMed, 1)}</td>
-          <td class="dcol" style="color:${corIdade(r.idadeMed)}">${fmtIdadeC(r.idadeMed)}</td>
-          <td class="dcol" style="color:${corMM(r.mmMed)};font-weight:700">${r.mmMed === null ? '—' : fmtBR(r.mmMed, 1) + ' mm'}</td>
           <td class="dcol">${fmtBRL(r.custoMed)}</td>
+          <td class="dcol">${fmtKm(r.kmMed)} km</td>
           <td style="text-align:right;white-space:nowrap">
             <span class="td-dias" style="color:${cpkCluster(r.cpk)}">${fmtCPK(r.cpk)}</span>
             <button class="row-toggle" onclick="toggleDetail(this)">+</button>
           </td>
         </tr>
-        <tr class="detail-row"><td colspan="10"><div class="kv">
+        <tr class="detail-row"><td colspan="6"><div class="kv">
           <span>Pneus: <b>${r.n}</b> · ${fmtBR(r.pctFrota, 1)}% da frota</span>
-          <span>Km Médio: <b>${fmtKm(r.kmMed)} km</b></span>
-          <span>Vida Média: <b>V${fmtBR(r.vidaMed, 1)}</b></span>
-          <span>Carcaça (DOT): <b>${fmtIdadeC(r.idadeMed)}</b></span>
-          <span>MM Média: <b>${r.mmMed === null ? '—' : fmtBR(r.mmMed, 1) + ' mm'}</b></span>
-          <span>Em fim de vida (≤3mm): <b>${fmtBR(r.pctFimVida, 0)}%</b></span>
           <span>Custo Médio: <b>${fmtBRL(r.custoMed)}</b></span>
-          <span>CPK: <b style="color:${cpkCluster(r.cpk)}">${fmtCPK(r.cpk)}</b></span>
+          <span>Km Médio: <b>${fmtKm(r.kmMed)} km</b></span>
+          <span>CPK: <b style="color:${cpkCluster(r.cpk)}">= ${fmtBRL(r.custoMed)} ÷ ${fmtKm(r.kmMed)} km = ${fmtCPK(r.cpk)}</b></span>
+          <span>Vida Média: <b>V${fmtBR(r.vidaMed, 1)}</b></span>
+          <span>Carcaça (DOT): <b style="color:${corIdade(r.idadeMed)}">${fmtIdadeC(r.idadeMed)}</b></span>
+          <span>MM Média: <b style="color:${corMM(r.mmMed)}">${r.mmMed === null ? '—' : fmtBR(r.mmMed, 1) + ' mm'}</b></span>
+          <span>Em fim de vida (≤3mm): <b>${fmtBR(r.pctFimVida, 0)}%</b></span>
         </div></td></tr>
       `).join('');
 }
