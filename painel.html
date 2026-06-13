@@ -1678,6 +1678,85 @@
       </div>
     </div>
 
+    <!-- ========== PREVISÃO DE TROCA ========== -->
+    <div class="page" id="page-previsao">
+
+      <!-- HERO -->
+      <div class="adh-hero">
+        <div class="adh-hero-left">
+          <div class="adh-label">Recape Previsto — Próximos 90 dias</div>
+          <div class="adh-value" id="prevHeroVal">—</div>
+          <div class="adh-deltas">
+            <div class="adh-delta">Já no Ponto<b id="prevDeltaJa" style="color:var(--red-soft)">—</b></div>
+            <div class="adh-delta">≤ 30 dias<b id="prevDelta30" style="color:var(--orange)">—</b></div>
+            <div class="adh-delta">31–60 dias<b id="prevDelta60" style="color:var(--yellow)">—</b></div>
+            <div class="adh-delta">61–90 dias<b id="prevDelta90" style="color:var(--yellow)">—</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 CARDS -->
+      <div class="saude-cards">
+        <div class="saude-card">
+          <div class="sc-label">Pneus Projetados</div>
+          <div class="sc-value" id="prevCardProj">—</div>
+          <div class="sc-sub" id="prevCardProjSub">com base de desgaste</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Já no Ponto (≤3mm)</div>
+          <div class="sc-value" id="prevCardJa">—</div>
+          <div class="sc-sub">enviar para recape agora</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Próximos 30 dias</div>
+          <div class="sc-value" id="prevCard30">—</div>
+          <div class="sc-sub">programar recape</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Próximos 90 dias</div>
+          <div class="sc-value" id="prevCard90">—</div>
+          <div class="sc-sub">planejar oficina/compra</div>
+        </div>
+        <div class="saude-card">
+          <div class="sc-label">Desgaste Médio</div>
+          <div class="sc-value" id="prevCardDesg">—</div>
+          <div class="sc-sub">mm por 1.000 km</div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO: PNEUS CHEGANDO AO PONTO POR MÊS -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-title" style="margin-bottom:6px">Pneus Chegando ao Ponto de Recape — Próximos Meses</div>
+        <div class="chart-legend">
+          <span class="lg-item"><span class="lg-dot" style="background:var(--red-soft)"></span> ≤ 30 dias</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--orange)"></span> 31 a 60 dias</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--yellow)"></span> 61 a 90 dias</span>
+          <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span> &gt; 90 dias</span>
+        </div>
+        <div style="position:relative;height:212px">
+          <canvas id="chartPrevMensal"></canvas>
+        </div>
+      </div>
+
+      <!-- TABELA: RANKING POR URGÊNCIA -->
+      <div class="adh-table-wrap">
+        <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <span>Pneus por Urgência — Mais Próximo do Recape Primeiro</span>
+          <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchPrev" oninput="filtrarPrev()" style="width:220px">
+        </div>
+        <div style="overflow-x:auto">
+        <table class="adh-table">
+          <thead><tr>
+            <th>#</th><th>Serial</th><th class="dcol">Placa</th><th class="dcol">Posição</th>
+            <th>MM Atual</th><th class="dcol">Desgaste</th><th class="dcol">Km/dia</th>
+            <th class="dcol">Data Prevista</th><th class="col-dias">Recape em ↑</th>
+          </tr></thead>
+          <tbody id="tbodyPrev"></tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ========== VISÃO DE EIXOS ========== -->
     <div class="page" id="page-eixos">
       <div class="chart-legend" style="margin-bottom:16px">
@@ -1736,7 +1815,7 @@ function toggleTheme() {
   const isLight = document.body.classList.toggle('light-mode');
   localStorage.setItem('femsa_theme', isLight ? 'light' : 'dark');
   // Re-renderiza gráficos com as cores do tema
-  if (DATA.vehicles.length) { renderMensalChart(); renderSaudeMensalChart(); renderMMMensalCharts(); renderPressaoMensalCharts(); renderCPK(); }
+  if (DATA.vehicles.length) { renderMensalChart(); renderSaudeMensalChart(); renderMMMensalCharts(); renderPressaoMensalCharts(); renderCPK(); renderPrevisao(); }
   const icon = document.getElementById('themeIcon');
   // Troca ícone sol ↔ lua
   if (isLight) {
@@ -1943,6 +2022,7 @@ function navigate(page) {
     milimetragem: 'Milimetragem',
     pressao: 'Pressão dos Pneus',
     cpk: 'CPK — Custo por Km',
+    previsao: 'Previsão de Troca',
     eixos: 'Visão de Eixos'
   };
   document.getElementById('pageTitle').textContent = titles[page] || 'Saúde dos Pneus';
@@ -2046,8 +2126,215 @@ function renderAll() {
   renderMilimetragem();
   renderPressao();
   renderCPK();
+  renderPrevisao();
   renderEixosFilters();
   renderEixos();
+}
+
+// ============================================================
+// PREVISÃO DE TROCA — projeta o recape pela taxa de desgaste real
+// ============================================================
+const PULL_POINT = 3; // mm — ponto ideal de retirada para recape
+
+// Calcula projeção por pneu (1ª vs última inspeção, robusto a ruído)
+function calcPrevisao() {
+  const tires = getFilteredTires().filter(t => t.status === 'INSTALLED' && t.menorMM > 0);
+
+  // histórico de inspeções por tireId (mm e odômetro válidos), ordenado por data
+  const hist = {};
+  DATA.inspections.forEach(i => {
+    if (!i.tireId || !(i.menorMM > 0) || !(i.odometro > 0)) return;
+    (hist[i.tireId] = hist[i.tireId] || []).push(i);
+  });
+  Object.values(hist).forEach(arr => arr.sort((a, b) => new Date(a.dataInspecao) - new Date(b.dataInspecao)));
+
+  const hoje = new Date();
+  const linhas = [];
+  tires.forEach(t => {
+    const h = hist[t.id];
+    if (!h || h.length < 2) { linhas.push({ t, semBase: true }); return; }
+
+    // Regressão linear mm = a + b·km (robusto a ruído de leitura)
+    const pts = h.map(i => ({ km: i.odometro, mm: i.menorMM }));
+    const kmDistintos = new Set(pts.map(p => p.km)).size;
+    if (kmDistintos < 2) { linhas.push({ t, semBase: true }); return; }
+    const n = pts.length;
+    const sx = pts.reduce((s, p) => s + p.km, 0);
+    const sy = pts.reduce((s, p) => s + p.mm, 0);
+    const sxx = pts.reduce((s, p) => s + p.km * p.km, 0);
+    const sxy = pts.reduce((s, p) => s + p.km * p.mm, 0);
+    const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx); // mm por km (negativo = desgaste)
+    if (!(slope < 0)) { linhas.push({ t, semBase: true }); return; } // não desgastou no período
+
+    const wear1000 = -slope * 1000;  // mm por 1.000 km
+    const a = h[0], b = h[h.length - 1];
+    const dKm  = b.odometro - a.odometro;
+    const dDia = (new Date(b.dataInspecao) - new Date(a.dataInspecao)) / 86400000;
+    const kmDia = (dKm > 0 && dDia > 0) ? dKm / dDia : 0;
+    if (!(kmDia > 0)) { linhas.push({ t, semBase: true }); return; }
+
+    const mmAtual = t.menorMM;
+    const kmAteRecape = Math.max(0, mmAtual - PULL_POINT) / (wear1000 / 1000);
+    const diasAteRecape = kmAteRecape / kmDia;
+    const dataPrev = new Date(hoje.getTime() + diasAteRecape * 86400000);
+
+    linhas.push({ t, semBase: false, wear1000, kmDia, mmAtual, dias: diasAteRecape, dataPrev });
+  });
+  return linhas;
+}
+
+function prevCor(dias) {
+  if (dias <= 0)  return 'var(--red-soft)';
+  if (dias <= 30) return 'var(--red-soft)';
+  if (dias <= 60) return 'var(--orange)';
+  if (dias <= 90) return 'var(--yellow)';
+  return 'var(--green)';
+}
+
+function renderPrevisao() {
+  if (!document.getElementById('prevHeroVal')) return;
+  const linhas = calcPrevisao();
+  const comBase = linhas.filter(l => !l.semBase);
+  const semBase = linhas.length - comBase.length;
+
+  const ja  = comBase.filter(l => l.mmAtual <= PULL_POINT).length;
+  const d30 = comBase.filter(l => l.mmAtual > PULL_POINT && l.dias <= 30).length;
+  const d60 = comBase.filter(l => l.dias > 30 && l.dias <= 60).length;
+  const d90 = comBase.filter(l => l.dias > 60 && l.dias <= 90).length;
+  const em90 = ja + d30 + d60 + d90;
+
+  const media = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  const desgMed = media(comBase.map(l => l.wear1000));
+
+  // Hero
+  const hero = document.getElementById('prevHeroVal');
+  hero.textContent = em90;
+  hero.style.color = em90 === 0 ? 'var(--green)' : (ja + d30) > 0 ? 'var(--red-soft)' : 'var(--yellow)';
+  document.getElementById('prevDeltaJa').textContent = ja;
+  document.getElementById('prevDelta30').textContent = d30;
+  document.getElementById('prevDelta60').textContent = d60;
+  document.getElementById('prevDelta90').textContent = d90;
+
+  // Cards
+  const setC = (id, v, cor) => { const e = document.getElementById(id); e.textContent = v; if (cor) e.style.color = cor; };
+  setC('prevCardProj', comBase.length, 'var(--text)');
+  document.getElementById('prevCardProjSub').textContent = `de ${linhas.length} instalados · ${semBase} sem base`;
+  setC('prevCardJa', ja, ja > 0 ? 'var(--red-soft)' : 'var(--green)');
+  setC('prevCard30', ja + d30, (ja + d30) > 0 ? 'var(--orange)' : 'var(--green)');
+  setC('prevCard90', em90, em90 > 0 ? 'var(--yellow)' : 'var(--green)');
+  setC('prevCardDesg', fmtBR(desgMed, 2) + ' mm', 'var(--text)');
+
+  // Gráfico mensal (próximos meses)
+  renderPrevMensalChart(comBase);
+
+  // Tabela por urgência (mais próximo primeiro; já no ponto = 0 dias)
+  window._prevLinhas = comBase
+    .map(l => ({ ...l, diasEff: l.mmAtual <= PULL_POINT ? 0 : l.dias }))
+    .sort((a, b) => a.diasEff - b.diasEff);
+  filtrarPrev();
+}
+
+function filtrarPrev() {
+  const q = (document.getElementById('searchPrev')?.value || '').toLowerCase();
+  const lista = (window._prevLinhas || []).filter(l =>
+    !q || (l.t.serial || '').toLowerCase().includes(q) || (l.t.placa || '').toLowerCase().includes(q));
+
+  const fmtDias = l => {
+    if (l.mmAtual <= PULL_POINT) return 'Agora';
+    if (!isFinite(l.dias)) return '—';
+    if (l.dias > 999) return '+999 d';
+    return Math.round(l.dias) + ' d';
+  };
+  const fmtData = l => l.mmAtual <= PULL_POINT ? '—' : (isFinite(l.dias) && l.dias < 3650 ? l.dataPrev.toLocaleDateString('pt-BR') : '—');
+
+  document.getElementById('tbodyPrev').innerHTML = lista.length === 0
+    ? '<tr><td colspan="9" class="empty">Sem pneus com base de projeção</td></tr>'
+    : lista.map((l, i) => {
+        const cor = prevCor(l.mmAtual <= PULL_POINT ? 0 : l.dias);
+        return `
+        <tr>
+          <td style="color:var(--text-muted)">${i + 1}</td>
+          <td><strong>${l.t.serial}</strong></td>
+          <td class="dcol">${l.t.placa || '—'}</td>
+          <td class="dcol">${l.t.nomePosicao || l.t.posicao || '—'}</td>
+          <td style="color:${l.mmAtual > 6 ? 'var(--green)' : l.mmAtual > 3 ? 'var(--yellow)' : 'var(--red-soft)'};font-weight:700">${fmt(l.mmAtual)} mm</td>
+          <td class="dcol">${fmtBR(l.wear1000, 2)} mm/1.000km</td>
+          <td class="dcol">${fmtBR(l.kmDia, 0)} km</td>
+          <td class="dcol">${fmtData(l)}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <span class="td-dias" style="color:${cor}">${fmtDias(l)}</span>
+            <button class="row-toggle" onclick="toggleDetail(this)">+</button>
+          </td>
+        </tr>
+        <tr class="detail-row"><td colspan="9"><div class="kv">
+          <span>Placa: <b>${l.t.placa || '—'}</b></span>
+          <span>Posição: <b>${l.t.nomePosicao || l.t.posicao || '—'}</b></span>
+          <span>MM Atual: <b>${fmt(l.mmAtual)} mm</b></span>
+          <span>Desgaste: <b>${fmtBR(l.wear1000, 2)} mm/1.000km</b></span>
+          <span>Km/dia: <b>${fmtBR(l.kmDia, 0)} km</b></span>
+          <span>Recape em: <b style="color:${cor}">${fmtDias(l)}</b> (${fmtData(l)})</span>
+        </div></td></tr>`;
+      }).join('');
+}
+
+function renderPrevMensalChart(comBase) {
+  const hoje = new Date();
+  // 8 meses à frente a partir do mês atual
+  const meses = Array.from({ length: 8 }, (_, k) => {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() + k, 1);
+    return { ano: d.getFullYear(), mes: d.getMonth(), label: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '') + '/' + String(d.getFullYear()).slice(2) };
+  });
+
+  // conta pneus cujo recape cai em cada mês (já no ponto entram no mês atual)
+  const counts = meses.map(() => 0);
+  comBase.forEach(l => {
+    let dt;
+    if (l.mmAtual <= PULL_POINT) dt = hoje;
+    else if (isFinite(l.dias) && l.dias < 3650) dt = l.dataPrev;
+    else return;
+    const idx = meses.findIndex(m => dt.getFullYear() === m.ano && dt.getMonth() === m.mes);
+    if (idx >= 0) counts[idx]++;
+    else if (dt < new Date(meses[0].ano, meses[0].mes, 1)) counts[0]++; // passado→mês atual
+  });
+
+  // cor por proximidade do mês (0 = atual → vermelho)
+  const corMes = k => k === 0 ? '255,102,102' : k === 1 ? '230,126,34' : k <= 2 ? '243,156,18' : '59,179,59';
+  const isLight = document.body.classList.contains('light-mode');
+  const cores  = meses.map((m, k) => `rgba(${corMes(k)},0.7)`);
+  const bordas = meses.map((m, k) => `rgba(${corMes(k)},1)`);
+
+  destroyChart('chartPrevMensal');
+  charts.chartPrevMensal = new Chart(document.getElementById('chartPrevMensal'), {
+    data: {
+      labels: meses.map(m => m.label),
+      datasets: [{
+        type: 'bar', label: 'Pneus', data: counts,
+        backgroundColor: cores, borderColor: bordas, borderWidth: 1.5, borderRadius: 3,
+        datalabels: {
+          display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+          anchor: 'end', align: 'end', offset: 2,
+          color: isLight ? '#111' : '#fff',
+          font: { family: 'Montserrat', size: window.innerWidth < 480 ? 8 : 13, weight: '700' },
+          formatter: v => v || ''
+        }
+      }]
+    },
+    plugins: [ChartDataLabels],
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#141B26', titleColor: '#E30613', bodyColor: '#F1F5F9',
+          borderColor: '#1E2D40', borderWidth: 1,
+          titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' },
+          callbacks: { label: ctx => ctx.parsed.y + ' pneus' }
+        }
+      },
+      scales: monthlyScales(isLight, v => v)
+    }
+  });
 }
 
 // ============================================================
