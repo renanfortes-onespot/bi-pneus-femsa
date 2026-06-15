@@ -2057,37 +2057,40 @@ function getFilteredVehicles() {
   return v;
 }
 
-// Reconstrói o estado dos pneus a partir da ÚLTIMA medição de cada pneu
-// dentro do conjunto de inspeções dado (compartilhado: getFilteredTires + gráfico mensal)
+// Reconstrói o estado dos pneus a partir das inspeções dadas, com UMA linha por
+// pneu = MÉDIA das suas leituras no período (1 mês => a própria leitura; vários
+// meses => média). Compartilhado por getFilteredTires e pelo gráfico mensal,
+// garantindo que hero/cards e a barra do mês usem exatamente a mesma base.
 function reconstructTires(insps) {
-  const ultimo = {};
-  insps.forEach(i => {
-    if (!i.tireId) return;
-    if (!ultimo[i.tireId] || new Date(i.dataInspecao) > new Date(ultimo[i.tireId].dataInspecao)) ultimo[i.tireId] = i;
-  });
+  const porPneu = {};
+  insps.forEach(i => { if (i.tireId) (porPneu[i.tireId] = porPneu[i.tireId] || []).push(i); });
   const cadastro = {};
   DATA.tires.forEach(x => { cadastro[x.id] = x; });
-  return Object.values(ultimo).map(m => {
-    const c = cadastro[m.tireId] || {};
-    const menor = m.menorMM || 0;
+
+  return Object.entries(porPneu).map(([tid, arr]) => {
+    const c = cadastro[tid] || {};
+    const avg = f => { const v = arr.map(f).filter(x => typeof x === 'number' && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
+    const recente = arr.reduce((a, b) => new Date(b.dataInspecao) > new Date(a.dataInspecao) ? b : a); // p/ campos não-numéricos
+    const menor = avg(i => i.menorMM);
     const statusMM = menor < 2 ? 'Bloquear' : menor <= 3 ? 'Recapar' : menor <= 6 ? 'Regular' : 'Bom Estado';
+    const desvio = avg(i => i.desvioPressao);
     return {
       ...c,
-      id: m.tireId,
-      serial: m.serial || c.serial || '',
+      id: +tid,
+      serial: recente.serial || c.serial || '',
       status: 'INSTALLED',
-      veiculoId: m.veiculoId ?? c.veiculoId,
-      placa: m.placa || c.placa || '',
-      frota: m.frota || c.frota || '',
-      posicao: m.posicao ?? c.posicao,
-      mm1: m.mm1, mm2: m.mm2, mm3: m.mm3, mm4: m.mm4,
+      veiculoId: recente.veiculoId ?? c.veiculoId,
+      placa: recente.placa || c.placa || '',
+      frota: recente.frota || c.frota || '',
+      posicao: recente.posicao ?? c.posicao,
+      mm1: avg(i => i.mm1), mm2: avg(i => i.mm2), mm3: avg(i => i.mm3), mm4: avg(i => i.mm4),
       menorMM: menor,
-      amplitude: m.amplitude,
+      amplitude: avg(i => i.amplitude),
       statusMM,
-      pressaoIdeal: m.pressaoIdeal,
-      pressaoAtual: m.pressaoMedida,
-      desvioPressao: m.desvioPressao,
-      pressaoNOK: m.pressaoNOK
+      pressaoIdeal: avg(i => i.pressaoIdeal),
+      pressaoAtual: avg(i => i.pressaoMedida),
+      desvioPressao: desvio,
+      pressaoNOK: Math.abs(desvio) > 15
     };
   });
 }
@@ -2119,6 +2122,38 @@ function getFilteredInspections() {
   }
   if (FILTERS.placa.length) i = i.filter(x => FILTERS.placa.includes(x.placa));
   return i;
+}
+
+// Meses {ano,mes} selecionados na vigência (ou TODOS os meses com dado, se vazio)
+function mesesSelecionados() {
+  if (FILTERS.vigencia.length) {
+    return FILTERS.vigencia.map(mv => { const [mm, yy] = mv.split('/').map(Number); return { ano: yy, mes: mm - 1 }; });
+  }
+  const ids = new Set(getFilteredVehicles().map(v => v.id));
+  const set = new Set();
+  DATA.inspections.forEach(i => { if (ids.has(i.veiculoId)) { const d = new Date(i.dataInspecao); set.add(d.getFullYear() + '-' + d.getMonth()); } });
+  return [...set].map(s => { const [a, m] = s.split('-').map(Number); return { ano: a, mes: m }; });
+}
+
+// Pneus reconstruídos de UM mês (filtrados por veículo + vida)
+function tiresNoMes(ano, mes) {
+  const ids = new Set(getFilteredVehicles().map(v => v.id));
+  const medidas = DATA.inspections.filter(i => {
+    if (!ids.has(i.veiculoId)) return false;
+    const d = new Date(i.dataInspecao);
+    return d.getFullYear() === ano && d.getMonth() === mes;
+  });
+  let tm = reconstructTires(medidas);
+  if (FILTERS.vida.length) tm = tm.filter(t => FILTERS.vida.includes(labelVida(t.cicloVida)));
+  return tm;
+}
+
+// Média, sobre os meses selecionados, de um agregado mensal (aggFn recebe os pneus do mês).
+// Garante que hero/cards = média das barras destacadas no gráfico (1 mês = a própria barra).
+function mediaSobreMeses(aggFn) {
+  const vals = mesesSelecionados().map(({ ano, mes }) => aggFn(tiresNoMes(ano, mes)))
+    .filter(v => v !== null && v !== undefined && !isNaN(v));
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
 }
 
 // ============================================================
@@ -2847,16 +2882,15 @@ function renderSaude() {
   // ---- agregados gerais ----
   const media = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
 
-  const mms        = tires.filter(t => t.menorMM > 0).map(t => t.menorMM);
-  const idades     = tires.map(t => parseDOT(t.dot)).filter(v => v !== null);
-  const recapes    = tires.map(t => Math.max(0, (t.cicloVida || 1) - 1));
-  const amps       = tires.map(t => t.amplitude);
-  const comPressao = tires.filter(t => t.pressaoIdeal > 0);
-  const pctOK      = comPressao.length ? (comPressao.filter(t => !t.pressaoNOK).length / comPressao.length * 100) : null;
-
-  // Score geral = média dos scores por pneu
-  const scoresGeral = tires.map(t => scorePneu(t)).filter(v => v !== null);
-  const scoreGeral  = media(scoresGeral);
+  // Hero e cards = MÉDIA SOBRE OS MESES SELECIONADOS (= média das barras do gráfico).
+  // Contagens e ranking usam o estado por pneu (uma linha por pneu).
+  const scoreGeral  = mediaSobreMeses(ts => media(ts.map(t => scorePneu(t)).filter(v => v !== null)));
+  const mmMedia     = mediaSobreMeses(ts => media(ts.filter(t => t.menorMM > 0).map(t => t.menorMM)));
+  const vidaMedia   = mediaSobreMeses(ts => media(ts.map(t => parseDOT(t.dot)).filter(v => v !== null)));
+  const recapMedia  = mediaSobreMeses(ts => media(ts.map(t => Math.max(0, (t.cicloVida || 1) - 1))));
+  const ampMedia    = mediaSobreMeses(ts => media(ts.map(t => t.amplitude)));
+  const pctOK       = mediaSobreMeses(ts => { const c = ts.filter(t => t.pressaoIdeal > 0); return c.length ? c.filter(t => !t.pressaoNOK).length / c.length * 100 : null; });
+  const idades      = tires.map(t => parseDOT(t.dot)).filter(v => v !== null);
 
   const elScore = document.getElementById('saudeScore');
   elScore.textContent = scoreGeral !== null ? fmtBR(scoreGeral, 1) : '—';
@@ -2867,11 +2901,11 @@ function renderSaude() {
   document.getElementById('saudeVeiculos').textContent = placas.length;
 
   // ---- cards ----
-  document.getElementById('scMM').textContent         = mms.length ? fmtBR(media(mms)) + ' mm' : '—';
-  document.getElementById('scVida').textContent       = idades.length ? fmtIdade(media(idades)) : '—';
+  document.getElementById('scMM').textContent         = mmMedia !== null ? fmtBR(mmMedia) + ' mm' : '—';
+  document.getElementById('scVida').textContent       = vidaMedia !== null ? fmtIdade(vidaMedia) : '—';
   document.getElementById('scVidaSub').textContent    = idades.length ? `DOT lido em ${idades.length} de ${tires.length} pneus` : 'sem DOT válido';
-  document.getElementById('scRecapes').textContent    = fmtBR(media(recapes), 2);
-  document.getElementById('scAmplitude').textContent  = fmtBR(media(amps)) + ' mm';
+  document.getElementById('scRecapes').textContent    = fmtBR(recapMedia ?? 0, 2);
+  document.getElementById('scAmplitude').textContent  = fmtBR(ampMedia ?? 0) + ' mm';
   document.getElementById('scCalibragem').textContent = pctOK !== null ? fmtBR(pctOK) + '%' : '—';
 
   // ---- gráfico mensal ----
@@ -3341,8 +3375,8 @@ function renderMilimetragem() {
   const tires = getFilteredTires().filter(t => t.status === 'INSTALLED');
   if (!document.getElementById('mmHeroVal')) return;
 
-  const comMM = tires.filter(t => t.menorMM > 0);
-  const mmMedia = comMM.length ? comMM.reduce((s, t) => s + t.menorMM, 0) / comMM.length : 0;
+  // Hero = MM média sobre os meses selecionados (= barras do gráfico); contagens por pneu.
+  const mmMedia = mediaSobreMeses(ts => { const c = ts.filter(t => t.menorMM > 0); return c.length ? c.reduce((s, t) => s + t.menorMM, 0) / c.length : null; }) ?? 0;
 
   const bloquear = tires.filter(t => t.statusMM === 'Bloquear').length;
   const recapar  = tires.filter(t => t.statusMM === 'Recapar').length;
@@ -3533,8 +3567,9 @@ function renderPressao() {
   const ok     = tires.filter(t => !t.pressaoNOK);
   const baixa  = tires.filter(t => t.desvioPressao < -15).length;
   const alta   = tires.filter(t => t.desvioPressao > 15).length;
-  const pctOK  = tires.length ? (ok.length / tires.length * 100) : 0;
-  const desvioMedio = tires.length ? tires.reduce((s, t) => s + Math.abs(t.desvioPressao), 0) / tires.length : 0;
+  // Hero e desvio = média sobre os meses selecionados (= barras do gráfico); contagens por pneu.
+  const pctOK  = mediaSobreMeses(ts => { const c = ts.filter(t => t.pressaoIdeal > 0); return c.length ? c.filter(t => !t.pressaoNOK).length / c.length * 100 : null; }) ?? 0;
+  const desvioMedio = mediaSobreMeses(ts => { const c = ts.filter(t => t.pressaoIdeal > 0); return c.length ? c.reduce((s, t) => s + Math.abs(t.desvioPressao), 0) / c.length : null; }) ?? 0;
 
   // Hero
   const hero = document.getElementById('prHeroVal');
