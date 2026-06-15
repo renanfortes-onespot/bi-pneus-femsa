@@ -1919,72 +1919,133 @@ function filterMs(input, panelId) {
   });
 }
 
-function selectAll(panelId, cb) {
-  document.querySelectorAll(`#${panelId} .ms-opt input`).forEach(c => {
-    c.checked = cb.checked;
-    c.dispatchEvent(new Event('change'));
+// ============================================================
+// MOTOR DE FILTROS — cascata + seleção explícita
+//   SEL[key] = 'all'  -> todos os valores marcados
+//   SEL[key] = Set    -> subconjunto explícito marcado
+// Os filtros se conectam: as opções de um filtro vêm dos dados
+// já filtrados por TODOS os outros (ex.: marca restringe placa/vigência).
+// ============================================================
+const FILTER_KEYS = ['ano','vigencia','unidade','placa','marca','modelo','vida'];
+let SEL = { ano:'all', vigencia:'all', unidade:'all', placa:'all', marca:'all', modelo:'all', vida:'all' };
+
+function labelVida(cv) { return (cv || 1) === 1 ? 'V1 (Novo)' : 'V' + cv + ' (recapado)'; }
+
+function vigOf(i) { const d = new Date(i.dataInspecao); return `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; }
+
+function distinctSorted(arr, mode) {
+  const a = [...new Set(arr.filter(v => v !== null && v !== undefined && v !== ''))];
+  if (mode === 'anoDesc') return a.sort((x,y)=>y-x);
+  if (mode === 'vigDesc') return a.sort().reverse();
+  if (mode === 'vidaAsc') return a.sort((x,y)=>x-y);
+  return a.sort();
+}
+
+// veículo passa pelos filtros de veículo (ignorando o dimensão 'except')
+function vehPass(v, except) {
+  if (except!=='unidade' && FILTERS.unidade.length && !FILTERS.unidade.includes(v.tipo))   return false;
+  if (except!=='placa'   && FILTERS.placa.length   && !FILTERS.placa.includes(v.placa))     return false;
+  if (except!=='marca'   && FILTERS.marca.length   && !FILTERS.marca.includes(v.marca))     return false;
+  if (except!=='modelo'  && FILTERS.modelo.length  && !FILTERS.modelo.includes(v.modelo))   return false;
+  return true;
+}
+
+// valores disponíveis p/ um filtro, dado TODOS os outros (cascata)
+function optionsFor(key) {
+  const vehOk    = DATA.vehicles.filter(v => vehPass(v, key));
+  const vehOkIds = new Set(vehOk.map(v => v.id));
+  const placasOk = new Set(vehOk.map(v => v.placa));
+
+  if (key === 'unidade') return distinctSorted(vehOk.map(v => v.tipo));
+  if (key === 'marca')   return distinctSorted(vehOk.map(v => v.marca));
+  if (key === 'modelo')  return distinctSorted(vehOk.map(v => v.modelo));
+  if (key === 'placa')   return distinctSorted(vehOk.map(v => v.placa));
+
+  if (key === 'ano' || key === 'vigencia') {
+    let insps = DATA.inspections.filter(i => vehOkIds.has(i.veiculoId));
+    if (key === 'vigencia' && FILTERS.ano.length)
+      insps = insps.filter(i => FILTERS.ano.includes(String(new Date(i.dataInspecao).getFullYear())));
+    if (key === 'ano' && FILTERS.vigencia.length)
+      insps = insps.filter(i => FILTERS.vigencia.includes(vigOf(i)));
+    if (key === 'ano')
+      return distinctSorted(insps.map(i => new Date(i.dataInspecao).getFullYear()), 'anoDesc').map(String);
+    return distinctSorted(insps.map(vigOf), 'vigDesc');
+  }
+
+  if (key === 'vida') {
+    const cic = DATA.tires.filter(t => placasOk.has(t.placa)).map(t => t.cicloVida || 1);
+    return distinctSorted(cic, 'vidaAsc').map(labelVida);
+  }
+  return [];
+}
+
+// FILTERS (arrays consumidos pelos getFiltered*) derivados de SEL
+function syncFiltersFromSel() {
+  FILTER_KEYS.forEach(key => {
+    FILTERS[key] = SEL[key] === 'all' ? [] : [...SEL[key]];
   });
 }
 
-function buildFilter(key, values) {
+// renderiza as opções de UM filtro a partir de SEL + cascata
+function renderFilterOptions(key) {
   const container = document.getElementById('opts-' + key);
   if (!container) return;
-  FILTERS[key] = [];
+  const values = optionsFor(key);
+  const sel = SEL[key];
+  const isCk = v => sel === 'all' || sel.has(String(v));
   container.innerHTML = values.map(v => `
     <div class="ms-option ms-opt" data-val="${v}">
-      <label>
-        <input type="checkbox" checked data-key="${key}" data-val="${v}"
-          onchange="onFilterChange('${key}')">
-        ${v}
-      </label>
+      <label><input type="checkbox" ${isCk(v) ? 'checked' : ''} data-key="${key}" data-val="${v}" onchange="onFilterChange('${key}')"> ${v}</label>
       <button class="ms-only" onclick="onlyFilter('${key}','${v}')">Apenas</button>
     </div>`).join('');
-}
 
-function onlyFilter(key, val) {
-  // Desmarca todos, marca só este
-  document.querySelectorAll(`#opts-${key} input`).forEach(c => {
-    c.checked = c.dataset.val === val;
-  });
-  onFilterChange(key);
-}
+  // "Todos": marcado/indeterminado
+  const todos = document.querySelector(`#panel-${key} .select-all input`);
+  const nCk = values.filter(isCk).length;
+  if (todos) { todos.checked = values.length > 0 && nCk === values.length; todos.indeterminate = nCk > 0 && nCk < values.length; }
 
-function onFilterChange(key) {
-  const checked = [...document.querySelectorAll(`#opts-${key} input:checked`)].map(c => c.dataset.val);
-  const all     = [...document.querySelectorAll(`#opts-${key} input`)].map(c => c.dataset.val);
-  FILTERS[key] = checked.length === all.length ? [] : checked;
-  // Atualiza contador no botão
+  // contador no botão
   const cnt = document.getElementById('cnt-' + key);
-  if (FILTERS[key].length > 0) {
-    cnt.textContent = FILTERS[key].length;
-    cnt.style.display = '';
-  } else {
-    cnt.style.display = 'none';
+  if (cnt) {
+    if (sel !== 'all' && nCk < values.length) { cnt.textContent = nCk; cnt.style.display = ''; }
+    else cnt.style.display = 'none';
   }
+}
+
+// aplica mudança de um filtro: sincroniza, recascateia todos e re-renderiza
+function applyFilterChange() {
+  syncFiltersFromSel();
+  FILTER_KEYS.forEach(renderFilterOptions);
   renderAll();
 }
 
+function onFilterChange(key) {
+  const inputs  = [...document.querySelectorAll(`#opts-${key} input`)];
+  const checked = inputs.filter(c => c.checked).map(c => c.dataset.val);
+  SEL[key] = checked.length === inputs.length ? 'all' : new Set(checked);
+  applyFilterChange();
+}
+
+function onlyFilter(key, val) {
+  // clicar "Apenas" no único já selecionado -> volta para Todos
+  if (SEL[key] !== 'all' && SEL[key].size === 1 && SEL[key].has(String(val))) SEL[key] = 'all';
+  else SEL[key] = new Set([String(val)]);
+  applyFilterChange();
+}
+
+function selectAll(panelId, cb) {
+  const key = panelId.replace('panel-', '');
+  SEL[key] = cb.checked ? 'all' : new Set();
+  applyFilterChange();
+}
+
 function populateFilters() {
-  const insps = DATA.inspections;
-  const vehs  = DATA.vehicles;
-
-  const anos = [...new Set(insps.map(i => new Date(i.dataInspecao).getFullYear()))].sort((a,b)=>b-a);
-  const meses = [...new Set(insps.map(i => {
-    const d = new Date(i.dataInspecao);
-    return `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-  }))].sort().reverse();
-  const unidades = [...new Set(vehs.map(v => v.tipo).filter(Boolean))].sort();
-  const placas   = [...new Set(vehs.map(v => v.placa).filter(Boolean))].sort();
-
-  buildFilter('ano',      anos.map(String));
-  buildFilter('vigencia', meses);
-  buildFilter('unidade',  unidades);
-  buildFilter('placa',    placas);
-  buildFilter('marca',    [...new Set(vehs.map(v => v.marca).filter(Boolean))].sort());
-  buildFilter('modelo',   [...new Set(vehs.map(v => v.modelo).filter(Boolean))].sort());
-  const vidas = [...new Set(DATA.tires.map(t => t.cicloVida || 1))].sort((a,b)=>a-b)
-    .map(v => v === 1 ? 'V1 (Novo)' : 'V' + v + ' (recapado)');
-  buildFilter('vida', vidas);
+  // padrão: tudo "Todos", exceto VIGÊNCIA = mês mais recente com dado
+  SEL = { ano:'all', vigencia:'all', unidade:'all', placa:'all', marca:'all', modelo:'all', vida:'all' };
+  const vigs = optionsFor('vigencia');          // mais recente primeiro
+  if (vigs.length) SEL.vigencia = new Set([vigs[0]]);
+  syncFiltersFromSel();
+  FILTER_KEYS.forEach(renderFilterOptions);
 }
 
 function getFilteredVehicles() {
@@ -1996,57 +2057,51 @@ function getFilteredVehicles() {
   return v;
 }
 
+// Reconstrói o estado dos pneus a partir da ÚLTIMA medição de cada pneu
+// dentro do conjunto de inspeções dado (compartilhado: getFilteredTires + gráfico mensal)
+function reconstructTires(insps) {
+  const ultimo = {};
+  insps.forEach(i => {
+    if (!i.tireId) return;
+    if (!ultimo[i.tireId] || new Date(i.dataInspecao) > new Date(ultimo[i.tireId].dataInspecao)) ultimo[i.tireId] = i;
+  });
+  const cadastro = {};
+  DATA.tires.forEach(x => { cadastro[x.id] = x; });
+  return Object.values(ultimo).map(m => {
+    const c = cadastro[m.tireId] || {};
+    const menor = m.menorMM || 0;
+    const statusMM = menor < 2 ? 'Bloquear' : menor <= 3 ? 'Recapar' : menor <= 6 ? 'Regular' : 'Bom Estado';
+    return {
+      ...c,
+      id: m.tireId,
+      serial: m.serial || c.serial || '',
+      status: 'INSTALLED',
+      veiculoId: m.veiculoId ?? c.veiculoId,
+      placa: m.placa || c.placa || '',
+      frota: m.frota || c.frota || '',
+      posicao: m.posicao ?? c.posicao,
+      mm1: m.mm1, mm2: m.mm2, mm3: m.mm3, mm4: m.mm4,
+      menorMM: menor,
+      amplitude: m.amplitude,
+      statusMM,
+      pressaoIdeal: m.pressaoIdeal,
+      pressaoAtual: m.pressaoMedida,
+      desvioPressao: m.desvioPressao,
+      pressaoNOK: m.pressaoNOK
+    };
+  });
+}
+
 function getFilteredTires() {
-  let t;
   const temPeriodo = FILTERS.ano.length || FILTERS.vigencia.length;
-
-  if (!temPeriodo) {
-    t = DATA.tires;
-  } else {
-    // Com filtro de período: reconstrói o estado dos pneus a partir da
-    // ÚLTIMA MEDIÇÃO de inspeção dentro do período (vigência/ano)
-    const insps = getFilteredInspections();
-    const ultimo = {};
-    insps.forEach(i => {
-      if (!i.tireId) return;
-      if (!ultimo[i.tireId] || new Date(i.dataInspecao) > new Date(ultimo[i.tireId].dataInspecao)) {
-        ultimo[i.tireId] = i;
-      }
-    });
-    const cadastro = {};
-    DATA.tires.forEach(x => { cadastro[x.id] = x; });
-
-    t = Object.values(ultimo).map(m => {
-      const c = cadastro[m.tireId] || {};
-      const menor = m.menorMM || 0;
-      const statusMM = menor < 2 ? 'Bloquear' : menor <= 3 ? 'Recapar' : menor <= 6 ? 'Regular' : 'Bom Estado';
-      return {
-        ...c,
-        id: m.tireId,
-        serial: m.serial || c.serial || '',
-        status: 'INSTALLED',
-        veiculoId: m.veiculoId ?? c.veiculoId,
-        placa: m.placa || c.placa || '',
-        frota: m.frota || c.frota || '',
-        posicao: m.posicao ?? c.posicao,
-        mm1: m.mm1, mm2: m.mm2, mm3: m.mm3, mm4: m.mm4,
-        menorMM: menor,
-        amplitude: m.amplitude,
-        statusMM,
-        pressaoIdeal: m.pressaoIdeal,
-        pressaoAtual: m.pressaoMedida,
-        desvioPressao: m.desvioPressao,
-        pressaoNOK: m.pressaoNOK
-      };
-    });
-  }
+  // Sem período: estado atual (snapshot). Com período: reconstrói da última medição no período.
+  let t = temPeriodo ? reconstructTires(getFilteredInspections()) : DATA.tires;
 
   if (FILTERS.placa.length || FILTERS.unidade.length || FILTERS.marca.length || FILTERS.modelo.length) {
     const placasOk = new Set(getFilteredVehicles().map(v => v.placa));
     t = t.filter(x => placasOk.has(x.placa));
   }
   if (FILTERS.vida.length) {
-    const labelVida = cv => (cv || 1) === 1 ? 'V1 (Novo)' : 'V' + cv + ' (recapado)';
     t = t.filter(x => FILTERS.vida.includes(labelVida(x.cicloVida)));
   }
   return t;
@@ -3012,7 +3067,9 @@ function renderSaudeMensalChart() {
 
   const med = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
 
-  // Agregados mensais a partir das medições de inspeção
+  // Cada mês: reconstrói o estado dos pneus pela última medição do mês e usa
+  // o MESMO cálculo do herói/cards (scorePneu por pneu) — assim o gráfico e o
+  // hero batem quando a vigência está no mês correspondente.
   const valores = meses.map(m => {
     if (isFuturo(m)) return null;
     const medidas = DATA.inspections.filter(i => {
@@ -3022,42 +3079,21 @@ function renderSaudeMensalChart() {
     });
     if (!medidas.length) return null;
 
-    const sMM = [], sAmp = [], sStatus = [], mmVals = [], ampVals = [];
-    let comP = 0, okP = 0;
-    medidas.forEach(x => {
-      if (x.menorMM > 0) {
-        mmVals.push(x.menorMM);
-        sMM.push(clamp01((x.menorMM - 2) / 8) * 100);
-        sStatus.push(x.menorMM < 2 ? 0 : x.menorMM <= 3 ? 33 : x.menorMM <= 6 ? 66 : 100);
-      }
-      ampVals.push(x.amplitude);
-      sAmp.push(clamp01(1 - x.amplitude / 5) * 100);
-      if (x.pressaoIdeal > 0) { comP++; if (!x.pressaoNOK) okP++; }
-    });
+    let tiresMes = reconstructTires(medidas);
+    if (FILTERS.vida.length) tiresMes = tiresMes.filter(t => FILTERS.vida.includes(labelVida(t.cicloVida)));
+    if (!tiresMes.length) return null;
 
     switch (SAUDE_METRIC) {
-      case 'mm':    return med(mmVals);
-      case 'calib': return comP > 0 ? (okP / comP * 100) : null;
-      case 'amp':   return med(ampVals);
-      case 'status': return med(sStatus);
+      case 'mm':    return med(tiresMes.filter(t => t.menorMM > 0).map(t => t.menorMM));
+      case 'calib': { const c = tiresMes.filter(t => t.pressaoIdeal > 0); return c.length ? c.filter(t => !t.pressaoNOK).length / c.length * 100 : null; }
+      case 'amp':   return med(tiresMes.map(t => t.amplitude));
+      case 'status': return med(tiresMes.filter(t => t.menorMM > 0).map(t => t.menorMM < 2 ? 0 : t.menorMM <= 3 ? 33 : t.menorMM <= 6 ? 66 : 100));
       case 'vida': {
-        // idade média (DOT) dos pneus instalados no fim do mês
         const fimMes = new Date(m.ano, m.mes + 1, 0, 23, 59, 59);
-        const idades = getFilteredTires()
-          .filter(t => t.status === 'INSTALLED')
-          .map(t => parseDOT(t.dot, fimMes))
-          .filter(v => v !== null);
-        return med(idades);
+        return med(tiresMes.map(t => parseDOT(t.dot, fimMes)).filter(v => v !== null));
       }
       default:
-        return scoreComposto({
-          mm:     med(sMM),
-          calib:  comP > 0 ? (okP / comP * 100) : null,
-          status: med(sStatus),
-          amp:    med(sAmp),
-          dot:    null,
-          recape: null
-        });
+        return med(tiresMes.map(t => scorePneu(t)).filter(v => v !== null));
     }
   });
 
