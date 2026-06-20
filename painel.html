@@ -1406,6 +1406,7 @@
           <div class="adh-label">Aderência</div>
           <div class="adh-value" id="adhValue">—</div>
           <div class="adh-deltas">
+            <div class="adh-delta">Total Veículos<b id="adhDeltaTotal" style="color:var(--text)">—</b></div>
             <div class="adh-delta">No Prazo<b id="adhDeltaPrazo" style="color:var(--green)">—</b></div>
             <div class="adh-delta">Em Atenção<b id="adhDeltaAtencao" style="color:var(--yellow)">—</b></div>
             <div class="adh-delta">Vencidos<b id="adhDeltaVencida" style="color:var(--red-soft)">—</b></div>
@@ -3254,6 +3255,7 @@ function renderPainel() {
   elVal.textContent = pctStr;
   elVal.style.color = corAd;
 
+  document.getElementById('adhDeltaTotal').textContent   = lista.length;
   document.getElementById('adhDeltaPrazo').textContent   = noPrazo;
   document.getElementById('adhDeltaAtencao').textContent = emAten;
   document.getElementById('adhDeltaVencida').textContent = vencida;
