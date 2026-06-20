@@ -522,6 +522,7 @@
   .td-dias.vencida  { color: var(--red-soft); }
   .td-dias.atencao  { color: var(--yellow); }
   .td-dias.prazo    { color: var(--green); }
+  .td-dias.sem      { color: var(--text-muted); }
 
   /* legenda do gráfico */
   .chart-legend {
@@ -548,6 +549,7 @@
   .farol-dot.vencida::before { background: var(--red-soft); }
   .farol-dot.atencao::before { background: var(--yellow); }
   .farol-dot.prazo::before   { background: var(--green); }
+  .farol-dot.sem::before     { background: var(--text-muted); }
 
   @media (max-width: 900px) {
     .adh-cards  { grid-template-columns: 1fr; }
@@ -1407,6 +1409,7 @@
             <div class="adh-delta">No Prazo<b id="adhDeltaPrazo" style="color:var(--green)">—</b></div>
             <div class="adh-delta">Em Atenção<b id="adhDeltaAtencao" style="color:var(--yellow)">—</b></div>
             <div class="adh-delta">Vencidos<b id="adhDeltaVencida" style="color:var(--red-soft)">—</b></div>
+            <div class="adh-delta">Sem Aferição<b id="adhDeltaSem" style="color:var(--text-muted)">—</b></div>
           </div>
         </div>
       </div>
@@ -3241,6 +3244,7 @@ function renderPainel() {
   const noPrazo = lista.filter(v => v.status === 'prazo').length;
   const emAten  = lista.filter(v => v.status === 'atencao').length;
   const vencida = lista.filter(v => v.status === 'vencida').length;
+  const semAfer = lista.filter(v => v.status === 'sem').length;
 
   const pct    = (noPrazo + emAten) / total * 100;
   const pctStr = pct.toFixed(1).replace('.', ',') + (window.innerWidth < 480 ? '' : '%');
@@ -3253,21 +3257,25 @@ function renderPainel() {
   document.getElementById('adhDeltaPrazo').textContent   = noPrazo;
   document.getElementById('adhDeltaAtencao').textContent = emAten;
   document.getElementById('adhDeltaVencida').textContent = vencida;
+  document.getElementById('adhDeltaSem').textContent     = semAfer;
 
-  // Tabelas
-  const ordenados = [...lista]
-    .filter(v => v.dias !== null)
-    .sort((a, b) => (b.dias ?? 0) - (a.dias ?? 0));
+  // Tabelas — "Sem Aferição" no topo (mais crítico), depois por dias decrescente
+  const ordenados = [...lista].sort((a, b) => {
+    if (a.status === 'sem' && b.status !== 'sem') return -1;
+    if (b.status === 'sem' && a.status !== 'sem') return 1;
+    return (b.dias ?? 0) - (a.dias ?? 0);
+  });
 
   const rowTabela = v => {
     const cls   = v.status;
-    const label = cls === 'vencida' ? 'Vencida' : cls === 'atencao' ? 'Em Atenção' : 'No Prazo';
+    const label = cls === 'vencida' ? 'Vencida' : cls === 'atencao' ? 'Em Atenção' : cls === 'sem' ? 'Sem Aferição' : 'No Prazo';
     const data  = v.dataInsp ? new Date(v.dataInsp).toLocaleDateString('pt-BR') : '—';
+    const diasTxt = v.dias != null ? v.dias : '—';
     return `<tr>
       <td><strong>${v.placa}</strong></td>
       <td>${data}</td>
       <td><span class="farol-dot ${cls}">${label}</span></td>
-      <td style="text-align:right"><span class="td-dias ${cls}">${v.dias}</span></td>
+      <td style="text-align:right"><span class="td-dias ${cls}">${diasTxt}</span></td>
     </tr>`;
   };
 
