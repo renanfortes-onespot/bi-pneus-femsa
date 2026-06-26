@@ -3022,9 +3022,8 @@ function highlightFn(meses, valores) {
       return vig.includes(mv);
     };
   }
-  let last = -1;
-  valores.forEach((v, i) => { if (v !== null && v !== undefined) last = i; });
-  return i => i === last;
+  // "Todos" (vigência vazia) = destaca TODOS os meses com dado
+  return i => valores[i] !== null && valores[i] !== undefined;
 }
 
 // Escalas padrão: grade leve em ambos os eixos, eixo X 11px / Y 9px (igual ao padrão DRE)
