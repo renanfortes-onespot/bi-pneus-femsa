@@ -2061,42 +2061,54 @@ function getFilteredVehicles() {
   return v;
 }
 
-// Reconstrói o estado dos pneus a partir das inspeções dadas, com UMA linha por
-// pneu = MÉDIA das suas leituras no período (1 mês => a própria leitura; vários
-// meses => média). Compartilhado por getFilteredTires e pelo gráfico mensal,
-// garantindo que hero/cards e a barra do mês usem exatamente a mesma base.
+// Reconstrói o estado dos pneus a partir das inspeções dadas: UMA linha por pneu =
+// a ÚLTIMA leitura dele no período (estado atual real, sem misturar leituras de
+// posições/datas diferentes). A média entre meses é feita à parte (mediaSobreMeses).
 function reconstructTires(insps) {
-  const porPneu = {};
-  insps.forEach(i => { if (i.tireId) (porPneu[i.tireId] = porPneu[i.tireId] || []).push(i); });
+  const ultimo = {};
+  insps.forEach(i => {
+    if (!i.tireId) return;
+    if (!ultimo[i.tireId] || new Date(i.dataInspecao) > new Date(ultimo[i.tireId].dataInspecao)) ultimo[i.tireId] = i;
+  });
   const cadastro = {};
   DATA.tires.forEach(x => { cadastro[x.id] = x; });
 
-  return Object.entries(porPneu).map(([tid, arr]) => {
-    const c = cadastro[tid] || {};
-    const avg = f => { const v = arr.map(f).filter(x => typeof x === 'number' && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
-    const recente = arr.reduce((a, b) => new Date(b.dataInspecao) > new Date(a.dataInspecao) ? b : a); // p/ campos não-numéricos
-    const menor = avg(i => i.menorMM);
+  const tires = Object.values(ultimo).map(m => {
+    const c = cadastro[m.tireId] || {};
+    const menor = m.menorMM || 0;
     const statusMM = menor < 2 ? 'Bloquear' : menor <= 3 ? 'Recapar' : menor <= 6 ? 'Regular' : 'Bom Estado';
-    const desvio = avg(i => i.desvioPressao);
     return {
       ...c,
-      id: +tid,
-      serial: recente.serial || c.serial || '',
+      id: m.tireId,
+      serial: m.serial || c.serial || '',
       status: 'INSTALLED',
-      veiculoId: recente.veiculoId ?? c.veiculoId,
-      placa: recente.placa || c.placa || '',
-      frota: recente.frota || c.frota || '',
-      posicao: recente.posicao ?? c.posicao,
-      mm1: avg(i => i.mm1), mm2: avg(i => i.mm2), mm3: avg(i => i.mm3), mm4: avg(i => i.mm4),
+      veiculoId: m.veiculoId ?? c.veiculoId,
+      placa: m.placa || c.placa || '',
+      frota: m.frota || c.frota || '',
+      posicao: m.posicao ?? c.posicao,
+      mm1: m.mm1, mm2: m.mm2, mm3: m.mm3, mm4: m.mm4,
       menorMM: menor,
-      amplitude: avg(i => i.amplitude),
+      amplitude: m.amplitude,
       statusMM,
-      pressaoIdeal: avg(i => i.pressaoIdeal),
-      pressaoAtual: avg(i => i.pressaoMedida),
-      desvioPressao: desvio,
-      pressaoNOK: Math.abs(desvio) > 15
+      pressaoIdeal: m.pressaoIdeal,
+      pressaoAtual: m.pressaoMedida,
+      desvioPressao: m.desvioPressao,
+      pressaoNOK: m.pressaoNOK,
+      _ultima: new Date(m.dataInspecao).getTime()
     };
   });
+
+  // Resolve TROCA no período: por veículo+posição, mantém só o pneu da aferição
+  // MAIS RECENTE (o que está realmente instalado). Sem isso, um pneu trocado/removido
+  // reaparece junto com o novo na mesma posição, com a média das leituras antigas.
+  const melhorPorPos = {};
+  tires.forEach(t => {
+    if (t.posicao == null) return;
+    const k = t.veiculoId + '|' + t.posicao;
+    if (!melhorPorPos[k] || t._ultima > melhorPorPos[k]._ultima) melhorPorPos[k] = t;
+  });
+  const vencedores = new Set(Object.values(melhorPorPos).map(t => t.id));
+  return tires.filter(t => t.posicao == null || vencedores.has(t.id)).map(t => { delete t._ultima; return t; });
 }
 
 function getFilteredTires() {
