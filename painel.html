@@ -485,6 +485,11 @@
     text-transform: uppercase; letter-spacing: 0.5px;
   }
 
+  /* tabelas longas: altura máxima (~30 linhas) + rolagem + cabeçalho fixo */
+  .tbl-scroll { overflow: auto; max-height: 72vh; }
+  .tbl-scroll table.adh-table thead th { position: sticky; top: 0; z-index: 2; background: #14171c; }
+  body.light-mode .tbl-scroll table.adh-table thead th { background: #dcdcdc; }
+
   .adh-table {
     width: 100%; border-collapse: collapse;
     font-size: 13px;
@@ -1538,7 +1543,7 @@
           <span>Ranking — Menor Sulco</span>
           <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchMM" oninput="filtrarMM()" style="width:220px">
         </div>
-        <div style="overflow-x:auto">
+        <div class="tbl-scroll">
         <table class="adh-table">
           <thead><tr>
             <th>#</th><th>Serial</th><th class="dcol">Placa</th><th class="dcol">Frota</th><th class="dcol">Posição</th>
@@ -1557,7 +1562,7 @@
           <span>Histórico de Aferições</span>
           <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchAfer" oninput="filtrarAfer()" style="width:220px">
         </div>
-        <div style="overflow-x:auto">
+        <div class="tbl-scroll">
         <table class="adh-table">
           <thead><tr>
             <th>Data</th><th class="dcol">Placa</th><th class="dcol">Frota</th><th class="dcol">Posição</th><th>Serial</th>
@@ -1642,7 +1647,7 @@
           <span>Ranking — Maior Desvio de Pressão</span>
           <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchPressao" oninput="filtrarPressao()" style="width:220px">
         </div>
-        <div style="overflow-x:auto">
+        <div class="tbl-scroll">
         <table class="adh-table">
           <thead><tr>
             <th>#</th><th>Serial</th><th class="dcol">Placa</th><th class="dcol">Frota</th><th class="dcol">Posição</th>
@@ -1713,7 +1718,7 @@
             <button class="chip" data-cpkdrill="banda" onclick="setCpkDrill('banda',this)">Modelo Banda</button>
           </div>
         </div>
-        <div style="overflow-x:auto">
+        <div class="tbl-scroll">
         <table class="adh-table">
           <thead><tr>
             <th>#</th><th id="thCpkDrill">Marca</th>
@@ -1795,7 +1800,7 @@
           <span>Pneus por Urgência — Mais Próximo do Recape Primeiro</span>
           <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchPrev" oninput="filtrarPrev()" style="width:220px">
         </div>
-        <div style="overflow-x:auto">
+        <div class="tbl-scroll">
         <table class="adh-table">
           <thead><tr>
             <th>#</th><th>Serial</th><th class="dcol">Placa</th><th class="dcol">Posição</th>
@@ -1804,6 +1809,12 @@
           </tr></thead>
           <tbody id="tbodyPrev"></tbody>
         </table>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin:8px 14px 14px;line-height:1.6">
+          A taxa de desgaste vem da regressão das aferições do próprio pneu quando confiável (≥3 leituras, ≥2.000 km rodados e ≤2,5 mm/1.000km).
+          Quando não é (pneu recém-trocado, pouco rodado ou leitura inconsistente), o valor é <b style="color:var(--orange)">estimado</b> (marcado com <b style="color:var(--orange)">*</b>) por uma cascata:
+          mesma <b>placa</b> com pneus semelhantes (marca/vida/banda/eixo) → placa por eixo → placa toda → <b>frota</b> com pneus semelhantes → frota por eixo → mediana da frota.
+          O km/dia segue a mesma lógica (veículo → frota). Passe o mouse no <b style="color:var(--orange)">*</b> para ver a origem.
         </div>
       </div>
     </div>
@@ -1819,7 +1830,7 @@
 
       <div class="adh-table-wrap">
         <div class="adh-table-title">Orçamento Mês a Mês — Recape e Compra</div>
-        <div style="overflow-x:auto">
+        <div class="tbl-scroll">
         <table class="adh-table orc-table" id="orcTable"></table>
         </div>
         <div id="orcNota" style="font-size:10px;color:var(--text-muted);margin:10px 14px 14px 11px;line-height:1.6"></div>
@@ -2504,8 +2515,14 @@ function renderOrcCharts(rows) {
 const PULL_POINT = 3; // mm — ponto ideal de retirada para recape
 
 // Calcula projeção por pneu (1ª vs última inspeção, robusto a ruído)
+// Limiares de confiabilidade da taxa do PRÓPRIO pneu (opção 1)
+const PREV_MIN_LEITURAS = 3;
+const PREV_MIN_KM = 2000;          // intervalo de odômetro mínimo
+const PREV_MAX_DESGASTE = 2.5;     // mm/1000km — acima disso é ruído/erro
+const PREV_KM_MIN = 5, PREV_KM_MAX = 500; // km/dia plausível
+
 function calcPrevisao() {
-  const tires = getFilteredTires().filter(t => t.status === 'INSTALLED' && t.menorMM > 0);
+  const hoje = new Date();
 
   // histórico de inspeções por tireId (mm e odômetro válidos), ordenado por data
   const hist = {};
@@ -2515,37 +2532,72 @@ function calcPrevisao() {
   });
   Object.values(hist).forEach(arr => arr.sort((a, b) => new Date(a.dataInspecao) - new Date(b.dataInspecao)));
 
-  const hoje = new Date();
+  // Regressão por pneu + confiabilidade
+  const reg = {};
+  Object.entries(hist).forEach(([tid, h]) => {
+    if (h.length < 2 || new Set(h.map(i => i.odometro)).size < 2) { reg[tid] = {}; return; }
+    const pts = h.map(i => ({ km: i.odometro, mm: i.menorMM }));
+    const n = pts.length;
+    const sx = pts.reduce((s, p) => s + p.km, 0), sy = pts.reduce((s, p) => s + p.mm, 0);
+    const sxx = pts.reduce((s, p) => s + p.km * p.km, 0), sxy = pts.reduce((s, p) => s + p.km * p.mm, 0);
+    const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+    const wear1000 = -slope * 1000;
+    const a = h[0], b = h[h.length - 1];
+    const span = b.odometro - a.odometro;
+    const dDia = (new Date(b.dataInspecao) - new Date(a.dataInspecao)) / 86400000;
+    const kmDia = (span > 0 && dDia > 0) ? span / dDia : 0;
+    const kmOk = kmDia >= PREV_KM_MIN && kmDia <= PREV_KM_MAX;
+    // taxa só é confiável se o odômetro também for (km/dia plausível) — odômetro furado corrompe os dois
+    const rateOk = n >= PREV_MIN_LEITURAS && span >= PREV_MIN_KM && slope < 0 && wear1000 > 0 && wear1000 <= PREV_MAX_DESGASTE && kmOk;
+    reg[tid] = { wear1000, kmDia, rateOk, kmOk };
+  });
+
+  // Atributos p/ a cascata
+  const eixoDe = t => { const p = t.posicao != null ? String(t.posicao) : ''; return p ? p[0] : '?'; };
+  const bandaDe = t => (t.bandaMarca || '') + '|' + (t.banda || '');
+
+  // POOL confiável (FROTA inteira, snapshot) — base dos fallbacks
+  const pool = [], kmPool = [];
+  DATA.tires.filter(t => t.status === 'INSTALLED').forEach(t => {
+    const r = reg[t.id]; if (!r) return;
+    if (r.rateOk) pool.push({ placa: t.placa, marca: t.marca || '', vida: t.cicloVida || 1, banda: bandaDe(t), eixo: eixoDe(t), wear: r.wear1000 });
+    if (r.kmOk) kmPool.push(r.kmDia);
+  });
+  const median = a => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+  const medSe = (arr, min) => arr.length >= min ? median(arr) : null;
+  const kmFrota = median(kmPool);
+
+  // Cascata da taxa de desgaste: placa·similar → placa·eixo → placa → frota·similar → frota·eixo → frota
+  function estimaWear(t) {
+    const eixo = eixoDe(t), marca = t.marca || '', vida = t.cicloVida || 1, banda = bandaDe(t);
+    const W = f => pool.filter(f).map(p => p.wear);
+    let v;
+    v = medSe(W(p => p.placa === t.placa && p.marca === marca && p.vida === vida && p.banda === banda && p.eixo === eixo), 3); if (v != null) return { wear: v, nivel: 'placa · marca/vida/banda/eixo' };
+    v = medSe(W(p => p.placa === t.placa && p.eixo === eixo), 3); if (v != null) return { wear: v, nivel: 'placa · eixo' };
+    v = medSe(W(p => p.placa === t.placa), 3);                    if (v != null) return { wear: v, nivel: 'placa' };
+    v = medSe(W(p => p.marca === marca && p.vida === vida && p.banda === banda && p.eixo === eixo), 3); if (v != null) return { wear: v, nivel: 'frota · marca/vida/banda/eixo' };
+    v = medSe(W(p => p.eixo === eixo), 3);                        if (v != null) return { wear: v, nivel: 'frota · eixo' };
+    v = median(pool.map(p => p.wear));                           if (v != null) return { wear: v, nivel: 'frota' };
+    return null;
+  }
+
+  // Saída para os pneus do VIEW filtrado
+  const tires = getFilteredTires().filter(t => t.status === 'INSTALLED' && t.menorMM > 0);
   const linhas = [];
   tires.forEach(t => {
-    const h = hist[t.id];
-    if (!h || h.length < 2) { linhas.push({ t, semBase: true }); return; }
+    const r = reg[t.id] || {};
+    let wear1000, kmDia, estimado = false, nivelEst = null, kmEst = false;
 
-    // Regressão linear mm = a + b·km (robusto a ruído de leitura)
-    const pts = h.map(i => ({ km: i.odometro, mm: i.menorMM }));
-    const kmDistintos = new Set(pts.map(p => p.km)).size;
-    if (kmDistintos < 2) { linhas.push({ t, semBase: true }); return; }
-    const n = pts.length;
-    const sx = pts.reduce((s, p) => s + p.km, 0);
-    const sy = pts.reduce((s, p) => s + p.mm, 0);
-    const sxx = pts.reduce((s, p) => s + p.km * p.km, 0);
-    const sxy = pts.reduce((s, p) => s + p.km * p.mm, 0);
-    const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx); // mm por km (negativo = desgaste)
-    if (!(slope < 0)) { linhas.push({ t, semBase: true }); return; } // não desgastou no período
+    if (r.rateOk) { wear1000 = r.wear1000; }
+    else { const e = estimaWear(t); if (!e) { linhas.push({ t, semBase: true }); return; } wear1000 = e.wear; estimado = true; nivelEst = e.nivel; }
 
-    const wear1000 = -slope * 1000;  // mm por 1.000 km
-    const a = h[0], b = h[h.length - 1];
-    const dKm  = b.odometro - a.odometro;
-    const dDia = (new Date(b.dataInspecao) - new Date(a.dataInspecao)) / 86400000;
-    const kmDia = (dKm > 0 && dDia > 0) ? dKm / dDia : 0;
-    if (!(kmDia > 0)) { linhas.push({ t, semBase: true }); return; }
+    if (r.kmOk) { kmDia = r.kmDia; }
+    else { if (kmFrota == null) { linhas.push({ t, semBase: true }); return; } kmDia = kmFrota; kmEst = true; }
 
     const mmAtual = t.menorMM;
-    const kmAteRecape = Math.max(0, mmAtual - PULL_POINT) / (wear1000 / 1000);
-    const diasAteRecape = kmAteRecape / kmDia;
-    const dataPrev = new Date(hoje.getTime() + diasAteRecape * 86400000);
-
-    linhas.push({ t, semBase: false, wear1000, kmDia, mmAtual, dias: diasAteRecape, dataPrev });
+    const dias = (Math.max(0, mmAtual - PULL_POINT) / (wear1000 / 1000)) / kmDia;
+    const dataPrev = new Date(hoje.getTime() + dias * 86400000);
+    linhas.push({ t, semBase: false, wear1000, kmDia, mmAtual, dias, dataPrev, estimado, nivelEst, kmEst });
   });
   return linhas;
 }
@@ -2625,8 +2677,8 @@ function filtrarPrev() {
           <td class="dcol">${l.t.placa || '—'}</td>
           <td class="dcol">${l.t.nomePosicao || l.t.posicao || '—'}</td>
           <td style="color:${l.mmAtual > 6 ? 'var(--green)' : l.mmAtual > 3 ? 'var(--yellow)' : 'var(--red-soft)'};font-weight:700">${fmt(l.mmAtual)} mm</td>
-          <td class="dcol">${fmtBR(l.wear1000, 2)} mm/1.000km</td>
-          <td class="dcol">${fmtBR(l.kmDia, 0)} km</td>
+          <td class="dcol">${fmtBR(l.wear1000, 2)} mm/1.000km${l.estimado ? ' <span style="color:var(--orange)" title="Estimado: ' + l.nivelEst + '">*</span>' : ''}</td>
+          <td class="dcol">${fmtBR(l.kmDia, 0)} km${l.kmEst ? ' <span style="color:var(--orange)" title="km/dia estimado pela frota">*</span>' : ''}</td>
           <td class="dcol">${fmtData(l)}</td>
           <td style="text-align:right;white-space:nowrap">
             <span class="td-dias" style="color:${cor}">${fmtDias(l)}</span>
@@ -2638,8 +2690,9 @@ function filtrarPrev() {
           <span>Posição: <b>${l.t.nomePosicao || l.t.posicao || '—'}</b></span>
           <span>MM Atual: <b>${fmt(l.mmAtual)} mm</b></span>
           <span>Desgaste: <b>${fmtBR(l.wear1000, 2)} mm/1.000km</b></span>
-          <span>Km/dia: <b>${fmtBR(l.kmDia, 0)} km</b></span>
+          <span>Km/dia: <b>${fmtBR(l.kmDia, 0)} km</b>${l.kmEst ? ' <span style="color:var(--orange)">(estimado: frota)</span>' : ''}</span>
           <span>Recape em: <b style="color:${cor}">${fmtDias(l)}</b> (${fmtData(l)})</span>
+          ${l.estimado ? `<span style="color:var(--orange)">Desgaste estimado por: <b>${l.nivelEst}</b></span>` : ''}
         </div></td></tr>`;
       }).join('');
 }
