@@ -1461,6 +1461,26 @@
         </div>
       </div>
 
+      <!-- HISTÓRICO DE AFERIÇÕES -->
+      <div class="adh-table-wrap" style="margin-top:20px">
+        <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <span>Histórico de Aferições</span>
+          <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchAfer2" oninput="filtrarAfer2()" style="width:220px">
+        </div>
+        <div class="tbl-scroll">
+        <table class="adh-table">
+          <thead><tr>
+            <th>Data</th><th class="dcol">Placa</th><th class="dcol">Frota</th><th class="dcol">Posição</th><th>Serial</th>
+            <th class="dcol">Marca</th><th class="dcol">Vida</th>
+            <th class="dcol">mm1</th><th class="dcol">mm2</th><th class="dcol">mm3</th><th class="dcol">mm4</th>
+            <th class="dcol">Amplitude</th><th>Menor MM</th><th>Status</th>
+          </tr></thead>
+          <tbody id="tbodyAfer2"></tbody>
+        </table>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin:8px 14px 14px">Aferições da(s) vigência(s) selecionada(s), da mais recente para a mais antiga. Marque "Todos" na Vigência para ver o histórico completo.</div>
+      </div>
+
     </div>
 
     <!-- ========== MILIMETRAGEM ========== -->
@@ -3536,10 +3556,14 @@ function renderAfericoes() {
   if (FILTERS.vida.length) ins = ins.filter(i => FILTERS.vida.includes(labelVida((cad[i.tireId] || {}).cicloVida || 1)));
   window._afericoes = ins.slice().sort((a, b) => new Date(b.dataInspecao) - new Date(a.dataInspecao));
   filtrarAfer();
+  filtrarAfer2();
 }
 
-function filtrarAfer() {
-  const q = (document.getElementById('searchAfer')?.value || '').toLowerCase();
+// renderiza o histórico num tbody (id), filtrando pela busca (id). Reutilizado nas 2 instâncias (Milimetragem e Aferições).
+function _renderAferTabela(tbodyId, searchId) {
+  const tb = document.getElementById(tbodyId);
+  if (!tb) return;
+  const q = (document.getElementById(searchId)?.value || '').toLowerCase();
   const cad = {};
   DATA.tires.forEach(t => { cad[t.id] = t; });
   const lista = (window._afericoes || []).filter(i =>
@@ -3548,7 +3572,7 @@ function filtrarAfer() {
   const corStatus = { 'Bloquear': 'var(--red-soft)', 'Recapar': 'var(--orange)', 'Regular': 'var(--yellow)', 'Bom Estado': 'var(--green)' };
   const statusDe = mm => mm < 2 ? 'Bloquear' : mm <= 3 ? 'Recapar' : mm <= 6 ? 'Regular' : 'Bom Estado';
 
-  document.getElementById('tbodyAfer').innerHTML = lista.length === 0
+  tb.innerHTML = lista.length === 0
     ? '<tr><td colspan="14" class="empty">Nenhuma aferição encontrada</td></tr>'
     : lista.slice(0, 600).map(i => {
         const c = cad[i.tireId] || {};
@@ -3573,6 +3597,8 @@ function filtrarAfer() {
         </tr>`;
       }).join('');
 }
+function filtrarAfer()  { _renderAferTabela('tbodyAfer',  'searchAfer');  }
+function filtrarAfer2() { _renderAferTabela('tbodyAfer2', 'searchAfer2'); }
 
 function filtrarMM() {
   const q = (document.getElementById('searchMM')?.value || '').toLowerCase();
