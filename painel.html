@@ -1550,6 +1550,26 @@
         </table>
         </div>
       </div>
+
+      <!-- HISTÓRICO DE AFERIÇÕES -->
+      <div class="adh-table-wrap" style="margin-top:20px">
+        <div class="adh-table-title" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <span>Histórico de Aferições</span>
+          <input class="search-box" type="text" placeholder="Buscar placa, serial..." id="searchAfer" oninput="filtrarAfer()" style="width:220px">
+        </div>
+        <div style="overflow-x:auto">
+        <table class="adh-table">
+          <thead><tr>
+            <th>Data</th><th class="dcol">Placa</th><th class="dcol">Frota</th><th class="dcol">Posição</th><th>Serial</th>
+            <th class="dcol">Marca</th><th class="dcol">Vida</th>
+            <th class="dcol">mm1</th><th class="dcol">mm2</th><th class="dcol">mm3</th><th class="dcol">mm4</th>
+            <th class="dcol">Amplitude</th><th>Menor MM</th><th>Status</th>
+          </tr></thead>
+          <tbody id="tbodyAfer"></tbody>
+        </table>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin:8px 14px 14px">Aferições da(s) vigência(s) selecionada(s), da mais recente para a mais antiga. Marque "Todos" na Vigência para ver o histórico completo.</div>
+      </div>
     </div>
 
     <!-- ========== PRESSÃO ========== -->
@@ -3449,6 +3469,56 @@ function renderMilimetragem() {
     return am - bm;
   });
   filtrarMM();
+  renderAfericoes();
+}
+
+// Histórico de Aferições — inspeções da(s) vigência(s) selecionada(s), recente→antiga
+function renderAfericoes() {
+  if (!document.getElementById('tbodyAfer')) return;
+  const placasOk = new Set(getFilteredVehicles().map(v => v.placa));
+  const cad = {};
+  DATA.tires.forEach(t => { cad[t.id] = t; });
+
+  let ins = getFilteredInspections().filter(i => placasOk.has(i.placa));
+  if (FILTERS.vida.length) ins = ins.filter(i => FILTERS.vida.includes(labelVida((cad[i.tireId] || {}).cicloVida || 1)));
+  window._afericoes = ins.slice().sort((a, b) => new Date(b.dataInspecao) - new Date(a.dataInspecao));
+  filtrarAfer();
+}
+
+function filtrarAfer() {
+  const q = (document.getElementById('searchAfer')?.value || '').toLowerCase();
+  const cad = {};
+  DATA.tires.forEach(t => { cad[t.id] = t; });
+  const lista = (window._afericoes || []).filter(i =>
+    !q || (i.serial || '').toLowerCase().includes(q) || (i.placa || '').toLowerCase().includes(q)
+  );
+  const corStatus = { 'Bloquear': 'var(--red-soft)', 'Recapar': 'var(--orange)', 'Regular': 'var(--yellow)', 'Bom Estado': 'var(--green)' };
+  const statusDe = mm => mm < 2 ? 'Bloquear' : mm <= 3 ? 'Recapar' : mm <= 6 ? 'Regular' : 'Bom Estado';
+
+  document.getElementById('tbodyAfer').innerHTML = lista.length === 0
+    ? '<tr><td colspan="14" class="empty">Nenhuma aferição encontrada</td></tr>'
+    : lista.slice(0, 600).map(i => {
+        const c = cad[i.tireId] || {};
+        const st = statusDe(i.menorMM);
+        const data = new Date(i.dataInspecao).toLocaleDateString('pt-BR');
+        return `
+        <tr>
+          <td style="white-space:nowrap">${data}</td>
+          <td class="dcol">${i.placa || '—'}</td>
+          <td class="dcol">${i.frota || '—'}</td>
+          <td class="dcol">${i.posicao ?? '—'}</td>
+          <td><strong>${i.serial || '—'}</strong></td>
+          <td class="dcol">${c.marca || '—'}</td>
+          <td class="dcol">${c.cicloVida ? 'V' + c.cicloVida : '—'}</td>
+          <td class="dcol">${fmt(i.mm1)}</td>
+          <td class="dcol">${fmt(i.mm2)}</td>
+          <td class="dcol">${fmt(i.mm3)}</td>
+          <td class="dcol">${fmt(i.mm4)}</td>
+          <td class="dcol" style="color:${i.amplitude > 5 ? 'var(--red-soft)' : i.amplitude > 3 ? 'var(--yellow)' : 'var(--green)'};font-weight:700">${fmt(i.amplitude)}</td>
+          <td style="color:${corStatus[st]};font-weight:700">${fmt(i.menorMM)}</td>
+          <td style="white-space:nowrap"><span class="farol-dot"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${corStatus[st]};margin-right:6px"></span>${st}</span></td>
+        </tr>`;
+      }).join('');
 }
 
 function filtrarMM() {
