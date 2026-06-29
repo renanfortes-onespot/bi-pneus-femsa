@@ -1278,6 +1278,16 @@
           <div id="opts-placa"></div>
         </div>
       </div>
+      <div class="ms-wrap" id="wrap-serial">
+        <button class="ms-btn" onclick="toggleMs('serial')">
+          SERIAL <span class="ms-count" id="cnt-serial" style="display:none"></span><span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-panel" id="panel-serial">
+          <input class="ms-search" placeholder="Buscar serial..." oninput="filterMs(this,'panel-serial')">
+          <div class="ms-option select-all"><label><input type="checkbox" onchange="selectAll('panel-serial',this)"> Todos</label></div>
+          <div id="opts-serial"></div>
+        </div>
+      </div>
       <div class="ms-wrap" id="wrap-vida">
         <button class="ms-btn" onclick="toggleMs('vida')">
           VIDA <span class="ms-count" id="cnt-vida" style="display:none"></span><span class="ms-arrow">▾</span>
@@ -1920,7 +1930,7 @@ const SUPABASE_KEY = 'sb_publishable_6GvYIjIoAYQSzFaWTiSptQ_VP8ravoC';
 // ============================================================
 let DATA = { vehicles: [], tires: [], inspections: [] };
 let charts = {};
-let FILTERS = { ano: [], vigencia: [], unidade: [], placa: [], marca: [], modelo: [], vida: [] };
+let FILTERS = { ano: [], vigencia: [], unidade: [], placa: [], serial: [], marca: [], modelo: [], vida: [] };
 
 // ============================================================
 // TEMA
@@ -1981,8 +1991,8 @@ function filterMs(input, panelId) {
 // Os filtros se conectam: as opções de um filtro vêm dos dados
 // já filtrados por TODOS os outros (ex.: marca restringe placa/vigência).
 // ============================================================
-const FILTER_KEYS = ['ano','vigencia','unidade','placa','marca','modelo','vida'];
-let SEL = { ano:'all', vigencia:'all', unidade:'all', placa:'all', marca:'all', modelo:'all', vida:'all' };
+const FILTER_KEYS = ['ano','vigencia','unidade','placa','serial','marca','modelo','vida'];
+let SEL = { ano:'all', vigencia:'all', unidade:'all', placa:'all', serial:'all', marca:'all', modelo:'all', vida:'all' };
 
 function labelVida(cv) { return (cv || 1) === 1 ? 'V1 (Novo)' : 'V' + cv + ' (recapado)'; }
 
@@ -2015,6 +2025,7 @@ function optionsFor(key) {
   if (key === 'marca')   return distinctSorted(vehOk.map(v => v.marca));
   if (key === 'modelo')  return distinctSorted(vehOk.map(v => v.modelo));
   if (key === 'placa')   return distinctSorted(vehOk.map(v => v.placa));
+  if (key === 'serial')  return distinctSorted(DATA.tires.filter(t => placasOk.has(t.placa)).map(t => t.serial));
 
   if (key === 'ano' || key === 'vigencia') {
     let insps = DATA.inspections.filter(i => vehOkIds.has(i.veiculoId));
@@ -2096,7 +2107,7 @@ function selectAll(panelId, cb) {
 
 function populateFilters() {
   // padrão: tudo "Todos", exceto VIGÊNCIA = mês mais recente com dado
-  SEL = { ano:'all', vigencia:'all', unidade:'all', placa:'all', marca:'all', modelo:'all', vida:'all' };
+  SEL = { ano:'all', vigencia:'all', unidade:'all', placa:'all', serial:'all', marca:'all', modelo:'all', vida:'all' };
   const vigs = optionsFor('vigencia');          // mais recente primeiro
   if (vigs.length) SEL.vigencia = new Set([vigs[0]]);
   syncFiltersFromSel();
@@ -2109,6 +2120,7 @@ function getFilteredVehicles() {
   if (FILTERS.placa.length)   v = v.filter(x => FILTERS.placa.includes(x.placa));
   if (FILTERS.marca.length)   v = v.filter(x => FILTERS.marca.includes(x.marca));
   if (FILTERS.modelo.length)  v = v.filter(x => FILTERS.modelo.includes(x.modelo));
+  if (FILTERS.serial.length) { const _ps = new Set(DATA.tires.filter(t => FILTERS.serial.includes(t.serial)).map(t => t.placa)); v = v.filter(x => _ps.has(x.placa)); }
   return v;
 }
 
@@ -2174,6 +2186,7 @@ function getFilteredTires() {
   if (FILTERS.vida.length) {
     t = t.filter(x => FILTERS.vida.includes(labelVida(x.cicloVida)));
   }
+  if (FILTERS.serial.length) t = t.filter(x => FILTERS.serial.includes(x.serial));
   return t;
 }
 
@@ -2188,6 +2201,7 @@ function getFilteredInspections() {
     });
   }
   if (FILTERS.placa.length) i = i.filter(x => FILTERS.placa.includes(x.placa));
+  if (FILTERS.serial.length) i = i.filter(x => FILTERS.serial.includes(x.serial));
   return i;
 }
 
