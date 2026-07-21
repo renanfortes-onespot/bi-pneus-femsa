@@ -1915,6 +1915,42 @@
       </div>
     </div>
 
+    <!-- ========== DESCARTE DE PNEUS ========== -->
+    <div class="page" id="page-descarte">
+      <div class="adh-hero">
+        <div class="adh-label">Descarte de Pneus (Acumulado)</div>
+        <div class="adh-value" id="descValue">—</div>
+        <div class="adh-deltas">
+          <div class="adh-delta">Total de Pneus<b id="descTotalUso">—</b></div>
+          <div class="adh-delta">Descartados<b id="descTotalDesc" style="color:var(--red-soft)">—</b></div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:11px;font-weight:600;color:var(--text-muted)">
+          <span style="display:flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block"></i> &lt; 20% descarte</span>
+          <span style="display:flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:50%;background:var(--yellow);display:inline-block"></i> 20–40%</span>
+          <span style="display:flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:50%;background:var(--red-soft);display:inline-block"></i> &gt; 40%</span>
+        </div>
+      </div>
+
+      <div class="adh-table-wrap">
+        <div style="padding:14px 18px 4px">
+          <div class="adh-table-title" style="padding:0 0 8px">Descartes</div>
+          <div class="chart-chips" id="descDimToggle">
+            <button class="chip active" data-dim="motivo" onclick="setDescDim('motivo')">MOTIVO</button>
+            <button class="chip" data-dim="marca" onclick="setDescDim('marca')">MARCA</button>
+            <button class="chip" data-dim="modelo" onclick="setDescDim('modelo')">MODELO</button>
+            <button class="chip" data-dim="vida" onclick="setDescDim('vida')">VIDA</button>
+          </div>
+        </div>
+        <div class="tbl-scroll">
+        <table class="adh-table">
+          <thead id="theadDesc"></thead>
+          <tbody id="tbodyDesc"></tbody>
+        </table>
+        </div>
+        <div id="descNota" style="font-size:10px;color:var(--text-muted);margin:8px 14px 14px;line-height:1.6"></div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </main>
 
@@ -2254,7 +2290,8 @@ function navigate(page) {
     cpk: 'CPK — Custo por Km',
     previsao: 'Previsão de Troca',
     orcamento: 'Previsão Orçamentária',
-    eixos: 'Visão de Eixos'
+    eixos: 'Visão de Eixos',
+    descarte: 'Descarte de Pneus'
   };
   document.getElementById('pageTitle').textContent = titles[page] || 'Saúde dos Pneus';
 }
@@ -2361,6 +2398,106 @@ function renderAll() {
   renderOrcamento();
   renderEixosFilters();
   renderEixos();
+  renderDescarte();
+}
+
+// ============================================================
+// DESCARTE DE PNEUS (replicado do hub de pneus / gestão-em-movimento)
+//   em uso/total = todos os status · descartado = status DISPOSAL
+//   % descarte = descartados / total  · cluster <20 verde / 20-40 amarelo / >40 vermelho
+// ============================================================
+const DESC_DESCARTADO = t => t.status === 'DISPOSAL';
+function descCluster(p) { return p < 20 ? 'var(--green)' : p <= 40 ? 'var(--yellow)' : 'var(--red-soft)'; }
+
+// de-para de motivos livres -> categorias curtas agrupadas
+function motivoCurto(m) {
+  const s = (m || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  if (!s) return 'SEM MOTIVO';
+  const has = (...ks) => ks.some(k => s.includes(k));
+  if (has('BAIXA PRESS', 'VAZIO', 'SOBRECARGA')) return 'BAIXA PRESSÃO/SOBRECARGA';
+  if (has('SUPERAQUEC', 'CALOR', 'QUEIMAD')) return 'SUPERAQUECIMENTO';
+  if (has('FADIGA', 'DOT')) return 'FADIGA/DOT';
+  if (has('INFILTRA')) return 'INFILTRAÇÃO';
+  if (has('PICOTA')) return 'PICOTAGEM';
+  if (has('LINER', 'BOLHA')) return 'LINER/BOLHA';
+  if (has('CADASTRO', 'VENDID', 'DEVOLVID', 'VENDA', 'EXTRAVIO', 'RECOLHIDO', 'TERCEIROS', 'EMPILHADEIRA')) return 'ADMINISTRATIVO';
+  if (has('IMPACTO', 'ACIDENTE', 'MANOBRA', 'FRENAGEM', 'ATRITO', 'BURACO', 'TRAVAMENTO')) return 'IMPACTO/ACIDENTE';
+  if (has('ESTOURO', 'RUPTURA', 'ZIPER')) return 'RUPTURA/ESTOURO';
+  if (has('CONSERTO', 'MANCHOES', 'REPARO', 'REPARADA', 'COBERTURA')) return 'CONSERTO/REPARO';
+  if (has('VIDA UTIL', 'DESGASTE', 'APARENTES', 'PREVISAO')) return 'DESGASTE/VIDA ÚTIL';
+  if (has('CORTE', 'OBJETO CORTANTE', 'PENETR', 'PERFUR')) return 'CORTE/PERFURAÇÃO';
+  if (has('CINTA', 'LONA', 'DESLOCAMENTO', 'SEPARA', 'DESAGREGA', 'OXIDA')) return 'CINTAS/LONAS';
+  if (has('TALAO')) return 'TALÃO';
+  if (has('FLANCO', 'LATERAL')) return 'FLANCO/LATERAL';
+  if (has('BANDA DE RODAGEM', 'ARRANCAMENTO', 'SOLTURA', 'OMBRO')) return 'BANDA DE RODAGEM';
+  return s; // motivo novo sem palavra-chave => vira o próprio cluster
+}
+
+let descDim = 'motivo';
+function setDescDim(dim) {
+  descDim = dim;
+  document.querySelectorAll('#descDimToggle .chip').forEach(c => c.classList.toggle('active', c.dataset.dim === dim));
+  renderDescarteTable();
+}
+
+// pneus considerados no descarte: TODOS os status, respeitando marca/modelo/vida do filtro global
+function descTires() {
+  return DATA.tires.filter(t => {
+    if (FILTERS.vida.length && !FILTERS.vida.includes(labelVida(t.cicloVida))) return false;
+    return true;
+  });
+}
+
+function renderDescarte() {
+  if (!document.getElementById('descValue') || !DATA.tires) return;
+  const tires = descTires();
+  const nTotal = tires.length;
+  const nDesc = tires.filter(DESC_DESCARTADO).length;
+  const pct = nTotal ? (nDesc / nTotal) * 100 : 0;
+
+  const hero = document.getElementById('descValue');
+  hero.textContent = fmtBR(pct, 1) + '%';
+  hero.style.color = descCluster(pct);
+  document.getElementById('descTotalUso').textContent = nTotal.toLocaleString('pt-BR');
+  document.getElementById('descTotalDesc').textContent = nDesc.toLocaleString('pt-BR');
+
+  document.getElementById('descNota').innerHTML =
+    'Descarte acumulado = pneus com status <b>DISPOSAL</b> ÷ total de pneus. ' +
+    'Motivos livres do Prolog são agrupados em categorias (de-para). ' +
+    (nDesc === 0 ? '<b style="color:var(--orange)">A frota FEMSA ainda não registrou descartes</b> — o painel popula automaticamente quando os primeiros pneus forem baixados.' : '');
+
+  renderDescarteTable();
+}
+
+function renderDescarteTable() {
+  if (!document.getElementById('tbodyDesc') || !DATA.tires) return;
+  const tires = descTires();
+  const descartados = tires.filter(DESC_DESCARTADO);
+  const thead = document.getElementById('theadDesc'), tbody = document.getElementById('tbodyDesc');
+  const emptyRow = c => '<tr><td colspan="' + c + '" style="text-align:center;color:var(--text-muted);padding:20px">Sem descartes registrados</td></tr>';
+
+  if (descDim === 'motivo') {
+    thead.innerHTML = '<tr><th>Motivo</th><th class="col-dias"># Descartados</th><th class="col-dias">% do Total</th></tr>';
+    const tot = descartados.length || 1;
+    const grp = {};
+    descartados.forEach(t => { const m = motivoCurto(t.motivoDescarte); grp[m] = (grp[m] || 0) + 1; });
+    const rows = Object.entries(grp).map(([k, n]) => ({ k, n, share: n / tot * 100 })).sort((a, b) => b.n - a.n);
+    tbody.innerHTML = rows.map(r =>
+      '<tr><td>' + r.k + '</td><td class="col-dias" style="text-align:right">' + r.n.toLocaleString('pt-BR') +
+      '</td><td class="col-dias" style="text-align:right">' + fmtBR(r.share, 1) + '%</td></tr>').join('') || emptyRow(3);
+    return;
+  }
+
+  const dimLabel = { marca: 'Marca', modelo: 'Modelo', vida: 'Vida' }[descDim];
+  const dimGet = { marca: t => t.marca || '—', modelo: t => t.modelo || '—', vida: t => labelVida(t.cicloVida) }[descDim];
+  thead.innerHTML = '<tr><th>' + dimLabel + '</th><th class="col-dias">TT Pneus</th><th class="col-dias"># Descartados</th><th class="col-dias">% Descarte</th></tr>';
+  const grp = {};
+  tires.forEach(t => { const k = dimGet(t); (grp[k] = grp[k] || { total: 0, desc: 0 }).total++; if (DESC_DESCARTADO(t)) grp[k].desc++; });
+  const rows = Object.entries(grp).map(([k, o]) => ({ k, total: o.total, desc: o.desc, pct: o.total ? o.desc / o.total * 100 : 0 })).sort((a, b) => b.pct - a.pct);
+  tbody.innerHTML = rows.map(r =>
+    '<tr><td>' + r.k + '</td><td class="col-dias" style="text-align:right">' + r.total.toLocaleString('pt-BR') +
+    '</td><td class="col-dias" style="text-align:right">' + r.desc.toLocaleString('pt-BR') +
+    '</td><td class="col-dias" style="text-align:right"><span class="td-dias" style="color:' + descCluster(r.pct) + '">' + fmtBR(r.pct, 1) + '%</span></td></tr>').join('') || emptyRow(4);
 }
 
 // ============================================================
