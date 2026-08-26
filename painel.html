@@ -1761,6 +1761,7 @@
           <tbody id="tbodyCpk"></tbody>
         </table>
         </div>
+        <div id="cpkNota" style="font-size:10px;color:var(--text-muted);margin:8px 14px 14px;line-height:1.6"></div>
       </div>
     </div>
 
@@ -2954,9 +2955,17 @@ function fmtKm(v) {
 }
 function fmtCPK(v) { return 'R$ ' + v.toFixed(3).replace('.', ','); }
 
+// CPK só é confiável com km rodado suficiente. Pneu recém-instalado tem o custo
+// dividido por quase nada -> CPK explode (ex.: pneu de 2 km = R$ 400/km). Regra:
+// exige >= CPK_MIN_KM rodados e CPK <= CPK_MAX (fisicamente impossível acima disso).
+const CPK_MIN_KM = 2000;
+const CPK_MAX = 2;
+
 function renderCPK() {
   if (!document.getElementById('cpkHeroVal')) return;
-  const tires = getFilteredTires().filter(t => t.status === 'INSTALLED' && t.cpk > 0);
+  const base = getFilteredTires().filter(t => t.status === 'INSTALLED' && t.cpk > 0);
+  const tires = base.filter(t => (t.kmRodados || 0) >= CPK_MIN_KM && t.cpk <= CPK_MAX);
+  const excluidos = base.length - tires.length;
 
   const media = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
   const cpkMedio = media(tires.map(t => t.cpk));
@@ -2991,6 +3000,10 @@ function renderCPK() {
   } else {
     ['cpkCardMelhor','cpkCardPior'].forEach(id => document.getElementById(id).textContent = '—');
   }
+
+  document.getElementById('cpkNota').innerHTML =
+    `Regra anti-outlier: pneus com <b>menos de ${CPK_MIN_KM.toLocaleString('pt-BR')} km</b> rodados ou <b>CPK &gt; R$ ${fmtBR(CPK_MAX, 2)}/km</b> ficam fora — o custo/km só estabiliza depois de rodar. ` +
+    (excluidos > 0 ? `<b style="color:var(--orange)">${excluidos} pneus recém-instalados excluídos</b> deste cálculo (o CPK deles ainda não é representativo).` : '');
 
   // Ranking pelo drill (vida / marca / modelo / banda)
   const drill = CPK_DRILL;
