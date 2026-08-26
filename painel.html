@@ -2960,6 +2960,7 @@ function fmtCPK(v) { return 'R$ ' + v.toFixed(3).replace('.', ','); }
 // exige >= CPK_MIN_KM rodados e CPK <= CPK_MAX (fisicamente impossível acima disso).
 const CPK_MIN_KM = 2000;
 const CPK_MAX = 2;
+const CPK_MIN_N = 10;   // grupo só entra no ranking com amostragem > 10 pneus
 
 function renderCPK() {
   if (!document.getElementById('cpkHeroVal')) return;
@@ -2982,7 +2983,7 @@ function renderCPK() {
   tires.forEach(t => { (porMarca[t.marca || '—'] = porMarca[t.marca || '—'] || []).push(t); });
   const marcasRank = Object.entries(porMarca)
     .map(([m, ts]) => ({ m, cpk: media(ts.map(t => t.cpk)), n: ts.length }))
-    .filter(x => x.n >= 2)
+    .filter(x => x.n > CPK_MIN_N)
     .sort((a, b) => a.cpk - b.cpk);
 
   // Cards
@@ -3002,8 +3003,9 @@ function renderCPK() {
   }
 
   document.getElementById('cpkNota').innerHTML =
-    `Regra anti-outlier: pneus com <b>menos de ${CPK_MIN_KM.toLocaleString('pt-BR')} km</b> rodados ou <b>CPK &gt; R$ ${fmtBR(CPK_MAX, 2)}/km</b> ficam fora — o custo/km só estabiliza depois de rodar. ` +
-    (excluidos > 0 ? `<b style="color:var(--orange)">${excluidos} pneus recém-instalados excluídos</b> deste cálculo (o CPK deles ainda não é representativo).` : '');
+    `Regra anti-outlier: pneus com <b>menos de ${CPK_MIN_KM.toLocaleString('pt-BR')} km</b> rodados ou <b>CPK &gt; R$ ${fmtBR(CPK_MAX, 2)}/km</b> ficam fora — o custo/km só estabiliza depois de rodar` +
+    (excluidos > 0 ? ` (<b style="color:var(--orange)">${excluidos} pneus recém-instalados excluídos</b>)` : '') + '. ' +
+    `Além disso, o ranking mostra apenas grupos com <b>amostragem &gt; ${CPK_MIN_N} pneus</b> — grupos menores não têm base estatística confiável e são omitidos.`;
 
   // Ranking pelo drill (vida / marca / modelo / banda)
   const drill = CPK_DRILL;
@@ -3037,6 +3039,7 @@ function renderCPK() {
         cpk: media(ts.map(t => t.cpk))
       };
     })
+    .filter(r => r.n > CPK_MIN_N)   // amostragem mínima: só grupos com > 10 pneus
     .sort((a, b) => a.cpk - b.cpk);
 
   const corMM = v => v === null ? 'var(--text)' : v > 6 ? 'var(--green)' : v > 3 ? 'var(--yellow)' : 'var(--red-soft)';
