@@ -121,7 +121,8 @@ body{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-s
 .s-user .av{flex:0 0 24px;}
 .av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-size:9px;font-weight:800;letter-spacing:.2px;color:#fff;background:#E30613;flex:0 0 24px;
-  box-shadow:0 1px 4px rgba(0,0,0,.25);}
+  box-shadow:0 1px 4px rgba(0,0,0,.25);overflow:hidden;}
+.av img{width:100%;height:100%;object-fit:cover;display:block;}
 .s-sair{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;
   color:var(--txt3);text-decoration:none;flex:0 0 26px;}
 .s-sair:hover{background:var(--hover);color:var(--txt);}
@@ -200,6 +201,17 @@ body.claro .ms-panel{box-shadow:0 18px 44px rgba(15,23,42,.20), 0 3px 10px rgba(
 /* gráficos */
 .gr2{flex:1 1 auto;min-height:190px;max-height:44vh;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 #vw-resumo .gr2{max-height:none;}
+/* gráfico alinhado com os 3 primeiros cards, tabela com os 2 últimos (mesmo gap dos KPIs) */
+.gr32{grid-template-columns:calc((100% - 40px)*3/5 + 20px) 1fr;gap:10px;}
+.dest{flex:1;min-height:0;overflow:auto;margin-top:4px;}
+.dest .dl{font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;padding:8px 0 4px;}
+.dest .dr{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--linha);font-size:12px;}
+.dest .dr .pos{width:22px;font-size:10px;font-weight:700;color:var(--txt3);}
+.dest .dr .nm{flex:1;min-width:0;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dest .dr .av2{font-size:10px;font-weight:600;color:var(--txt3);}
+.dest .dr .vl{font-weight:800;color:var(--txt);min-width:64px;text-align:right;}
+.dest .dr .bar{height:4px;border-radius:2px;background:#E30613;opacity:.75;}
+@media(max-width:860px){ .gr32{display:block;} }
 #vw-rank .gr2{max-height:none;min-height:260px;}
 @media(min-width:861px) and (max-height:820px){
   .kpi{padding:11px 14px;}
@@ -348,7 +360,7 @@ table.dre td.muted{color:var(--txt4);}
     </a>
 
     <div class="s-user">
-      <div class="av" id="euAv">FE</div>
+      <div class="av" id="euAv"><img src="../logo-femsa.png" alt="FEMSA"></div>
       <div><b id="euNome">FEMSA · Gestão de Frota</b><i id="euSub">Manutenções × Orçado</i></div>
       <a class="s-sair" href="../" title="Voltar ao hub">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -428,19 +440,19 @@ table.dre td.muted{color:var(--txt4);}
           <div class="kpi"><div class="kl">Orçado</div><div class="kv" id="c-orc">—</div><div class="km">Período filtrado</div></div>
           <div class="kpi"><div class="kl">Realizado</div><div class="kv" id="c-real">—</div><div class="km">Atingimento: <b id="c-real-at">—</b></div></div>
           <div class="kpi"><div class="kl">Δ Orçado</div><div class="kv" id="c-dorc-v">—</div><div class="km"><b id="c-dorc-p">—</b></div></div>
-          <div class="kpi"><div class="kl">Peças</div><div class="kv" id="c-pec">—</div><div class="km">AV: <b id="c-pec-av">—</b></div></div>
-          <div class="kpi"><div class="kl">Mão de obra</div><div class="kv" id="c-mo">—</div><div class="km">AV: <b id="c-mo-av">—</b></div></div>
+          <div class="kpi"><div class="kl">Placas atendidas</div><div class="kv" id="c-placas">—</div><div class="km">Custo/placa: <b id="c-placas-m">—</b></div></div>
+          <div class="kpi"><div class="kl">Fornecedores</div><div class="kv" id="c-forn">—</div><div class="km">Top 1: <b id="c-forn-top">—</b></div></div>
         </div>
 
         <div class="kpis">
           <div class="kpi"><div class="kl">Corretiva</div><div class="kv" id="c-corr">—</div><div class="km">AV: <b id="c-corr-av">—</b></div></div>
           <div class="kpi"><div class="kl">Preventiva</div><div class="kv" id="c-prev">—</div><div class="km">AV: <b id="c-prev-av">—</b></div></div>
           <div class="kpi"><div class="kl">Pneus</div><div class="kv" id="c-pneu">—</div><div class="km">AV: <b id="c-pneu-av">—</b></div></div>
-          <div class="kpi"><div class="kl">Placas atendidas</div><div class="kv" id="c-placas">—</div><div class="km">Custo/placa: <b id="c-placas-m">—</b></div></div>
-          <div class="kpi"><div class="kl">Fornecedores</div><div class="kv" id="c-forn">—</div><div class="km">Top 1: <b id="c-forn-top">—</b></div></div>
+          <div class="kpi"><div class="kl">Peças</div><div class="kv" id="c-pec">—</div><div class="km">AV: <b id="c-pec-av">—</b></div></div>
+          <div class="kpi"><div class="kl">Mão de obra</div><div class="kv" id="c-mo">—</div><div class="km">AV: <b id="c-mo-av">—</b></div></div>
         </div>
 
-        <div class="gr2">
+        <div class="gr2 gr32">
           <div class="card gcard">
             <div class="gtit">Custo Mensal (BRL)</div>
             <div class="gsub">Realizado × Orçado</div>
@@ -448,10 +460,9 @@ table.dre td.muted{color:var(--txt4);}
             <div class="gcv"><canvas id="ch-mensal"></canvas></div>
           </div>
           <div class="card gcard">
-            <div class="gtit">Acumulado no Ano (BRL)</div>
-            <div class="gsub">Realizado acumulado × Orçado acumulado</div>
-            <div class="gleg"><span style="color:var(--txt2)"><i class="sq"></i>Realizado acum.</span><span style="color:var(--txt)"><i></i>Orçado acum.</span></div>
-            <div class="gcv"><canvas id="ch-acum"></canvas></div>
+            <div class="gtit">Destaques</div>
+            <div class="gsub">Ranking de fornecedores · custo realizado no período</div>
+            <div class="dest" id="dest-forn"></div>
           </div>
         </div>
       </section>
@@ -785,11 +796,23 @@ function atualizar(){
   set('c-placas', a.placas.size.toLocaleString('pt-BR')); set('c-placas-m', a.placas.size?fmt(a.real/a.placas.size):'—');
   const fornArr=Object.entries(a.forn).sort((x,y)=>y[1]-x[1]);
   set('c-forn', fornArr.length.toLocaleString('pt-BR')); set('c-forn-top', fornArr.length?fornArr[0][0]:'—');
+  renderDestaques(fornArr, a.real);
 
   renderCharts(f);
   renderAnalise(rows, ytdRows, orc, orcY, a, ay);
   renderRank(rows);
   renderLanc();
+}
+
+/* ── destaques: ranking de fornecedores ao lado do gráfico ── */
+function renderDestaques(arr, total){
+  const el=$('dest-forn'); if(!el) return;
+  const top=arr.filter(p=>p[0]!=='—'&&p[1]>0).slice(0,10), mx=top.length?top[0][1]:1;
+  el.innerHTML = top.length ? `<div class="dl">Maiores custos</div>`+top.map((p,i)=>
+    `<div class="dr"><span class="pos">${i+1}º</span><span class="nm" title="${esc(p[0])}">${esc(p[0])}</span>`+
+    `<span class="av2">${total?pctAbs(p[1]/total*100):''}</span><span class="vl">${fmt(p[1])}</span></div>`+
+    `<div class="bar" style="width:${Math.round(p[1]/mx*100)}%"></div>`).join('')
+  : `<div class="dl">Sem fornecedores no período</div>`;
 }
 
 /* ── gráficos do Resumo ── */
@@ -865,9 +888,6 @@ function renderCharts(f){
   if(charts.mensal) charts.mensal.destroy();
   charts.mensal=new Chart($('ch-mensal'),{type:'line',data:{labels:lbls,datasets:[dsReal(dReal,'Realizado',dOrc), dsLin(dOrc,'Orçado',orcC)]},
     plugins:plugDL,options:opt(sc(padBounds([dReal,dOrc],0.12,0.06)))});
-  if(charts.acum) charts.acum.destroy();
-  charts.acum=new Chart($('ch-acum'),{type:'line',data:{labels:lbls,datasets:[dsReal(cReal,'Realizado acum.',cOrc), dsLin(cOrc,'Orçado acum.',orcC)]},
-    plugins:plugDL,options:opt(sc(padBounds([cReal,cOrc],0.12,0.06)))});
 }
 
 /* ── rankings (barra horizontal, top 10, vermelho FEMSA) ── */
