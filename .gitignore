@@ -1,3 +1,10 @@
 proxy.gs
 loader.gs
 *.gs
+
+.claude/
+*.pptx
+*.csv
+CPK-regras-outlier.md
+gerar_ppt.ps1
+
