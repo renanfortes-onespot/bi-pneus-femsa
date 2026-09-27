@@ -98,7 +98,10 @@ function fixTxt(s){
   catch(e){ return s.trim(); }
 }
 function pad(n){ return String(n).padStart(2,'0'); }
-function toNum(v){ if(typeof v==='number') return v; if(!v) return 0; return parseFloat(String(v).replace(/\./g,'').replace(',','.'))||0; }
+// aceita "821,212.45" (US, como o gviz devolve) e "821.212,45" (BR): o ÚLTIMO separador é o decimal
+function toNum(v){ if(typeof v==='number') return v; if(!v) return 0; let s=String(v).trim(); const lc=s.lastIndexOf(','), ld=s.lastIndexOf('.');
+  if(lc>=0&&ld>=0){ s = lc>ld ? s.replace(/\./g,'').replace(',','.') : s.replace(/,/g,''); } else if(lc>=0){ s=s.replace(',','.'); }
+  return parseFloat(s.replace(/[^0-9.\-]/g,''))||0; }
 
 function lerArquivo(){
   const f=document.getElementById('fileOS').files[0]; if(!f) return;
