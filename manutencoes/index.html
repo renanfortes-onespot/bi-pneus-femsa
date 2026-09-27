@@ -473,24 +473,18 @@ table.dre td.muted{color:var(--txt4);}
           <div class="thead-row">
             <div><div class="ttit">Custos Frota por Dimensão</div><div class="tsub" id="sub-analise">—</div></div>
             <div class="dims">
-              <button class="dimb dim-an on" data-dim="tipo" onclick="setAnDim('tipo')">Tipo</button>
-              <button class="dimb dim-an" data-dim="codigo" onclick="setAnDim('codigo')">Código</button>
+              <button class="dimb dim-an on" data-dim="codigo" onclick="setAnDim('codigo')">Tipo de Manutenção</button>
               <button class="dimb dim-an" data-dim="placa" onclick="setAnDim('placa')">Placa</button>
               <button class="dimb dim-an" data-dim="fornecedor" onclick="setAnDim('fornecedor')">Fornecedor</button>
-              <button class="dimb dim-an" data-dim="cidade" onclick="setAnDim('cidade')">Cidade</button>
-              <button class="dimb dim-an" data-dim="status" onclick="setAnDim('status')">Status</button>
             </div>
           </div>
           <div class="twrap">
             <table class="dre"><thead><tr>
-              <th id="th-an-dim">TIPO</th>
-              <th class="num">REAL</th><th class="num">AV %</th>
-              <th class="num sep-l">Nº OS</th><th class="num">TICKET MÉDIO</th>
-              <th class="num sep-l">PEÇAS</th><th class="num">MÃO DE OBRA</th>
-              <th class="num sep-l">YTD</th><th class="num">AV YTD %</th>
+              <th id="th-an-dim">TIPO DE MANUTENÇÃO</th>
+              <th class="num">REALIZADO</th><th class="num">% DO TOTAL</th><th class="num">% DO ORÇAMENTO</th>
             </tr></thead><tbody id="body-analise"></tbody></table>
           </div>
-          <div class="nota">O orçado é da frota como um todo (planilha mensal), por isso aparece só na linha de referência e no total: Δ = Orçado − Realizado (verde quando sobra, vermelho quando estoura). AV = participação de cada linha no realizado do período. YTD = acumulado do ano até a última vigência filtrada.</div>
+          <div class="nota">Ordenado do maior para o menor gasto. % do Total = participação no realizado do período; % do Orçamento = quanto cada linha consome do orçado da frota no período (planilha mensal). Na linha de total, o % do Orçamento é o atingimento: verde até 100%, vermelho acima.</div>
         </div>
       </section>
 
@@ -538,7 +532,7 @@ const SB_URL='https://qqcnavptvfcthuidzipj.supabase.co';
 const SB_KEY='sb_publishable_6GvYIjIoAYQSzFaWTiSptQ_VP8ravoC';
 const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const DIMS=['tipo','codigo','placa','fornecedor','cidade','status'];
-const DIM_LBL={tipo:'TIPO',codigo:'CÓDIGO',placa:'PLACA',fornecedor:'FORNECEDOR',cidade:'CIDADE',status:'STATUS'};
+const DIM_LBL={codigo:'TIPO DE MANUTENÇÃO',placa:'PLACA',fornecedor:'FORNECEDOR'};
 
 /* ── formatadores ── */
 const fmt  = v => { const neg=+v<0,a=Math.abs(+v||0); let s; if(a>=1e9) s=(a/1e9).toFixed(2)+' bi'; else if(a>=1e6) s=(a/1e6).toFixed(2)+' mi'; else if(a>=1e5) s=(a/1e3).toFixed(2)+'k'; else s=Math.round(a).toLocaleString('pt-BR'); return (neg?'-':'')+s; };
@@ -566,7 +560,7 @@ const vigLabel = d => { const vk=vigKey(d); const [y,m]=vk.split('-'); return ME
 
 /* ── estado ── */
 let OS=[], ORC=[], vigs=[], lastF=null, FONTE='banco';
-let anDim='tipo', VW='resumo';
+let anDim='codigo', VW='resumo';
 const charts={};
 
 /* ── multi-select (mesma mecânica do portal) ── */
@@ -916,29 +910,18 @@ function renderRank(rows){
 
 /* ── análise por dimensão ── */
 function renderAnalise(rows, ytdRows, orc, orcY, a, ay){
-  const m=aggBy(rows,anDim), my=aggBy(ytdRows,anDim);
-  const d=orc-a.real, dp=orc?d/Math.abs(orc)*100:null, bad=d<0;
-  const dy=orcY-ay.real, dyp=orcY?dy/Math.abs(orcY)*100:null, bady=dy<0;
+  const m=aggBy(rows,anDim);
+  const d=orc-a.real, dp=orc?d/Math.abs(orc)*100:null;
+  const at=orc?a.real/orc*100:null, bad=at!=null&&at>100;
   set('sub-analise', `Realizado ${fmt(a.real)} × Orçado ${fmt(orc)} · Δ ${fmtD(d)} (${pctInt(dp)})`);
-  let html=`<tr class="ref-row"><td class="conta">Orçado</td><td class="num">${fmt(orc)}</td><td class="num">—</td>`+
-    `<td class="num sep-l">—</td><td class="num">—</td><td class="num sep-l">—</td><td class="num">—</td>`+
-    `<td class="num sep-l">${fmt(orcY)}</td><td class="num">—</td></tr>`;
+  let html='';
   Object.keys(m).sort((x,y)=>m[y].real-m[x].real).forEach(k=>{
-    const x=m[k], y=my[k]||{real:0};
-    html+=`<tr><td class="conta">${esc(k)}</td><td class="num" data-v="${x.real}">${fmt(x.real)}</td><td class="num">${a.real?pctAbs(x.real/a.real*100):'—'}</td>`+
-      `<td class="num sep-l">${x.n}</td><td class="num" data-v="${x.n?x.real/x.n:0}">${x.n?fmt(x.real/x.n):'—'}</td>`+
-      `<td class="num sep-l" data-v="${x.pec}">${fmt(x.pec)}</td><td class="num" data-v="${x.mo}">${fmt(x.mo)}</td>`+
-      `<td class="num sep-l" data-v="${y.real}">${fmt(y.real)}</td><td class="num">${ay.real?pctAbs(y.real/ay.real*100):'—'}</td></tr>`;
+    const x=m[k];
+    html+=`<tr><td class="conta">${esc(k)}</td><td class="num" data-v="${x.real}">${fmt(x.real)}</td>`+
+      `<td class="num">${a.real?pctAbs(x.real/a.real*100):'—'}</td><td class="num">${orc?pctAbs(x.real/orc*100):'—'}</td></tr>`;
   });
-  html+=`<tr class="total"><td class="conta">Total Realizado</td>`+
-    `<td class="num">${fmt(a.real)}</td><td class="num">100,0%</td>`+
-    `<td class="num sep-l">${a.n}</td><td class="num">${a.n?fmt(a.real/a.n):'—'}</td>`+
-    `<td class="num sep-l">${fmt(a.pec)}</td><td class="num">${fmt(a.mo)}</td>`+
-    `<td class="num sep-l">${fmt(ay.real)}</td><td class="num">100,0%</td></tr>`;
-  html+=`<tr class="total"><td class="conta">Δ Orçado − Realizado</td>`+
-    `<td class="num ${bad?'cr':'cg'}">${fmtD(d)}</td><td class="num ${bad?'cr-t':'cg-t'}">${pctInt(dp)}</td>`+
-    `<td class="num sep-l">—</td><td class="num">—</td><td class="num sep-l">—</td><td class="num">—</td>`+
-    `<td class="num sep-l ${bady?'cr':'cg'}">${fmtD(dy)}</td><td class="num ${bady?'cr-t':'cg-t'}">${pctInt(dyp)}</td></tr>`;
+  html+=`<tr class="total"><td class="conta">Total Realizado <span class="pill">Orçado ${fmt(orc)}</span></td>`+
+    `<td class="num">${fmt(a.real)}</td><td class="num">100,0%</td><td class="num ${bad?'cr':'cg'}">${at!=null?pctAbs(at):'—'}</td></tr>`;
   $('body-analise').innerHTML=html;
 }
 function setAnDim(dim){
