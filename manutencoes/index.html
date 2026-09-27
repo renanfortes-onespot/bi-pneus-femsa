@@ -215,7 +215,6 @@ body.claro .ms-panel{box-shadow:0 18px 44px rgba(15,23,42,.20), 0 3px 10px rgba(
 .dest .dr .vl{font-weight:800;color:var(--txt);min-width:64px;text-align:right;}
 .dest .dr .bar{height:4px;border-radius:2px;background:#E30613;opacity:.75;}
 @media(max-width:860px){ .gr32{display:block;} }
-#vw-rank .gr2{max-height:none;min-height:260px;}
 @media(min-width:861px) and (max-height:820px){
   .kpi{padding:11px 14px;}
   .kpi .kv{font-size:21px;margin-top:5px;}
@@ -341,10 +340,6 @@ table.dre td.muted{color:var(--txt4);}
     <button class="s-item" data-vw="analise">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
       Análise por Dimensão
-    </button>
-    <button class="s-item" data-vw="rank">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h4V9H3zM10 17h4V4h-4zM17 17h4v-5h-4z"/></svg>
-      Rankings
     </button>
     <button class="s-item" data-vw="lanc">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/></svg>
@@ -491,19 +486,7 @@ table.dre td.muted{color:var(--txt4);}
         </div>
       </section>
 
-      <!-- ══ 3 · RANKINGS ══ -->
-      <section class="vw" id="vw-rank">
-        <div class="gr2">
-          <div class="card gcard"><div class="gtit">Top 10 · Placas</div><div class="gsub">Custo realizado no período</div><div class="gcv"><canvas id="ch-placa"></canvas></div></div>
-          <div class="card gcard"><div class="gtit">Top 10 · Fornecedores</div><div class="gsub">Custo realizado no período</div><div class="gcv"><canvas id="ch-forn"></canvas></div></div>
-        </div>
-        <div class="gr2">
-          <div class="card gcard"><div class="gtit">Top 10 · Códigos de Manutenção</div><div class="gsub">Custo realizado no período</div><div class="gcv"><canvas id="ch-cod"></canvas></div></div>
-          <div class="card gcard"><div class="gtit">Top 10 · Cidades</div><div class="gsub">Custo realizado no período</div><div class="gcv"><canvas id="ch-cid"></canvas></div></div>
-        </div>
-      </section>
-
-      <!-- ══ 4 · LANÇAMENTOS ══ -->
+      <!-- ══ 3 · LANÇAMENTOS ══ -->
       <section class="vw" id="vw-lanc">
         <div class="card tsec">
           <div class="thead-row">
@@ -797,7 +780,6 @@ function atualizar(){
 
   renderCharts(f);
   renderAnalise(rows, ytdRows, orc, orcY, a, ay);
-  renderRank(rows);
   renderLanc();
 }
 
@@ -887,30 +869,6 @@ function renderCharts(f){
     plugins:plugDL,options:opt(sc(padBounds([dReal,dOrc],0.12,0.06)))});
 }
 
-/* ── rankings (barra horizontal, top 10, vermelho FEMSA) ── */
-const isClaro=()=>document.body.classList.contains('claro');
-const getTick=(sz=10)=>({color:isClaro()?'#4A5568':'#B2BCD2',font:{family:'Montserrat',size:sz}});
-const labelPlugin={afterDatasetsDraw(chart){const meta=chart.getDatasetMeta(0),ds=chart.data.datasets[0];if(!meta)return;const ctx=chart.ctx;ctx.save();ctx.font='700 10px Montserrat,sans-serif';ctx.fillStyle=isClaro()?'#161D2B':'#EEF2FA';ctx.textAlign='left';ctx.textBaseline='middle';ds.data.forEach((v,i)=>{const pt=meta.data[i];if(!pt||v==null)return;ctx.fillText(fmt(v),pt.x+6,pt.y);});ctx.restore();}};
-function barChart(id,pairs,max){
-  const top=pairs.slice(0,max||10);
-  if(charts[id])charts[id].destroy();
-  if(!$(id))return;
-  const TT={backgroundColor:isClaro()?'#FFFFFF':'#1B1B1E',titleColor:'#E30613',bodyColor:isClaro()?'#161D2B':'#EEF2FA',borderColor:isClaro()?'#d7dce4':'#33343A',borderWidth:1,titleFont:{family:'Montserrat'},bodyFont:{family:'Montserrat'}};
-  charts[id]=new Chart($(id),{type:'bar',
-    data:{labels:top.map(p=>p[0]),datasets:[{data:top.map(p=>p[1]),backgroundColor:'#E30613A6',borderColor:'#E30613',borderWidth:1,borderRadius:3}]},
-    plugins:[labelPlugin],
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,layout:{padding:{right:48}},
-      plugins:{legend:{display:false},tooltip:Object.assign({callbacks:{label:c=>fmt(c.raw)}},TT)},
-      scales:{y:{grid:{display:false},border:{display:false},ticks:Object.assign({autoSkip:false,callback:function(v){const l=this.getLabelForValue(v);return l.length>18?l.slice(0,17)+'…':l;}},getTick())},
-        x:{display:false,beginAtZero:true,grace:'8%'}}}});
-}
-function renderRank(rows){
-  if(VW!=='rank') return;
-  const top=key=>Object.entries(aggBy(rows,key)).map(([k,v])=>[k,v.real]).filter(p=>p[0]!=='—'&&p[1]>0).sort((a,b)=>b[1]-a[1]);
-  barChart('ch-placa',top('placa')); barChart('ch-forn',top('fornecedor'));
-  barChart('ch-cod',top('codigo'));  barChart('ch-cid',top('cidade'));
-}
-
 /* ── análise por dimensão ── */
 function renderAnalise(rows, ytdRows, orc, orcY, a, ay){
   const m=aggBy(rows,anDim);
@@ -951,13 +909,13 @@ function renderLanc(){
 }
 
 /* ── navegação entre as visões ── */
-const TIT={resumo:'Resumo Gerencial',analise:'Análise por Dimensão',rank:'Rankings',lanc:'Lançamentos (OS)'};
+const TIT={resumo:'Resumo Gerencial',analise:'Análise por Dimensão',lanc:'Lançamentos (OS)'};
 function setVw(v){
   VW=v;
   document.querySelectorAll('.s-item[data-vw]').forEach(b=>b.classList.toggle('on',b.dataset.vw===v));
   document.querySelectorAll('.vw').forEach(s=>s.classList.toggle('on', s.id==='vw-'+v));
   set('tit', TIT[v]||'');
-  if(lastF) setTimeout(()=>{ if(v==='resumo') renderCharts(lastF); if(v==='rank') renderRank(filterOS(lastF)); },30);
+  if(lastF && v==='resumo') setTimeout(()=>renderCharts(lastF),30);
 }
 document.querySelectorAll('.s-item[data-vw]').forEach(b=>b.addEventListener('click',()=>setVw(b.dataset.vw)));
 
@@ -986,7 +944,7 @@ function trocaMini(){
   const l=document.querySelector('.side').classList.toggle('mini');
   localStorage.setItem('frota_mini', l?'1':'0');
   const b=$('btMini'); if(b) b.title=l?'Expandir menu':'Recolher menu';
-  if(lastF) setTimeout(()=>{ renderCharts(lastF); renderRank(filterOS(lastF)); },260);
+  if(lastF) setTimeout(()=>renderCharts(lastF),260);
 }
 if(localStorage.getItem('frota_mini')==='1'){ document.querySelector('.side').classList.add('mini'); $('btMini').title='Expandir menu'; }
 
@@ -997,7 +955,7 @@ function aplicaTema(t){
   document.body.classList.toggle('claro', t==='light');
   localStorage.setItem('bi_theme', t);
   const b=$('btTema'); if(b) b.innerHTML = t==='light'?_LUA:_SOL;
-  if(lastF){ renderCharts(lastF); renderRank(filterOS(lastF)); }
+  if(lastF) renderCharts(lastF);
 }
 function trocaTema(){ aplicaTema(document.body.classList.contains('claro')?'dark':'light'); }
 aplicaTema(localStorage.getItem('bi_theme')||'dark');
@@ -1043,7 +1001,7 @@ async function recarregar(){
 }
 document.addEventListener('DOMContentLoaded',recarregar);
 let _rt;
-window.addEventListener('resize',()=>{ clearTimeout(_rt); _rt=setTimeout(()=>{ if(lastF){ renderCharts(lastF); renderRank(filterOS(lastF)); } },400); });
+window.addEventListener('resize',()=>{ clearTimeout(_rt); _rt=setTimeout(()=>{ if(lastF) renderCharts(lastF); },400); });
 </script>
 <script src="../assets/mobile.js?v=202609271200"></script>
 <script src="../assets/sortable-table.js?v=202609271200"></script>
