@@ -43,6 +43,14 @@
     box-shadow: 0 2px 16px rgba(0,0,0,0.3);
   }
 
+  .hub-back {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(227,6,19,0.12); border: 1px solid rgba(227,6,19,0.22);
+    color: #E30613; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px;
+    padding: 9px 16px; border-radius: 8px; text-decoration: none; white-space: nowrap;
+  }
+  .hub-back:hover { background: rgba(227,6,19,0.25); }
+  .hub-back svg { width: 13px; height: 13px; stroke: #E30613; fill: none; }
   .hub-brand h1 {
     font-size: 24px; font-weight: 800;
     color: var(--text); letter-spacing: 1px;
@@ -186,6 +194,10 @@
   <div class="hub-brand">
     <h1>BI Gestão de Pneus</h1>
   </div>
+  <a class="hub-back" href="./" title="Voltar ao hub Gestão de Frota">
+    <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Hub
+  </a>
 </header>
 
 <div class="hub-content">
