@@ -920,7 +920,7 @@ function renderAnalise(rows, ytdRows, orc, orcY, a, ay){
     html+=`<tr><td class="conta">${esc(k)}</td><td class="num" data-v="${x.real}">${fmt(x.real)}</td>`+
       `<td class="num">${a.real?pctAbs(x.real/a.real*100):'—'}</td><td class="num">${orc?pctAbs(x.real/orc*100):'—'}</td></tr>`;
   });
-  html+=`<tr class="total"><td class="conta">Total Realizado <span class="pill">Orçado ${fmt(orc)}</span></td>`+
+  html+=`<tr class="total"><td class="conta">Total Realizado</td>`+
     `<td class="num">${fmt(a.real)}</td><td class="num">100,0%</td><td class="num ${bad?'cr':'cg'}">${at!=null?pctAbs(at):'—'}</td></tr>`;
   $('body-analise').innerHTML=html;
 }
