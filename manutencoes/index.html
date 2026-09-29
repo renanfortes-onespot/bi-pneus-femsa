@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="202609291425">
+<meta name="build" content="202609291443">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Custos Frota · Manutenções FEMSA</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -846,7 +846,8 @@ function renderCharts(f){
       const o=ref&&ref[i]!=null?ref[i]:null; return (o==null||v>o)?vermelho:verde; });
     return {type:'bar',label,data,backgroundColor:bg,borderColor:bc,borderWidth:1,borderRadius:3,order:2};
   }
-  const dsLin=(data,label,c)=>({type:'line',label,data,borderColor:c,borderWidth:2.5,tension:.3,fill:false,
+  // monotone: a curva passa pelos pontos sem "barriga" acima do maior valor
+  const dsLin=(data,label,c)=>({type:'line',label,data,borderColor:c,borderWidth:2.5,cubicInterpolationMode:'monotone',fill:false,
     borderDash:[5,3],pointRadius:mkR(data),pointBackgroundColor:mkBg(data,c),pointBorderColor:mkBg(data,c),
     pointBorderWidth:mkBw(data),order:1});
   const tickC=isLight?'#4A5568':'#B2BCD2';
@@ -878,7 +879,17 @@ function renderCharts(f){
     plugins:{legend:{display:false},tooltip,datalabels:dl(fmt)},scales:s});
   if(charts.mensal) charts.mensal.destroy();
   charts.mensal=new Chart($('ch-mensal'),{type:'line',data:{labels:lbls,datasets:[dsReal(dReal,'Realizado',dOrc), dsLin(dOrc,'Orçado',orcC)]},
-    plugins:plugDL,options:opt(sc(padBounds([dReal,dOrc],0.12,0.06)))});
+    plugins:plugDL,options:opt(sc(escalaSuave([dReal,dOrc])))});
+  /* ESCALA SUAVE (Renan, 29/09/2026: "é legal ter a perspectiva, mas está exagerada"). A janela
+     justa do padBounds começava em ~700k: 711k e 810k — 14% de diferença — pareciam o chão e o
+     teto. Aqui o eixo começa na METADE do menor valor: a diferença continua visível, mas na
+     proporção certa (começar do zero achataria tudo). */
+  function escalaSuave(arrs){
+    const v=[]; arrs.forEach(a=>(a||[]).forEach(x=>{ if(x!=null&&isFinite(x)) v.push(+x); }));
+    if(!v.length) return null;
+    const mn=Math.min(...v), mx=Math.max(...v);
+    return {min:Math.max(0,mn*0.5), max:mx*1.12};
+  }
 }
 
 /* ── análise por dimensão ── */
