@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="202609291144">
+<meta name="build" content="202609291151">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Importar · Custos Frota — FEMSA</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -96,7 +96,8 @@ td.n,th.n{text-align:right;} td.f{color:var(--txt);font-weight:600;}
 
   <div class="ajuda">
     <b>Relatório de OS</b> — o arquivo <i>RelGeralOsCadastradas</i> como sai do sistema. Cabeçalhos, blocos e linhas de total são ignorados; o mês de cada OS vem da data de entrada e o valor é o <i>Valor Total Aprovado</i>.<br>
-    <b>Orçamento</b> — não precisa importar: o painel lê direto da planilha Google de orçamento. Basta preencher lá e clicar em <i>Atualizar dados</i> no painel.
+    <b>Orçamento</b> — não precisa importar: o painel lê direto da planilha Google de orçamento. Basta preencher lá e clicar em <i>Atualizar dados</i> no painel.<br>
+    <span data-build></span>
   </div>
 </div>
 
@@ -156,6 +157,30 @@ function dataDe(c){
 }
 const iso=t=>t?`${t.y}-${pad(t.m)}-${pad(t.d)}T${pad(t.h)}:${pad(t.i)}:00`:null;
 
+/* TRAVA: o relatório traz o mês por extenso (coluna "Mês") e o período no cabeçalho. Se o mês
+   que saiu da data de entrada não bater com o que o próprio relatório diz, a leitura está errada
+   e a importação é RECUSADA — não grava. (29/09/2026: duas cargas entraram como jan/fev/mar.) */
+const MES_EXT=['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const semAcento=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+function conferir(rows,out){
+  let dif=0;
+  rows.forEach(r=>{
+    if(!r||!r[13]) return;
+    const i=MES_EXT.indexOf(semAcento(r[7])); if(i<0) return;
+    const d=dataDe(r[13]); if(d&&d.m!==i+1) dif++;
+  });
+  if(dif) return `A data de ${dif} OS não bate com o mês informado no próprio relatório. Nada foi gravado — avise o suporte.`;
+  // período do cabeçalho: "01/09/2026 até 03/09/2026"
+  let per=null;
+  rows.some(r=>(r||[]).some(c=>{ const m=String(c||'').match(/(\d{2}\/\d{2}\/\d{4})\s+at[eé]\s+(\d{2}\/\d{2}\/\d{4})/i); if(m){ per=[dataDe(m[1]),dataDe(m[2])]; return true; } }));
+  if(per&&per[0]&&per[1]){
+    const n=t=>t.y*10000+t.m*100+t.d, a=n(per[0]), b=n(per[1]);
+    const fora=out.filter(x=>{ const v=+x.entrada.slice(0,10).replace(/-/g,''); return v<a||v>b; }).length;
+    if(fora) return `${fora} OS estão fora do período do relatório (${pad(per[0].d)}/${pad(per[0].m)}/${per[0].y} a ${pad(per[1].d)}/${pad(per[1].m)}/${per[1].y}). Nada foi gravado — avise o suporte.`;
+  }
+  return null;
+}
+
 function lerOS(rows){
   const out=[]; let semData=0;
   rows.forEach(r=>{
@@ -190,7 +215,11 @@ function abrir(f){
     }
     catch(err){ mostrarErro(f.name,'Não consegui ler o arquivo. Ele abre normalmente no Excel?'); return; }
     const o=lerOS(rows);
-    if(o.out.length){ DADOS=o.out; previaOS(f.name,o.semData); return; }
+    if(o.out.length){
+      const erro=conferir(rows,o.out);
+      if(erro){ DADOS=[]; mostrarErro(f.name,erro); return; }
+      DADOS=o.out; previaOS(f.name,o.semData); return;
+    }
     mostrarErro(f.name,'Não reconheci este arquivo como o relatório de OS (RelGeralOsCadastradas).');
   };
   rd.readAsArrayBuffer(f);
@@ -248,5 +277,6 @@ drop.addEventListener('drop',e=>abrir(e.dataTransfer.files[0]));
 window.addEventListener('dragover',e=>e.preventDefault());
 window.addEventListener('drop',e=>e.preventDefault());
 </script>
+<script src="../assets/build-check.js?v=202609291200"></script>
 </body>
 </html>
