@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="202609291407">
+<meta name="build" content="202609291422">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Custos Frota · Manutenções FEMSA</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -192,7 +192,9 @@ body.claro .ms-panel{box-shadow:0 18px 44px rgba(15,23,42,.20), 0 3px 10px rgba(
 .horc .hmg{font-size:.6em;}
 .hdel div{font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.7px;}
 .hdel b{display:block;font-size:13px;font-weight:800;color:var(--txt);margin-top:2px;letter-spacing:0;text-transform:none;}
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;flex:0 0 auto;}
+/* 6 por fileira desde 29/09/2026: entraram Custo por placa e Custo fixo de contrato */
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;flex:0 0 auto;}
+@media(min-width:1101px) and (max-width:1560px){ .kpi .kv{font-size:26px!important;} .kpi{padding-left:16px!important;padding-right:16px!important;} .kpi .kl,.kpi .km{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .dest .dr .av2{display:none;} }
 /* sem o hero em cima, os cards crescem para manter a proporção da tela (Renan, 29/09/2026) */
 .kpi{padding:28px 20px 34px;border:1px solid var(--card-brd);border-radius:11px;background:var(--side);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
@@ -205,7 +207,7 @@ body.claro .ms-panel{box-shadow:0 18px 44px rgba(15,23,42,.20), 0 3px 10px rgba(
 .gr2{flex:1 1 auto;min-height:190px;max-height:44vh;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 #vw-resumo .gr2{max-height:none;}
 /* gráfico alinhado com os 3 primeiros cards, tabela com os 2 últimos (mesmo gap dos KPIs) */
-.gr32{grid-template-columns:calc((100% - 40px)*3/5 + 20px) 1fr;gap:10px;}
+.gr32{grid-template-columns:calc((100% - 50px)*4/6 + 30px) minmax(0,1fr);gap:10px;}   /* gráfico = 4 cards, tabela = 2 */
 .dest{flex:1;min-height:0;overflow:auto;margin-top:4px;}
 .dest .dl{font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;padding:8px 0 4px;}
 .dest .dr{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--linha);font-size:12px;}
@@ -426,10 +428,12 @@ table.dre td.muted{color:var(--txt4);}
           <div class="kpi"><div class="kl">Realizado</div><div class="kv" id="c-real">—</div><div class="km">Nº OS: <b id="c-real-n">—</b></div></div>
           <div class="kpi"><div class="kl">Δ Orçado</div><div class="kv" id="c-dorc-v">—</div><div class="km"><b id="c-dorc-p">—</b></div></div>
           <div class="kpi"><div class="kl">Atingimento</div><div class="kv" id="c-ating">—</div><div class="km">Realizado ÷ Orçado</div></div>
-          <div class="kpi"><div class="kl">Ticket médio</div><div class="kv" id="c-tkt">—</div><div class="km">Custo/placa: <b id="c-tkt-placa">—</b></div></div>
+          <div class="kpi"><div class="kl">Ticket médio</div><div class="kv" id="c-tkt">—</div><div class="km">Por ordem de serviço</div></div>
+          <div class="kpi"><div class="kl">Custo por placa</div><div class="kv" id="c-placa">—</div><div class="km">Placas atendidas: <b id="c-placa-n">—</b></div></div>
         </div>
 
         <div class="kpis">
+          <div class="kpi"><div class="kl">Custo fixo</div><div class="kv" id="c-fixo">—</div><div class="km" id="c-fixo-m">Contrato · AV: <b id="c-fixo-av">—</b></div></div>
           <div class="kpi"><div class="kl">Corretiva</div><div class="kv" id="c-corr">—</div><div class="km">AV: <b id="c-corr-av">—</b></div></div>
           <div class="kpi"><div class="kl">Preventiva</div><div class="kv" id="c-prev">—</div><div class="km">AV: <b id="c-prev-av">—</b></div></div>
           <div class="kpi"><div class="kl">Pneus</div><div class="kv" id="c-pneu">—</div><div class="km">AV: <b id="c-pneu-av">—</b></div></div>
@@ -678,6 +682,16 @@ function orcPeriodo(f, vk){
     else { if(f.ano.length&&!f.ano.includes(k.slice(0,4))) return a; if(f.vig.length&&!f.vig.includes(k)) return a; }
     return a+(+r.valor||0); },0);
 }
+/* CUSTO FIXO DE CONTRATO (coluna "Valor Fixo Contrato" da planilha): entra no REALIZADO do mês.
+   É um valor da frota inteira, sem placa, tipo nem fornecedor — por isso só entra quando nenhum
+   desses filtros está ligado. Com filtro por placa/tipo/etc. o painel mostra só as OS filtradas. */
+function fixoPeriodo(f, vk){
+  if(DIMS.some(d=>f[d]&&f[d].length)) return 0;
+  return ORC.reduce((a,r)=>{ const k=vigKey(r.vigencia);
+    if(vk){ if(k!==vk) return a; }
+    else { if(f.ano.length&&!f.ano.includes(k.slice(0,4))) return a; if(f.vig.length&&!f.vig.includes(k)) return a; }
+    return a+(+r.fixo||0); },0);
+}
 function populateFilters(){
   const anos=[...new Set([...OS.map(o=>vigKey(o.vigencia).slice(0,4)),...ORC.map(r=>vigKey(r.vigencia).slice(0,4))])].sort().reverse();
   buildMsFilter('ms-ano', anos);
@@ -732,6 +746,9 @@ function atualizar(){
   const rows=filterOS(f), a=agg(rows), orc=orcPeriodo(f);
   const fy={...f, ano:[], vig:getYtdVigs(f)};
   const ytdRows=filterOS(fy), ay=agg(ytdRows), orcY=orcPeriodo(fy);
+  // realizado = OS + custo fixo de contrato; ticket médio continua só sobre as OS
+  a.os=a.real;  a.fixo=fixoPeriodo(f);   a.real+=a.fixo;
+  ay.os=ay.real; ay.fixo=fixoPeriodo(fy); ay.real+=ay.fixo;
 
   // subtítulo
   const per = f.vig.length ? f.vig.slice().sort().map(vk=>vigLabel(vk).toUpperCase()).join(', ')
@@ -745,8 +762,12 @@ function atualizar(){
   set('c-orc', fmt(orc)); set('c-real', fmt(a.real));
   set('c-real-n', a.n.toLocaleString('pt-BR'));
   const cra=$('c-ating'); if(cra){ cra.textContent=at!=null?pctAbs(at):'—'; if(at!=null) colI(cra, at>100); else cra.style.color=''; }
-  set('c-tkt', a.n?fmt(a.real/a.n):'—');
-  set('c-tkt-placa', a.placas.size?fmt(a.real/a.placas.size):'—');
+  set('c-tkt', a.n?fmt(a.os/a.n):'—');
+  set('c-placa', a.placas.size?fmt(a.real/a.placas.size):'—');
+  set('c-placa-n', a.placas.size.toLocaleString('pt-BR'));
+  set('c-fixo', fmt(a.fixo));
+  const filtrado=DIMS.some(k=>f[k]&&f[k].length), cfm=$('c-fixo-m');
+  if(cfm) cfm.innerHTML = filtrado ? 'Fora do filtro' : `Contrato · AV: <b>${a.real?pctAbs(a.fixo/a.real*100):'—'}</b>`;
   const cd=$('c-dorc-v'); if(cd){ cd.textContent=fmtD(d); colI(cd, d<0); }
   setArr($('c-dorc-p'), pct(dp), dp, dp!=null&&dp<0);
   const av=v=>a.real?pctAbs(v/a.real*100):'—';
@@ -792,7 +813,7 @@ function renderCharts(f){
   for(let m=1;m<=12;m++){
     lbls.push(MESES[m-1]+'.');
     const key=`${vy}-${String(m).padStart(2,'0')}`;
-    const real=agg(filterOS(f,null,key)).real, orc=orcPeriodo(f,key);
+    const real=agg(filterOS(f,null,key)).real+fixoPeriodo(f,key), orc=orcPeriodo(f,key);
     dReal.push(real?real:null); dOrc.push(orc?orc:null);
     if(m<=maxReal){ accR+=real; cReal.push(accR); } else cReal.push(null);
     if(orc){ accO+=orc; cOrc.push(accO); } else cOrc.push(accO||null);
@@ -856,6 +877,7 @@ function renderAnalise(rows, ytdRows, orc, orcY, a, ay){
   const at=orc?a.real/orc*100:null, bad=at!=null&&at>100;
   set('sub-analise', `Realizado ${fmt(a.real)} × Orçado ${fmt(orc)} · Δ ${fmtD(d)} (${pctInt(dp)})`);
   let html='';
+  if(a.fixo) m['Custo fixo · contrato']={real:a.fixo};     // linha própria, ordenada junto com as demais
   Object.keys(m).sort((x,y)=>m[y].real-m[x].real).forEach(k=>{
     const x=m[k];
     html+=`<tr><td class="conta">${esc(k)}</td><td class="num" data-v="${x.real}">${fmt(x.real)}</td>`+
@@ -983,11 +1005,12 @@ async function fetchOrcadoPlanilha(){
   const t=await r.text(), j=JSON.parse(t.substring(t.indexOf('{'), t.lastIndexOf('}')+1));
   const out=[];
   (j.table.rows||[]).forEach(row=>{
-    const d=row.c&&row.c[0]&&row.c[0].v, v=row.c&&row.c[1]&&row.c[1].v;
-    if(!d||v==null||v==='') return;
+    const d=row.c&&row.c[0]&&row.c[0].v, v=row.c&&row.c[1]&&row.c[1].v, x=row.c&&row.c[2]&&row.c[2].v;
+    if(!d) return;
     const m=String(d).match(/Date\((\d+),(\d+),(\d+)\)/); if(!m) return;
-    const val=toNum(v); if(!val) return;
-    out.push({vigencia:m[1]+'-'+String(+m[2]+1).padStart(2,'0')+'-01', valor:val});
+    const val=toNum(v), fixo=toNum(x);                    // col. B = orçado · col. C = valor fixo de contrato
+    if(!val&&!fixo) return;
+    out.push({vigencia:m[1]+'-'+String(+m[2]+1).padStart(2,'0')+'-01', valor:val, fixo});
   });
   if(!out.length) throw new Error('planilha sem valores');
   return out;
