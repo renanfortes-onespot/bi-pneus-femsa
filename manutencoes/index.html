@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="202609291217">
+<meta name="build" content="202609291407">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Custos Frota · Manutenções FEMSA</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -318,6 +318,7 @@ table.dre td.muted{color:var(--txt4);}
   .twrap{max-height:none;overflow-x:auto;}
 }
 </style>
+<script>/* endereço limpo: tira ?v= e ?cb= que o verificador de versão acrescenta */(function(){try{var u=new URL(location.href),m=false;['v','cb','t'].forEach(function(k){if(u.searchParams.has(k)){u.searchParams.delete(k);m=true;}});var p=u.pathname.replace(/index\.html$/,'');if(p!==u.pathname){u.pathname=p;m=true;}if(m)history.replaceState(null,'',u.pathname+(u.searchParams.toString()?'?'+u.searchParams.toString():'')+u.hash);}catch(e){}})();</script>
 </head>
 <body>
 
@@ -352,7 +353,7 @@ table.dre td.muted{color:var(--txt4);}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
       Atualizar dados
     </button>
-    <a class="s-item" id="lkImportar" href="importar.html" style="text-decoration:none">
+    <a class="s-item" id="lkImportar" href="importar/" style="text-decoration:none">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Importar planilha
     </a>
@@ -1006,9 +1007,6 @@ async function recarregar(){
   populateFilters();
   atualizar();
 }
-/* o link de importar leva a hora do clique: o navegador não pode reaproveitar uma cópia antiga
-   da tela (29/09/2026: a versão em cache leu as datas trocadas e gravou errado) */
-(function(){ const a=$('lkImportar'); if(a) a.addEventListener('click',()=>{ a.href='importar.html?v='+Date.now(); }); })();
 document.addEventListener('DOMContentLoaded',recarregar);
 let _rt;
 window.addEventListener('resize',()=>{ clearTimeout(_rt); _rt=setTimeout(()=>{ if(lastF) renderCharts(lastF); },400); });
