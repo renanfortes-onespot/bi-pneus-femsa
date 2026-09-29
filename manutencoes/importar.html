@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="202609291136">
+<meta name="build" content="202609291144">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Importar · Custos Frota — FEMSA</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -121,24 +121,54 @@ const CP1252={0x20AC:0x80,0x201A:0x82,0x0192:0x83,0x201E:0x84,0x2026:0x85,0x2020
 function fixTxt(s){
   if(typeof s!=='string') return s==null?'':String(s);
   if(!/[ÃÂ]/.test(s)) return s.trim();
-  try{ const b=[]; for(const ch of s){ const c=ch.charCodeAt(0); b.push(c<=0xFF?c:(CP1252[c]!=null?CP1252[c]:c)); } return new TextDecoder('utf-8').decode(new Uint8Array(b)).trim(); }
+  // fatal:true — se a sequência não for UTF-8 válido, o texto já estava certo (ex.: "APROVAÇÃO") e fica como veio
+  try{ const b=[]; for(const ch of s){ const c=ch.charCodeAt(0); if(c>0xFF&&CP1252[c]==null) return s.trim(); b.push(c<=0xFF?c:CP1252[c]); } return new TextDecoder('utf-8',{fatal:true}).decode(new Uint8Array(b)).trim(); }
   catch(e){ return s.trim(); }
 }
 
 let DADOS=[];
 
+/* O RELATÓRIO NÃO É EXCEL DE VERDADE: o sistema exporta uma página HTML com extensão .xls.
+   O Excel abre e lê no padrão brasileiro, mas a biblioteca do navegador lia no americano —
+   01/09 virava 9 de janeiro e "250,00" virava 25.000 (importação de 29/09/2026 caiu em
+   MAR/26 com 1,13 mi). Por isso o HTML é lido aqui, célula a célula, como texto, e data e
+   valor são interpretados SEMPRE em pt-BR. Excel binário de verdade segue pela biblioteca. */
+function linhasHtml(txt){
+  const doc=new DOMParser().parseFromString(txt,'text/html');
+  return [...doc.querySelectorAll('tr')].map(tr=>{
+    const r=[];
+    [...tr.children].forEach(td=>{ const v=fixTxt(td.textContent).replace(/ /g,' ').replace(/\s+/g,' ').trim();
+      r.push(v===''?null:v); for(let k=1;k<(+td.getAttribute('colspan')||1);k++) r.push(null); });
+    return r;
+  });
+}
+// valor pt-BR em texto: ponto é milhar, vírgula é decimal
+function numBR(v){ if(typeof v==='number') return v; if(v==null||v==='') return 0;
+  return parseFloat(String(v).replace(/[^0-9.,\-]/g,'').replace(/\./g,'').replace(',','.'))||0; }
+// data: Date (Excel de verdade), número de série do Excel, ou texto "dd/mm/aaaa hh:mm"
+function dataDe(c){
+  if(c instanceof Date && !isNaN(c)) return {y:c.getFullYear(),m:c.getMonth()+1,d:c.getDate(),h:c.getHours(),i:c.getMinutes()};
+  if(typeof c==='number' && c>20000 && c<80000){ const ms=Math.round((c-25569)*86400000), u=new Date(ms);
+    return {y:u.getUTCFullYear(),m:u.getUTCMonth()+1,d:u.getUTCDate(),h:u.getUTCHours(),i:u.getUTCMinutes()}; }
+  const m=String(c==null?'':c).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if(!m||+m[2]<1||+m[2]>12||+m[1]<1||+m[1]>31) return null;
+  return {y:+m[3],m:+m[2],d:+m[1],h:+(m[4]||0),i:+(m[5]||0)};
+}
+const iso=t=>t?`${t.y}-${pad(t.m)}-${pad(t.d)}T${pad(t.h)}:${pad(t.i)}:00`:null;
+
 function lerOS(rows){
   const out=[]; let semData=0;
   rows.forEach(r=>{
-    const os=r[0];
-    if(typeof os!=='number' || !r[1]) return;           // só linha de OS; ignora cabeçalho, seção e total
-    const ent=r[13];
-    if(!(ent instanceof Date)||isNaN(ent)){ semData++; return; }
-    out.push({ os, vigencia:ent.getFullYear()+'-'+pad(ent.getMonth()+1)+'-01',
+    if(!r||r[0]==null||!r[1]) return;
+    const os=typeof r[0]==='number'?r[0]:(/^\d{5,}$/.test(String(r[0]).trim())?+String(r[0]).trim():null);
+    if(os==null) return;                                  // só linha de OS; ignora cabeçalho, seção e total
+    const ent=dataDe(r[13]);
+    if(!ent){ semData++; return; }
+    out.push({ os, vigencia:ent.y+'-'+pad(ent.m)+'-01',
       tipo:fixTxt(r[1]), codigo:fixTxt(r[2]), placa:fixTxt(r[6]), status:fixTxt(r[8]), aprovador:fixTxt(r[9]),
       fornecedor:fixTxt(r[11]), cidade:fixTxt(r[12]),
-      entrada:ent.toISOString(), retirada:(r[14] instanceof Date&&!isNaN(r[14]))?r[14].toISOString():null,
-      valor_pecas:toNum(r[16]), valor_mao_obra:toNum(r[17]), valor_aprovado:toNum(r[18]) });
+      entrada:iso(ent), retirada:iso(dataDe(r[14])),
+      valor_pecas:numBR(r[16]), valor_mao_obra:numBR(r[17]), valor_aprovado:numBR(r[18]) });
   });
   return {out, semData};
 }
@@ -149,8 +179,15 @@ function abrir(f){
   const rd=new FileReader();
   rd.onload=e=>{
     let rows;
-    try{ const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
-         rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:null}); }
+    try{
+      const bytes=new Uint8Array(e.target.result);
+      const ini=new TextDecoder('utf-8').decode(bytes.subarray(0,2000)).replace(/^﻿/,'').trimStart();
+      // o arquivo mistura UTF-8 e Windows-1252: lê tudo como 1252 (nenhum byte se perde) e o fixTxt
+      // conserta, célula a célula, só o que era UTF-8
+      if(ini[0]==='<' || /<table/i.test(ini)){ rows=linhasHtml(new TextDecoder('windows-1252').decode(bytes)); }
+      else { const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+             rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:null}); }
+    }
     catch(err){ mostrarErro(f.name,'Não consegui ler o arquivo. Ele abre normalmente no Excel?'); return; }
     const o=lerOS(rows);
     if(o.out.length){ DADOS=o.out; previaOS(f.name,o.semData); return; }
