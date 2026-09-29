@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="202609291443">
+<meta name="build" content="202609291453">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Custos Frota · Manutenções FEMSA</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -888,7 +888,8 @@ function renderCharts(f){
     const v=[]; arrs.forEach(a=>(a||[]).forEach(x=>{ if(x!=null&&isFinite(x)) v.push(+x); }));
     if(!v.length) return null;
     const mn=Math.min(...v), mx=Math.max(...v);
-    return {min:Math.max(0,mn*0.5), max:mx*1.12};
+    // 0.75 = meio-termo entre a janela justa (exagerada) e começar na metade (suave demais)
+    return {min:Math.max(0,mn*0.75), max:mx*1.08};
   }
 }
 
