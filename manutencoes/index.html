@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="202609291459">
+<meta name="build" content="202609291500">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Custos Frota · Manutenções FEMSA</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -437,8 +437,8 @@ table.dre td.muted{color:var(--txt4);}
           <div class="kpi"><div class="kl">Corretiva</div><div class="kv" id="c-corr">—</div><div class="km"><b id="c-corr-av">—</b> do realizado</div></div>
           <div class="kpi"><div class="kl">Preventiva</div><div class="kv" id="c-prev">—</div><div class="km"><b id="c-prev-av">—</b> do realizado</div></div>
           <div class="kpi"><div class="kl">Pneus</div><div class="kv" id="c-pneu">—</div><div class="km"><b id="c-pneu-av">—</b> do realizado</div></div>
-          <div class="kpi"><div class="kl">Peças</div><div class="kv" id="c-pec">—</div><div class="km"><b id="c-pec-av">—</b> das OS</div></div>
-          <div class="kpi"><div class="kl">Mão de obra</div><div class="kv" id="c-mo">—</div><div class="km"><b id="c-mo-av">—</b> das OS</div></div>
+          <div class="kpi"><div class="kl">Peças</div><div class="kv" id="c-pec">—</div><div class="km"><b id="c-pec-av">—</b> do realizado</div></div>
+          <div class="kpi"><div class="kl">Mão de obra</div><div class="kv" id="c-mo">—</div><div class="km"><b id="c-mo-av">—</b> do realizado</div></div>
         </div>
 
         <div class="gr2 gr32">
@@ -781,13 +781,12 @@ function atualizar(){
   if(cfm) cfm.innerHTML = filtrado ? 'Fora do filtro' : `<b>${a.real?pctAbs(a.fixo/a.real*100):'—'}</b> do realizado`;
   const cd=$('c-dorc-v'); if(cd){ cd.textContent=fmtD(d); colI(cd, d<0); }
   setArr($('c-dorc-p'), pct(dp), dp, dp!=null&&dp<0);
-  /* DOIS RECORTES, DUAS BASES (Renan, 29/09/2026: "somando dá mais de 100%"):
-     por TIPO  — Custo fixo + Corretiva + Preventiva + Pneus = 100% do REALIZADO;
-     por NATUREZA — Peças + Mão de obra = 100% do custo das OS (o contrato fixo não tem peça nem mão de obra). */
+  /* TODOS os percentuais dos cards são sobre o TOTAL REALIZADO (Renan, 29/09/2026), nunca sobre o
+     orçado. São dois recortes do mesmo total: por tipo (Fixo + Corretiva + Preventiva + Pneus = 100%)
+     e por natureza (Fixo + Peças + Mão de obra = 100%). */
   const av=v=>a.real?pctAbs(v/a.real*100):'—';
-  const avOS=v=>a.os?pctAbs(v/a.os*100):'—';
-  set('c-pec', fmt(a.pec)); set('c-pec-av', avOS(a.pec));
-  set('c-mo', fmt(a.mo));   set('c-mo-av', avOS(a.mo));
+  set('c-pec', fmt(a.pec)); set('c-pec-av', av(a.pec));
+  set('c-mo', fmt(a.mo));   set('c-mo-av', av(a.mo));
   set('c-corr', fmt(a.corr)); set('c-corr-av', av(a.corr));
   set('c-prev', fmt(a.prev)); set('c-prev-av', av(a.prev));
   set('c-pneu', fmt(a.pneu)); set('c-pneu-av', av(a.pneu));
