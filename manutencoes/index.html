@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="202609290935">
+<meta name="build" content="202609291136">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Custos Frota · Manutenções FEMSA</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -735,7 +735,7 @@ function atualizar(){
   // subtítulo
   const per = f.vig.length ? f.vig.slice().sort().map(vk=>vigLabel(vk).toUpperCase()).join(', ')
             : f.ano.length ? 'Ano '+f.ano.join(', ') : 'Todo o período';
-  set('titSub', `${per} · ${a.n.toLocaleString('pt-BR')} OS · ${FONTE==='demo'?'⚠️ DEMO (banco vazio)':'Fonte: banco'}`);
+  set('titSub', `${per} · ${a.n.toLocaleString('pt-BR')} OS · ${FONTE==='demo'?'⚠️ DEMO (banco vazio)':(FONTE_ORC==='planilha'?'Orçado: planilha':'Orçado: cópia do banco (planilha indisponível)')}`);
 
   const d=orc-a.real, dp=orc?d/Math.abs(orc)*100:null;
   const at=orc?a.real/orc*100:null;
@@ -968,10 +968,38 @@ function carregarDemo(){
   OS=base.map(r=>({os:n++,vigencia:'2026-09-01',tipo:r[0],codigo:r[1],placa:r[2],fornecedor:r[3],cidade:r[4],status:r[5],valor_aprovado:r[6],valor_pecas:r[7],valor_mao_obra:r[8]}));
   FONTE='demo';
 }
+/* ORÇADO = PLANILHA GOOGLE, AO VIVO (Renan, 29/09/2026: "não quero importar orçado. Ele
+   preenche lá e consome"). O cliente edita a planilha e o painel lê direto; a tabela
+   orcamento_frota do banco fica só de reserva para quando a planilha não responder. */
+const ORC_SHEET='1WDDPFe-spk9gpUQAAWkuIEm9xIcHw1Vky_3V9D5IYqI', ORC_GID='0';
+// aceita "821,212.45" (como o gviz devolve) e "821.212,45": o ÚLTIMO separador é o decimal
+function toNum(v){ if(typeof v==='number') return v; if(!v) return 0; let s=String(v).trim(); const lc=s.lastIndexOf(','), ld=s.lastIndexOf('.');
+  if(lc>=0&&ld>=0){ s = lc>ld ? s.replace(/\./g,'').replace(',','.') : s.replace(/,/g,''); } else if(lc>=0){ s=s.replace(',','.'); }
+  return parseFloat(s.replace(/[^0-9.\-]/g,''))||0; }
+async function fetchOrcadoPlanilha(){
+  const r=await fetch(`https://docs.google.com/spreadsheets/d/${ORC_SHEET}/gviz/tq?tqx=out:json&gid=${ORC_GID}&cb=${Date.now()}`);
+  if(!r.ok) throw new Error('planilha '+r.status);
+  const t=await r.text(), j=JSON.parse(t.substring(t.indexOf('{'), t.lastIndexOf('}')+1));
+  const out=[];
+  (j.table.rows||[]).forEach(row=>{
+    const d=row.c&&row.c[0]&&row.c[0].v, v=row.c&&row.c[1]&&row.c[1].v;
+    if(!d||v==null||v==='') return;
+    const m=String(d).match(/Date\((\d+),(\d+),(\d+)\)/); if(!m) return;
+    const val=toNum(v); if(!val) return;
+    out.push({vigencia:m[1]+'-'+String(+m[2]+1).padStart(2,'0')+'-01', valor:val});
+  });
+  if(!out.length) throw new Error('planilha sem valores');
+  return out;
+}
+let FONTE_ORC='planilha';
 async function recarregar(){
   set('titSub','Carregando…');
   try{
-    const [os,orc]=await Promise.all([fetchAll('manutencao_os'),fetchAll('orcamento_frota')]);
+    const [os,orc]=await Promise.all([
+      fetchAll('manutencao_os'),
+      fetchOrcadoPlanilha().then(x=>{ FONTE_ORC='planilha'; return x; })
+        .catch(e=>{ console.warn('orçado: planilha indisponível, usando a cópia do banco', e); FONTE_ORC='banco'; return fetchAll('orcamento_frota'); })
+    ]);
     OS=os; ORC=orc; FONTE='banco';
   }catch(e){ console.error(e); OS=[]; ORC=[]; }
   if(!OS.length || new URLSearchParams(location.search).get('demo')==='1') carregarDemo();
