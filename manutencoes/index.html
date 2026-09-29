@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="build" content="202609291422">
+<meta name="build" content="202609291425">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Custos Frota · Manutenções FEMSA</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -710,6 +710,17 @@ function cascata(){
   });
 }
 
+/* FORNECEDORES QUE SÃO SEMPRE PREVENTIVA (Renan, 29/09/2026): "sempre devem ser preventivas,
+   independente do que vier no relatório de OS". O banco guarda o relatório como veio; a regra é
+   aplicada aqui, na leitura, então vale para o que já foi importado e para o que vier.
+   Nome EXATO do fornecedor — "NECO TRUCK MAO DE OBRA" é outro e não entra. */
+const SEMPRE_PREVENTIVA=['NECO TRUCK PECAS','REAL PECAS'];
+const _nomeForn=s=>String(s||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+function aplicarRegras(lista){
+  lista.forEach(o=>{ if(SEMPRE_PREVENTIVA.includes(_nomeForn(o.fornecedor))){ if(o.tipo_relatorio===undefined) o.tipo_relatorio=o.tipo; o.tipo='PREVENTIVA'; } });
+  return lista;
+}
+
 /* ── agregação ── */
 function agg(rows){
   const r={real:0,pec:0,mo:0,n:0,corr:0,prev:0,pneu:0,placas:new Set(),forn:{}};
@@ -1024,7 +1035,7 @@ async function recarregar(){
       fetchOrcadoPlanilha().then(x=>{ FONTE_ORC='planilha'; return x; })
         .catch(e=>{ console.warn('orçado: planilha indisponível, usando a cópia do banco', e); FONTE_ORC='banco'; return fetchAll('orcamento_frota'); })
     ]);
-    OS=os; ORC=orc; FONTE='banco';
+    OS=aplicarRegras(os); ORC=orc; FONTE='banco';
   }catch(e){ console.error(e); OS=[]; ORC=[]; }
   if(!OS.length || new URLSearchParams(location.search).get('demo')==='1') carregarDemo();
   populateFilters();
